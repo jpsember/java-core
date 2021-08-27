@@ -53,6 +53,7 @@ public final class JSMap extends JSObject {
     constructFrom(parser);
     parser.assertCompleted();
   }
+
   public static JSMap from(File file) {
     String content = Files.readString(file);
     return new JSMap(content);
@@ -135,7 +136,9 @@ public final class JSMap extends JSObject {
         firstKeyFlag = false;
       String key = parser.readString();
       parser.read(':');
-      mMap.put(key, parser.readValue());
+      Object value = parser.readValue();
+      if (value != null)
+        mMap.put(key, value);
     }
   }
 
