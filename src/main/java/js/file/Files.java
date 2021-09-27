@@ -920,6 +920,18 @@ public final class Files extends BaseObject {
   private File mProjectConfigDirectory;
 
   // ------------------------------------------------------------------
+  // Wrappers for File methods that throw checked exceptions
+  // ------------------------------------------------------------------
+
+  public static File createTempFile(String prefix, String suffix) {
+    try {
+      return File.createTempFile(prefix, suffix);
+    } catch (IOException e) {
+      throw asFileException(e);
+    }
+  }
+
+  // ------------------------------------------------------------------
   // Streams
   // ------------------------------------------------------------------
 

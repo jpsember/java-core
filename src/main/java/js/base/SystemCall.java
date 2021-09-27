@@ -59,8 +59,12 @@ public final class SystemCall extends BaseObject {
    */
   public SystemCall arg(Object... argumentObjects) {
     assertMutable();
-    for (Object arg : argumentObjects)
-      mArgList.add(arg.toString());
+    for (Object arg : argumentObjects) {
+      String argStr = arg.toString();
+      mArgList.add(argStr);
+      if (argStr.charAt(0) == '"' || argStr.charAt(0) == '\'')
+        throw badArg("Unexpected quoting in SystemCall argument?", argStr);
+    }
     return this;
   }
 
