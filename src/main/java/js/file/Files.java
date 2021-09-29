@@ -524,7 +524,12 @@ public final class Files extends BaseObject {
   }
 
   private static Supplier<File> sDesktopDirectory = singleton(() -> {
-    return assertDirectoryExists(new File(FileUtils.getUserDirectory(), "Desktop"));
+    File candidate = new File(FileUtils.getUserDirectory(), "Desktop");
+    if (!candidate.exists()) {
+      alert("Desktop directory not found, creating one:", INDENT, candidate);
+      mkdirHelper(candidate);
+    }
+    return assertDirectoryExists(candidate);
   });
 
   public static File repoDir() {
@@ -532,19 +537,9 @@ public final class Files extends BaseObject {
   }
 
   private static Supplier<File> sRepoDir = singleton(() -> {
-    String userDir = currentDirectory().getPath();
-    String repoHome;
-    // If running within Docker container, or something similar, return the home directory
-    //
-    if (userDir.startsWith("/home/ubuntu")) {
-      repoHome = "/home/ubuntu";
-    } else {
-      // Assume we are running in a subdirectory of the repo's "source" directory
-      int i = userDir.indexOf("/source/");
-      checkState(i >= 0, "can't find $REPO_HOME, nor find '/source/' within userDir: " + userDir);
-      repoHome = userDir.substring(0, i);
-    }
-    return new File(repoHome).getAbsoluteFile();
+    File currentDirectory = currentDirectory();
+    return parent(
+        getFileWithinParents(currentDirectory, ".git", "git repository containing", currentDirectory));
   });
 
   // ------------------------------------------------------------------
@@ -611,14 +606,10 @@ public final class Files extends BaseObject {
   // ------------------------------------------------------------------
 
   public File mkdirs(File dir) {
-    try {
-      log("mkdirs:", dir);
-      if (!dryRun())
-        FileUtils.forceMkdir(dir);
-      return dir;
-    } catch (IOException e) {
-      throw asFileException(e);
-    }
+    log("mkdirs:", dir);
+    if (!dryRun())
+      mkdirHelper(dir);
+    return dir;
   }
 
   public File remakeDirs(File dir) {
@@ -926,6 +917,18 @@ public final class Files extends BaseObject {
   public static File createTempFile(String prefix, String suffix) {
     try {
       return File.createTempFile(prefix, suffix);
+    } catch (IOException e) {
+      throw asFileException(e);
+    }
+  }
+
+  /**
+   * A static version of mkdirs, for internal use
+   */
+  private static File mkdirHelper(File dir) {
+    try {
+      FileUtils.forceMkdir(dir);
+      return dir;
     } catch (IOException e) {
       throw asFileException(e);
     }
