@@ -198,6 +198,13 @@ public final class Files extends BaseObject {
   }
 
   /**
+   * Read a byte array from a resource
+   */
+  public static byte[] toByteArray(Class theClass, String resourceName) {
+    return Files.toByteArray(openResource(theClass, resourceName));
+  }
+
+  /**
    * Read a number of bytes from input stream
    */
   public static byte[] readBytes(InputStream inputStream, int length) {
@@ -606,7 +613,8 @@ public final class Files extends BaseObject {
   // ------------------------------------------------------------------
 
   public File mkdirs(File dir) {
-    log("mkdirs:", dir);
+    if (verbose() && !dir.isDirectory())
+      log("mkdirs:", dir);
     if (!dryRun())
       mkdirHelper(dir);
     return dir;
@@ -1046,10 +1054,15 @@ public final class Files extends BaseObject {
     return m;
   }
 
-  /**
-   * Version of infoMap() for string parameter
-   */
+  @Deprecated // Use info(file) instead
   public static JSMap info(String file) {
+    return infoMap(file);
+  }
+
+  /**
+   * Version of info() for string parameter
+   */
+  public static JSMap infoMap(String file) {
     File f = null;
     if (file != null)
       f = new File(file);
