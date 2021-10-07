@@ -404,6 +404,11 @@ public final class Files extends BaseObject {
     return file;
   }
 
+  public static String assertRelative(String path, Object... errorMessages) {
+    assertRelative(new File(path), errorMessages);
+    return path;
+  }
+
   /**
    * Get absolute form of file
    */
@@ -915,8 +920,23 @@ public final class Files extends BaseObject {
     return mProjectSecretsDirectory;
   }
 
+  /**
+   * Get a file within the secrets directory; make sure it exists
+   */
+  public File fileWithinSecrets(String relativePath) {
+    File file = new File(projectSecretsDirectory(), assertRelative(relativePath));
+    return mustExist(file);
+  }
+
+  public String entityName() {
+    if (mEntityName == null)
+      mEntityName = readString(fileWithinSecrets("entity_name.txt")).trim();
+    return mEntityName;
+  }
+
   private File mProjectSecretsDirectory;
   private File mProjectConfigDirectory;
+  private String mEntityName;
 
   // ------------------------------------------------------------------
   // Wrappers for File methods that throw checked exceptions
