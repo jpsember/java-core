@@ -118,17 +118,34 @@ public final class Files extends BaseObject {
     return file;
   }
 
-  public static File mustExist(File file) {
+  public static File assertExists(File file) {
+    return assertExists(file, null);
+  }
+
+  public static File assertExists(File file, String contextOrNull) {
     assertNonEmpty(file);
     if (!file.exists())
-      badArg("No such file:", file);
+      badArg("No such file:", file, contextExpression(contextOrNull));
     return file;
   }
 
+  @Deprecated // Use assertExists
+  public static File mustExist(File file) {
+    return assertExists(file, null);
+  }
+
+  @Deprecated // Use assertDoesNotExist
   public static File mustNotExist(File file) {
     assertNonEmpty(file);
     if (file.exists())
       badArg("File or directory already exists:", file);
+    return file;
+  }
+
+  public static File assertDoesNotExist(File file, String contextOrNull) {
+    assertNonEmpty(file);
+    if (file.exists())
+      badArg("File or directory already exists:", file, contextExpression(contextOrNull));
     return file;
   }
 
