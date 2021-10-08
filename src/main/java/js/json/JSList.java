@@ -149,18 +149,24 @@ public final class JSList extends JSObject implements Iterable<Object> {
 
   // ------------------------------------------------------------------
 
+  // It is possible that some values are Integers and others are Longs, 
+  // or Floats and Doubles, and their differing types will cause a 
+  // more naive method to fail.  So, for equals and hashCode, we
+  // convert the objects to a (non-pretty printed) string
+  // and compare those strings.  Slower but robust.
+
   @Override
   public boolean equals(Object o) {
     if (this == o)
       return true;
     if (o == null || getClass() != o.getClass())
       return false;
-    return mList.equals(((JSList) o).mList);
+    return this.toString().equals(((JSList) o).toString());
   }
 
   @Override
   public int hashCode() {
-    return mList.hashCode();
+    return this.toString().hashCode();
   }
 
   @Override

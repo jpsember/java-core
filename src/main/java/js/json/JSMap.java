@@ -490,18 +490,25 @@ public final class JSMap extends JSObject {
   // Equals / hashcode
   // ------------------------------------------------------------------
 
+  // It is possible that some values are Integers and others are Longs, 
+  // or Floats and Doubles, and their differing types will cause a 
+  // more naive method to fail.  So, for equals and hashCode, we
+  // convert the objects to a (non-pretty printed) string
+  // and compare those strings.  Slower but robust.
+
   @Override
   public boolean equals(Object o) {
     if (this == o)
       return true;
     if (o == null || getClass() != o.getClass())
       return false;
-    return mMap.equals(((JSMap) o).mMap);
+    JSMap m2 = (JSMap) o;
+    return this.toString().equals(m2.toString());
   }
 
   @Override
   public int hashCode() {
-    return mMap.hashCode();
+    return toString().hashCode();
   }
 
   private Object getValueFor(String key, boolean mustExist) {
