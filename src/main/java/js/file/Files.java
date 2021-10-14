@@ -942,7 +942,7 @@ public final class Files extends BaseObject {
    */
   public File fileWithinSecrets(String relativePath) {
     File file = new File(projectSecretsDirectory(), assertRelative(relativePath));
-    return mustExist(file);
+    return assertExists(file);
   }
 
   public String entityName() {
@@ -1028,8 +1028,7 @@ public final class Files extends BaseObject {
   // ------------------------------------------------------------------
 
   public static <T extends AbstractData> T parseAbstractData(T prototype, File file) {
-    mustExist(file);
-    return parseAbstractDataOpt(prototype, file);
+    return parseAbstractDataOpt(prototype, assertExists(file));
   }
 
   public static <T extends AbstractData> T parseAbstractDataOpt(T prototype, File file) {

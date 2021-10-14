@@ -79,8 +79,8 @@ public final class SystemCall extends BaseObject {
         log("Making call:", INDENT, sysCallAsString());
       processBuilder().command(mArgList);
       Process process = processBuilder().start();
-      mSystemOut = captureStreamToString(process.getInputStream(), verbose() ? "" : null);
-      mSystemErr = captureStreamToString(process.getErrorStream(), verbose() ? "ERR>>" : null);
+      mSystemOut = captureStreamToString(process.getInputStream(), verbose() ? "system_out>>" : null);
+      mSystemErr = captureStreamToString(process.getErrorStream(), verbose() ? "system_err>>" : null);
       mExitCode = process.waitFor();
       process.destroy();
     } catch (Throwable t) {
