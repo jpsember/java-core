@@ -197,9 +197,18 @@ public abstract class App extends BaseObject {
     return mDryRun;
   }
 
+  // ------------------------------------------------------------------
+  // Injectable Files object (for unit tests)
+  // ------------------------------------------------------------------
+
+  public final void setFiles(Files f) {
+    checkState(mFilesObject == null,"Files already set");
+    mFilesObject = f.withDryRun(dryRun()).withVerbose(verbose());
+  }
+  
   public final Files files() {
     if (mFilesObject == null)
-      mFilesObject = new Files().withDryRun(dryRun()).withVerbose(verbose());
+      setFiles(new Files());
     return mFilesObject;
   }
 

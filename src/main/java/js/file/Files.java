@@ -923,22 +923,69 @@ public final class Files extends BaseObject {
     return result;
   }
 
+  // ------------------------------------------------------------------
+  // Project directory structure
+  // ------------------------------------------------------------------
+
+  /**
+   * Get project directory. If not yet defined, looks at the current directory
+   * or one of its parents for one containing a subdirectory named
+   * "project_config"
+   */
+  public File projectDirectory() {
+    if (mProjectDirectory == null)
+      setProjectDirectory(
+          parent(getFileWithinParents(null, "project_config", "directory containing 'project_config'")));
+    return mProjectDirectory;
+  }
+
+  /**
+   * Set directory for project; must not already be defined
+   */
+  public void setProjectDirectory(File directory) {
+    checkState(mProjectDirectory == null, "project directory already set to:", mProjectDirectory);
+    mProjectDirectory = getCanonicalFile(assertNonEmpty(directory));
+  }
+
+  /**
+   * Get the project config directory. If not yet set, sets it to
+   * <project_directory>/project_config
+   */
   public File projectConfigDirectory() {
     if (mProjectConfigDirectory == null) {
-      mProjectConfigDirectory = getFileWithinParents(null, "project_config", "project_config directory");
+      setProjectConfigDirectory(fileWithinProject("project_config"));
     }
     return mProjectConfigDirectory;
   }
 
+  /**
+   * Set project config directory; must not already be defined
+   */
+  public void setProjectConfigDirectory(File directory) {
+    checkState(mProjectConfigDirectory == null, "project config directory already set to:",
+        mProjectConfigDirectory);
+    mProjectConfigDirectory = getCanonicalFile(assertDirectoryExists(directory));
+  }
+
+  /**
+   * Get the project secrets directory. If not yet set, sets it to
+   * <project_directory>/secrets
+   */
   public File projectSecretsDirectory() {
-    if (mProjectSecretsDirectory == null) {
-      mProjectSecretsDirectory = getFileWithinParents(null, "secrets", "project_config directory");
-    }
+    if (mProjectSecretsDirectory == null)
+      mProjectSecretsDirectory = assertDirectoryExists(fileWithinProject("secrets"));
     return mProjectSecretsDirectory;
   }
 
   /**
-   * Get a file within the secrets directory; make sure it exists
+   * Gets a file within the project directory; makes sure it exists
+   */
+  public File fileWithinProject(String relativePath) {
+    return assertExists(new File(projectDirectory(), assertRelative(relativePath)));
+  }
+
+  /**
+   * Gets a file within the secrets directory; makes sure it exists
    */
   public File fileWithinSecrets(String relativePath) {
     File file = new File(projectSecretsDirectory(), assertRelative(relativePath));
@@ -951,6 +998,7 @@ public final class Files extends BaseObject {
     return mEntityName;
   }
 
+  private File mProjectDirectory;
   private File mProjectSecretsDirectory;
   private File mProjectConfigDirectory;
   private String mEntityName;
