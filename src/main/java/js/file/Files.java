@@ -471,7 +471,7 @@ public final class Files extends BaseObject {
 
   public static File getCanonicalFile(File file) {
     try {
-      return file.getCanonicalFile();
+      return assertNonEmpty(file).getCanonicalFile();
     } catch (IOException e) {
       throw asFileException(e);
     }
@@ -944,7 +944,7 @@ public final class Files extends BaseObject {
    */
   public void setProjectDirectory(File directory) {
     checkState(mProjectDirectory == null, "project directory already set to:", mProjectDirectory);
-    mProjectDirectory = getCanonicalFile(assertNonEmpty(directory));
+    mProjectDirectory = getCanonicalFile(directory);
   }
 
   /**
