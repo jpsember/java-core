@@ -605,6 +605,20 @@ public final class Tools {
   // Data structure utilities
   // ------------------------------------------------------------------
 
+  /**
+   * Check if an optional boolean value is true (versus false or null)
+   */
+  public static boolean isTrue(Boolean booleanOrNull) {
+    return booleanOrNull == Boolean.TRUE;
+  }
+
+  /**
+   * Check if an optional boolean value is false or null
+   */
+  public static boolean isFalse(Boolean booleanOrNull) {
+    return !isTrue(booleanOrNull);
+  }
+
   public static <T> T nullTo(T value, T defaultValue) {
     return value == null ? defaultValue : value;
   }
