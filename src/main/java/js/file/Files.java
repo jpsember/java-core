@@ -44,6 +44,7 @@ import static js.base.Tools.*;
 
 import js.base.BaseObject;
 import js.base.BasePrinter;
+import js.base.SystemCall;
 import js.file.DirWalk;
 import js.data.AbstractData;
 import js.json.JSMap;
@@ -1028,6 +1029,26 @@ public final class Files extends BaseObject {
   }
 
   // ------------------------------------------------------------------
+  // Miscellaneous
+  // ------------------------------------------------------------------
+
+  /**
+   * Call chmod on a file
+   * 
+   * @param file
+   * @param flags
+   *          argument for chmod command; e.g. "u+x" or 750
+   */
+  public void chmod(File file, Object flags) {
+    if (dryRun())
+      return;
+    SystemCall sc = new SystemCall();
+    sc.setVerbose(verbose());
+    sc.arg("chmod", flags, file);
+    sc.assertSuccess();
+  }
+
+  // ------------------------------------------------------------------
   // Streams
   // ------------------------------------------------------------------
 
@@ -1043,7 +1064,7 @@ public final class Files extends BaseObject {
     if (verbose())
       log("opening output stream for:", file);
     if (dryRun())
-      throw notSupported("Should we have a null output stream?");
+      throw notSupported("Not supported in 'dryrun' mode");
     try {
       return new FileOutputStream(file);
     } catch (IOException e) {
