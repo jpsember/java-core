@@ -261,7 +261,7 @@ public class IPoint implements AbstractData {
    * Parse an IPoint from a JSMap
    */
   public static IPoint get(JSMap jsonMap, String key) {
-    JSMap m = jsonMap.optJSMap(key);
+    JSList m = jsonMap.optJSList(key);
     if (m == null)
       throw badArg("No IPoint found for key:", key, INDENT, jsonMap);
     return DEFAULT_INSTANCE.parse(m);
