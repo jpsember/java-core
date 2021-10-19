@@ -648,7 +648,12 @@ public final class DataUtil {
           result = (T) defaultInstance.parse(obj);
         items.add(result);
       } else {
-        items.add((T) defaultInstance.parse(obj));
+        T result = (T) defaultInstance.parse(obj);
+        // I think it is a bad idea to return a null object if parsing failed.
+        if (result == null)
+          badArg("null item parsed from:", obj, CR, "source:", INDENT, sourceListOrNull, OUTDENT,
+              "defaultInstance:", INDENT, defaultInstance);
+        items.add(result);
       }
     }
     return Collections.unmodifiableList(items);

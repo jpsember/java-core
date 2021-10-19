@@ -882,8 +882,8 @@ public final class Files extends BaseObject {
   public File rebuild(File directory, String... preserveRelativeFiles) {
     if (dryRun())
       throw notSupported("Should we have a null output stream?");
-    throw notSupported("do we need to construct a BackupManager?");
-    //    return BackupManager.get().rebuild(directory, preserveRelativeFiles);
+    todo("Investigate BackupManager, and document its assumptions etc");
+    return backupManager().backupAndDelete(directory, preserveRelativeFiles);
   }
 
   /**
@@ -1245,6 +1245,19 @@ public final class Files extends BaseObject {
    */
   public static final Comparator<File> COMPARATOR = (File x, File y) -> x.getPath().compareTo(y.getPath());
 
+  // ------------------------------------------------------------------
+  // Backups
+  // ------------------------------------------------------------------
+
+  public BackupManager backupManager() {
+    if (mBackupManager == null) {
+      File backupDir = new File(projectDirectory(), "_SKIP_files_backups");
+      mBackupManager = new BackupManager(this, projectDirectory()).withBackupRootDirectory(backupDir);
+    }
+    return mBackupManager;
+  }
+
+  private BackupManager mBackupManager;
   // ------------------------------------------------------------------
   // Hash functions for files (for test purposes)
   // ------------------------------------------------------------------

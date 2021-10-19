@@ -69,7 +69,8 @@ public final class BackupManager extends BaseObject {
       relativePath = Files.fileRelativeToDirectory(fileOrDirectory, sourceRootDirectory()).toString();
     }
     if (relativePath.startsWith("..")) {
-      throw badArg("Invalid path:", fileOrDirectory);
+      throw badArg("Invalid relative path:", fileOrDirectory, CR, "for sourceRootDirectory:",
+          sourceRootDirectory());
     }
     log("relative to backup directory:", INDENT, relativePath);
     fileOrDirectory = new File(sourceRootDirectory(), relativePath);
