@@ -1015,33 +1015,57 @@ public final class DataUtil {
     return Arrays.copyOf(source, source.length);
   }
 
-  /**
-   * If an optional field is missing, attempt to parse from a file. If field is
-   * missing, and file is empty, returns null
-   * 
-   * @param fieldPrototype
-   * @param optionalField
-   * @param path
-   *          path containing JSMap, or null; can include a suffix of
-   *          space-delimited keys to reach the JSMap if it is nested within one
-   *          or more JSMaps
-   */
-  public static <F extends AbstractData> F resolveField(F fieldPrototype, F optionalField, File path) {
-    return resolveField(null, fieldPrototype, optionalField, path);
-  }
+  // ------------------------------------------------------------------
+  // Field links
+  // ------------------------------------------------------------------
 
   /**
-   * If an optional field is missing, attempt to parse from a file. If field is
-   * missing, and file is empty, returns null
+   * <pre>
+   * 
+   * Field links are a mechanism to allow a data type to point to some other file containing the data type's value.
+   * For example, let us define a data type Foo that wants to have a field representing an instance of type Bar.
+   * 
+   * By convention, Foo's field link to a Bar instance consists of two fields, an optional value, and a link
+   * to an external value:
+   * 
+   * # foo.dat
+   * #
+   * fields {
+   *       :
+   *    ? Bar bar;
+   *    File bar_path;
+   *       :
+   * }
+   * 
+   * If the optional field bar is non null, then that is the value of Bar that is used.  Otherwise, the field link
+   * is *resolved* by parsing the bar_path field.  This is a File with the structure:
+   *      
+   *      <target_file> ( ',' <key> )*
+   * 
+   * <target_file> is the path to a file containing a JSMap (typically the serialization of some other data type),
+   * and <key> is a list of keys defining a path through the JSMap to reach the desired JSMap representing the
+   * Foo to be returned.
+   * 
+   * </pre>
+   */
+
+  /**
+   * Resolve a field link. See discussion above.
    * 
    * @param baseDirectoryOrNull
-   *          if defined, acts as if current directory were this
+   *          if not null, a directory to serve as the base directory for the
+   *          path argument (if it is relative)
    * @param fieldPrototype
+   *          an instance of the returned type, to use as a parser
    * @param optionalField
+   *          if non-null, this value is returned
    * @param path
-   *          path containing JSMap, or null; can include a suffix of
-   *          space-delimited keys to reach the JSMap if it is nested within one
-   *          or more JSMaps
+   *          if optionalField is null, this path is parsed as a comma-delimited
+   *          sequence of strings, the first of which is a path to a file
+   *          containing a JSMap (A), and the subsequent strings are a set of
+   *          keys pointing to a nested JSMap (B) within (A). B is parsed and
+   *          returned
+   * @return value, either optionalField or B
    */
   @SuppressWarnings("unchecked")
   public static <F extends AbstractData> F resolveField(File baseDirectoryOrNull, F fieldPrototype,
@@ -1054,22 +1078,26 @@ public final class DataUtil {
     return (F) fieldPrototype.parse(jsonMap);
   }
 
-  public static JSMap resolveJSMap(File baseDirectoryOrNull, File path) {
-    if (Files.empty(path))
+  private static JSMap resolveJSMap(File baseDirectoryOrNull, File linkedFile) {
+    if (Files.empty(linkedFile))
       return null;
-    String pathStr = path.toString();
+
+    String pathStr = linkedFile.toString();
     List<String> elements = Tools.split(pathStr, ',');
-    path = Files.fileWithinOptionalDirectory(new File(elements.get(0)), baseDirectoryOrNull);
-    JSMap m = JSMap.from(path);
-    if (elements.size() > 1) {
-      for (String k : elements.subList(1, elements.size())) {
-        JSMap m2 = m.optJSMap(k);
-        if (m2 == null)
-          throw new IllegalArgumentException("no key found: " + k + " while parsing\n" + m);
-        m = m2;
-      }
+
+    String relativePath = elements.get(0);
+    remove(elements, 0, 1);
+    linkedFile = Files.fileWithinOptionalDirectory(new File(relativePath), baseDirectoryOrNull);
+    JSMap sourceMap = JSMap.from(linkedFile);
+
+    JSMap nestedMap = sourceMap;
+    for (String key : elements) {
+      JSMap childMap = nestedMap.optJSMap(key);
+      if (childMap == null)
+        badArg("no key found:", key, "parsing:", INDENT, sourceMap, OUTDENT, "link path:", pathStr);
+      nestedMap = childMap;
     }
-    return m;
+    return nestedMap;
   }
 
 }

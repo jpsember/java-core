@@ -42,10 +42,7 @@ public final class BackupManager extends BaseObject {
 
   public BackupManager withBackupRootDirectory(File backupRootDirectory) {
     assertMutable();
-    if (!backupRootDirectory.isAbsolute()) {
-      backupRootDirectory = new File(sourceRootDirectory(), backupRootDirectory.toString());
-    }
-    mBackupRootDirectory = backupRootDirectory;
+    mBackupRootDirectory = Files.fileWithinDirectory(backupRootDirectory, sourceRootDirectory());
     return this;
   }
 
@@ -61,17 +58,8 @@ public final class BackupManager extends BaseObject {
     Files.assertNonEmpty(fileOrDirectory);
     prepare();
 
-    String relativePath;
-    if (!fileOrDirectory.isAbsolute()) {
-      relativePath = fileOrDirectory.toString();
-      todo("!ensure file spec doesn't include .. that will yield a file outside of the source");
-    } else {
-      relativePath = Files.fileRelativeToDirectory(fileOrDirectory, sourceRootDirectory()).toString();
-    }
-    if (relativePath.startsWith("..")) {
-      throw badArg("Invalid relative path:", fileOrDirectory, CR, "for sourceRootDirectory:",
-          sourceRootDirectory());
-    }
+    fileOrDirectory = Files.relativeToContainingDirectory(fileOrDirectory, sourceRootDirectory());
+    String relativePath = fileOrDirectory.toString();
     log("relative to backup directory:", INDENT, relativePath);
     fileOrDirectory = new File(sourceRootDirectory(), relativePath);
     mSourceFileOrDirectory = fileOrDirectory;

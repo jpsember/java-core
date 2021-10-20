@@ -447,14 +447,51 @@ public final class Files extends BaseObject {
   }
 
   /**
-   * If file is not absolute, and a parent directory is specified, join them;
-   * else return file
+   * If file is not absolute, and a parent directory is specified, return new
+   * File(parent, file); else, return file
    */
   public static File fileWithinOptionalDirectory(File file, File parentDirectoryOrNull) {
-    assertNonEmpty(file, "fileWithinOptionalDirectory");
-    if (!file.isAbsolute() && nonEmpty(parentDirectoryOrNull))
-      return new File(parentDirectoryOrNull, file.getPath());
+    if (parentDirectoryOrNull != null)
+      return fileWithinDirectory(file, parentDirectoryOrNull);
+    return assertNonEmpty(file, "fileWithinOptionalDirectory");
+  }
+
+  /**
+   * If file is not absolute, express it relative to a directory
+   */
+  public static File fileWithinDirectory(File file, File parentDirectory) {
+    assertNonEmpty(file, "fileWithinDirectory");
+    if (!file.isAbsolute()) {
+      assertNonEmpty(parentDirectory);
+      return new File(parentDirectory, file.toString());
+    }
     return file;
+  }
+
+  /**
+   * Given a file and a directory containing the file, return file relative to
+   * the directory. Throw exception if file is not (strictly) within the
+   * directory.
+   */
+  public static File relativeToContainingDirectory(File file, File container) {
+    final boolean DB = false && alert("logging");
+    if (DB)
+      pr("relativeToContainingDirectory:", INDENT, file, CR, container);
+    assertAbsolute(container);
+    File canonicalFile = getCanonicalFile(file);
+    String canonicalPath = canonicalFile.toString();
+    String containerPath = container.toString();
+    int prefixLength = containerPath.length() + 1;
+    if (DB) {
+      pr("canonical:", canonicalPath);
+      pr("container:", containerPath);
+      pr("prefix length:", prefixLength);
+      pr("canPath length:", canonicalPath.length());
+    }
+    if (!canonicalPath.startsWith(containerPath) || canonicalPath.length() <= prefixLength)
+      badArg("file is not strictly within container directory:", file, INDENT, container);
+    // Trim the container path prefix, as well as the '/' 
+    return new File(canonicalPath.substring(prefixLength));
   }
 
   /**
