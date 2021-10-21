@@ -474,20 +474,11 @@ public final class Files extends BaseObject {
    * directory.
    */
   public static File relativeToContainingDirectory(File file, File container) {
-    final boolean DB = false && alert("logging");
-    if (DB)
-      pr("relativeToContainingDirectory:", INDENT, file, CR, container);
-    assertAbsolute(container);
+    container = getCanonicalFile(container);
     File canonicalFile = getCanonicalFile(file);
     String canonicalPath = canonicalFile.toString();
     String containerPath = container.toString();
     int prefixLength = containerPath.length() + 1;
-    if (DB) {
-      pr("canonical:", canonicalPath);
-      pr("container:", containerPath);
-      pr("prefix length:", prefixLength);
-      pr("canPath length:", canonicalPath.length());
-    }
     if (!canonicalPath.startsWith(containerPath) || canonicalPath.length() <= prefixLength)
       badArg("file is not strictly within container directory:", file, INDENT, container);
     // Trim the container path prefix, as well as the '/' 
@@ -919,7 +910,6 @@ public final class Files extends BaseObject {
   public File rebuild(File directory, String... preserveRelativeFiles) {
     if (dryRun())
       throw notSupported("Should we have a null output stream?");
-    todo("Investigate BackupManager, and document its assumptions etc");
     return backupManager().backupAndDelete(directory, preserveRelativeFiles);
   }
 

@@ -33,16 +33,40 @@ import java.util.regex.Pattern;
 import js.base.BaseObject;
 import js.parsing.RegExp;
 
+/**
+ * Maintains sets of rotating backups for files and directories
+ * 
+ * All files and directories being backed up by a manager must lie within a file
+ * hierarchy
+ */
 public final class BackupManager extends BaseObject {
 
-  public BackupManager(Files filesObject, File sourceRootDirectory) {
+  // ------------------------------------------------------------------
+  // Construction and configuration
+  // ------------------------------------------------------------------
+
+  /**
+   * Constructor
+   * 
+   * @param filesObject
+   *          Files instance to use, or null to use the default one (Files.S)
+   * @param baseDirectory
+   *          topmost directory; all files to be backed up must lie somewhere
+   *          within its hierarchy
+   * 
+   */
+  public BackupManager(Files filesObject, File baseDirectory) {
     mFiles = nullTo(filesObject, Files.S);
-    mSourceRootDirectory = Files.assertNonEmpty(sourceRootDirectory);
+    mBaseDirectory = Files.assertNonEmpty(baseDirectory);
   }
 
+  /**
+   * Set the directory that will contain the backups. It need not lie within the
+   * baseDirectory hierarchy. Initially set to <baseDirectory>/_SKIP_backups
+   */
   public BackupManager withBackupRootDirectory(File backupRootDirectory) {
     assertMutable();
-    mBackupRootDirectory = Files.fileWithinDirectory(backupRootDirectory, sourceRootDirectory());
+    mBackupRootDirectory = Files.fileWithinDirectory(backupRootDirectory, baseDirectory());
     return this;
   }
 
@@ -58,15 +82,15 @@ public final class BackupManager extends BaseObject {
     Files.assertNonEmpty(fileOrDirectory);
     prepare();
 
-    fileOrDirectory = Files.relativeToContainingDirectory(fileOrDirectory, sourceRootDirectory());
+    fileOrDirectory = Files.relativeToContainingDirectory(fileOrDirectory, baseDirectory());
+
     String relativePath = fileOrDirectory.toString();
     log("relative to backup directory:", INDENT, relativePath);
-    fileOrDirectory = new File(sourceRootDirectory(), relativePath);
+    fileOrDirectory = new File(baseDirectory(), relativePath);
     mSourceFileOrDirectory = fileOrDirectory;
     File backupFile = new File(backupDirectory(), relativePath);
 
     long timestamp = determineTimestampOfFileOrDir(fileOrDirectory);
-    todo("!don't backup the file or dir if an existing backup matches the target name");
     File target;
 
     List<File> existingBackups = existingBackups(backupFile);
@@ -107,28 +131,6 @@ public final class BackupManager extends BaseObject {
     return fileOrDirectory;
   }
 
-  private long determineTimestampOfFileOrDir(File fileOrDirectory) {
-    log("finding timestamp for:", fileOrDirectory);
-    Long newestTimestamp = null;
-    if (fileOrDirectory.isDirectory()) {
-      for (File childFile : new DirWalk(fileOrDirectory).files()) {
-        long mtime = childFile.lastModified();
-        if (newestTimestamp == null || newestTimestamp < mtime) {
-          newestTimestamp = mtime;
-          log("......newest timestamp now:", mtime, "for:", INDENT, childFile);
-        }
-      }
-      if (newestTimestamp == null) {
-        newestTimestamp = fileOrDirectory.lastModified();
-        log("...directory was empty");
-      }
-    } else {
-      newestTimestamp = fileOrDirectory.lastModified();
-    }
-    log("...returning timestamp:", newestTimestamp);
-    return newestTimestamp;
-  }
-
   /**
    * Make a backup of a directory, and create a new one, optionally preserving a
    * set of files
@@ -150,11 +152,21 @@ public final class BackupManager extends BaseObject {
     return directory;
   }
 
+  // ------------------------------------------------------------------
+  // Unit tests
+  // ------------------------------------------------------------------
+
+  /**
+   * Public for tests only
+   */
   public File getSourceRootDirectory() {
     testOnlyAssert();
-    return sourceRootDirectory();
+    return baseDirectory();
   }
 
+  /**
+   * Public for tests only
+   */
   public File getBackupDirectory() {
     testOnlyAssert();
     return backupDirectory();
@@ -184,8 +196,8 @@ public final class BackupManager extends BaseObject {
     return files;
   }
 
-  private File sourceRootDirectory() {
-    return mSourceRootDirectory;
+  private File baseDirectory() {
+    return mBaseDirectory;
   }
 
   private void assertMutable() {
@@ -197,7 +209,7 @@ public final class BackupManager extends BaseObject {
     if (mPrepared)
       return;
     if (mBackupRootDirectory == null)
-      withBackupRootDirectory(new File(sourceRootDirectory(), "_SKIP_backups"));
+      withBackupRootDirectory(new File(baseDirectory(), "_SKIP_backups"));
     mPrepared = true;
   }
 
@@ -223,8 +235,33 @@ public final class BackupManager extends BaseObject {
     }
   }
 
+  /**
+   * Determine the newest timestamp of files within a directory tree
+   */
+  private long determineTimestampOfFileOrDir(File fileOrDirectory) {
+    log("finding timestamp for:", fileOrDirectory);
+    Long newestTimestamp = null;
+    if (fileOrDirectory.isDirectory()) {
+      for (File childFile : new DirWalk(fileOrDirectory).files()) {
+        long mtime = childFile.lastModified();
+        if (newestTimestamp == null || newestTimestamp < mtime) {
+          newestTimestamp = mtime;
+          log("......newest timestamp now:", mtime, "for:", INDENT, childFile);
+        }
+      }
+      if (newestTimestamp == null) {
+        newestTimestamp = fileOrDirectory.lastModified();
+        log("...directory was empty");
+      }
+    } else {
+      newestTimestamp = fileOrDirectory.lastModified();
+    }
+    log("...returning timestamp:", newestTimestamp);
+    return newestTimestamp;
+  }
+
   private final Files mFiles;
-  private final File mSourceRootDirectory;
+  private final File mBaseDirectory;
   private File mBackupRootDirectory;
   private boolean mPrepared;
   private int mMaxBackupsCount = 5;
