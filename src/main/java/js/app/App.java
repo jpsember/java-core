@@ -48,6 +48,7 @@ public abstract class App extends BaseObject {
    */
   public final void startApplication(String[] cmdLineArguments) {
     mOperMap = hashMap();
+    mOrderedOperCommands = arrayList();
     registerOperations();
 
     cmdLineArgs().parse(cmdLineArguments);
@@ -76,7 +77,9 @@ public abstract class App extends BaseObject {
   protected abstract void registerOperations();
 
   protected void registerOper(AppOper oper) {
-    mOperMap.put(oper.userCommand(), oper);
+    AppOper previousMapping = mOperMap.put(oper.userCommand(), oper);
+    checkState(previousMapping == null, "duplicate operation key:", oper.userCommand());
+    mOrderedOperCommands.add(oper.userCommand());
     oper.setApp(this);
   }
 
@@ -85,6 +88,7 @@ public abstract class App extends BaseObject {
   }
 
   private Map<String, AppOper> mOperMap;
+  private List<String> mOrderedOperCommands;
 
   private void runApplication(CmdLineArgs args) {
     if (!hasMultipleOperations()) {
@@ -141,12 +145,14 @@ public abstract class App extends BaseObject {
       if (supportArgsFile()) {
         ca.add(CLARG_ARGS_FILE).def("").desc("Specify file containing arguments").shortName("a");
         ca.add(CLARG_GEN_ARGS).desc("Generate default operation arguments").shortName("g");
-      } 
-      
+      }
+
       {
         addAppCommandLineArgs(ca);
-        for (AppOper oper : mOperMap.values())
+        for (String key : mOrderedOperCommands) {
+          AppOper oper = mOperMap.get(key);
           oper.addCommandLineArgs(ca);
+        }
       }
       ca.banner(getClass().getSimpleName() + " banner (!!! Please add one)");
       ca.add(CLARG_DRYRUN).desc("Dry run");
@@ -175,7 +181,8 @@ public abstract class App extends BaseObject {
       sb.append("\nUsage: [--<app arg>]* [<operation> <operation arg>*]*\n\n");
       sb.append("Operations:\n");
     }
-    for (AppOper oper : mOperMap.values()) {
+    for (String key : mOrderedOperCommands) {
+      AppOper oper = mOperMap.get(key);
       BasePrinter b = new BasePrinter();
       oper.getHelp(b);
       sb.append(b.toString());
@@ -202,10 +209,10 @@ public abstract class App extends BaseObject {
   // ------------------------------------------------------------------
 
   public final void setFiles(Files f) {
-    checkState(mFilesObject == null,"Files already set");
+    checkState(mFilesObject == null, "Files already set");
     mFilesObject = f.withDryRun(dryRun()).withVerbose(verbose());
   }
-  
+
   public final Files files() {
     if (mFilesObject == null)
       setFiles(new Files());

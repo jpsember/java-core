@@ -402,6 +402,15 @@ public final class Files extends BaseObject {
   // Relative and absolute paths
   // ------------------------------------------------------------------
 
+  public static File join(File parent, String child) {
+    return join(parent, new File(child));
+  }
+
+  public static File join(File parent, File child) {
+    assertRelative(child);
+    return new File(assertNonEmpty(parent), child.toString());
+  }
+
   /**
    * Ensure a file is absolute
    */
@@ -462,8 +471,7 @@ public final class Files extends BaseObject {
   public static File fileWithinDirectory(File file, File parentDirectory) {
     assertNonEmpty(file, "fileWithinDirectory");
     if (!file.isAbsolute()) {
-      assertNonEmpty(parentDirectory);
-      return new File(parentDirectory, file.toString());
+      return join(parentDirectory, file);
     }
     return file;
   }
@@ -474,6 +482,7 @@ public final class Files extends BaseObject {
    * directory.
    */
   public static File relativeToContainingDirectory(File file, File container) {
+    // TODO: is it a reasonable condition that the file is STRICTLY within the container? I.e., file != container?
     container = getCanonicalFile(container);
     File canonicalFile = getCanonicalFile(file);
     String canonicalPath = canonicalFile.toString();
@@ -578,11 +587,11 @@ public final class Files extends BaseObject {
    * Get file within OSX Desktop
    */
   public static File getDesktopFile(String relativePath) {
-    return new File(getDesktopDirectory(), relativePath);
+    return join(getDesktopDirectory(), relativePath);
   }
 
   private static Supplier<File> sDesktopDirectory = singleton(() -> {
-    File candidate = new File(FileUtils.getUserDirectory(), "Desktop");
+    File candidate = join(FileUtils.getUserDirectory(), "Desktop");
     if (!candidate.exists()) {
       alert("Desktop directory not found, creating one:", INDENT, candidate);
       mkdirHelper(candidate);
@@ -1009,20 +1018,38 @@ public final class Files extends BaseObject {
    * Gets a file within the project directory; makes sure it exists
    */
   public File fileWithinProject(String relativePath) {
-    return assertExists(new File(projectDirectory(), assertRelative(relativePath)));
+    return assertExists(join(projectDirectory(), relativePath));
   }
 
   /**
    * Gets a file within the secrets directory; makes sure it exists
    */
   public File fileWithinSecrets(String relativePath) {
-    File file = new File(projectSecretsDirectory(), assertRelative(relativePath));
-    return assertExists(file);
+    return assertExists(join(projectSecretsDirectory(), relativePath));
   }
+
+  public final JSMap entityInfo() {
+    if (mEntityInfo == null) {
+      File entityInfoFile = fileWithinSecrets(SECRETS_FILE_ENTITY_INFO);
+      if (entityInfoFile.exists()) {
+        mEntityInfo = JSMap.from(entityInfoFile);
+      } else {
+        alert("No entity info file found:", INDENT, entityInfoFile);
+        mEntityInfo = map();
+      }
+    }
+    return mEntityInfo;
+  }
+
+  private static JSMap mEntityInfo;
+
+  public static final String SECRETS_FILE_ENTITY_INFO = "entity_info.json";
+  @Deprecated
+  public static final String SECRETS_FILE_ENTITY_NAME = "entity_name.txt";
 
   public String entityName() {
     if (mEntityName == null)
-      mEntityName = readString(fileWithinSecrets("entity_name.txt")).trim();
+      mEntityName = readString(fileWithinSecrets(SECRETS_FILE_ENTITY_NAME)).trim();
     return mEntityName;
   }
 
