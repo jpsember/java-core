@@ -482,15 +482,20 @@ public final class Files extends BaseObject {
    * directory.
    */
   public static File relativeToContainingDirectory(File file, File container) {
-    // TODO: is it a reasonable condition that the file is STRICTLY within the container? I.e., file != container?
+
     container = getCanonicalFile(container);
-    File canonicalFile = getCanonicalFile(file);
-    String canonicalPath = canonicalFile.toString();
+    File absFile = getCanonicalFile(file);
+
+    // Note: calling toString() on a File is a very efficient operation (from what I can tell)
+    //
+    String canonicalPath = absFile.toString();
     String containerPath = container.toString();
+
+    // Include the trailing '/' in the prefix
     int prefixLength = containerPath.length() + 1;
     if (!canonicalPath.startsWith(containerPath) || canonicalPath.length() <= prefixLength)
       badArg("file is not strictly within container directory:", file, INDENT, container);
-    // Trim the container path prefix, as well as the '/' 
+
     return new File(canonicalPath.substring(prefixLength));
   }
 
@@ -1047,6 +1052,7 @@ public final class Files extends BaseObject {
   @Deprecated
   public static final String SECRETS_FILE_ENTITY_NAME = "entity_name.txt";
 
+  @Deprecated
   public String entityName() {
     if (mEntityName == null)
       mEntityName = readString(fileWithinSecrets(SECRETS_FILE_ENTITY_NAME)).trim();
