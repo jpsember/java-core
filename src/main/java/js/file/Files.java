@@ -1049,20 +1049,10 @@ public final class Files extends BaseObject {
   private static JSMap mEntityInfo;
 
   public static final String SECRETS_FILE_ENTITY_INFO = "entity_info.json";
-  @Deprecated
-  public static final String SECRETS_FILE_ENTITY_NAME = "entity_name.txt";
-
-  @Deprecated
-  public String entityName() {
-    if (mEntityName == null)
-      mEntityName = readString(fileWithinSecrets(SECRETS_FILE_ENTITY_NAME)).trim();
-    return mEntityName;
-  }
 
   private File mProjectDirectory;
   private File mProjectSecretsDirectory;
   private File mProjectConfigDirectory;
-  private String mEntityName;
 
   // ------------------------------------------------------------------
   // Wrappers for File methods that throw checked exceptions
