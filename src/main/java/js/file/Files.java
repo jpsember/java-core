@@ -1030,12 +1030,19 @@ public final class Files extends BaseObject {
    * Gets a file within the secrets directory; makes sure it exists
    */
   public File fileWithinSecrets(String relativePath) {
-    return assertExists(join(projectSecretsDirectory(), relativePath));
+    return assertExists(optFileWithinSecrets(relativePath));
+  }
+
+  /**
+   * Get file within the secrets directory, which may not exist
+   */
+  public File optFileWithinSecrets(String relativePath) {
+    return join(projectSecretsDirectory(), relativePath);
   }
 
   public final JSMap entityInfo() {
     if (mEntityInfo == null) {
-      File entityInfoFile = fileWithinSecrets(SECRETS_FILE_ENTITY_INFO);
+      File entityInfoFile = optFileWithinSecrets(SECRETS_FILE_ENTITY_INFO);
       if (entityInfoFile.exists()) {
         mEntityInfo = JSMap.from(entityInfoFile);
       } else {
