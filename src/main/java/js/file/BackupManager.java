@@ -132,21 +132,28 @@ public final class BackupManager extends BaseObject {
   }
 
   /**
-   * Make a backup of a directory, and create a new one, optionally preserving a
-   * set of files
+   * Rebuild a directory (if it exists).
+   * 
+   * If directory already exists, make a backup of a directory, and create a new
+   * one, optionally preserving a set of files
    */
   public File backupAndDelete(File directory, String... preserveRelativeFiles) {
     log("backupAndDelete:", directory, "preserving:", preserveRelativeFiles);
-    makeBackup(directory);
-    Files.assertDirectoryExists(mSourceFileOrDirectory);
-    mFiles.deleteDirectory(mSourceFileOrDirectory);
-    mFiles.mkdirs(mSourceFileOrDirectory);
-    for (String relFile : preserveRelativeFiles) {
-      File source = new File(mTargetBackupOrDirectory, relFile);
-      File dest = new File(mSourceFileOrDirectory, relFile);
-      if (source.exists()) {
-        log("...copying preserved file:", dest);
-        mFiles.copyFile(source, dest, true);
+    boolean oldExists = directory.exists();
+    if (!oldExists) {
+      mFiles.mkdirs(directory);
+    } else {
+      makeBackup(directory);
+      Files.assertDirectoryExists(mSourceFileOrDirectory);
+      mFiles.deleteDirectory(mSourceFileOrDirectory);
+      mFiles.mkdirs(mSourceFileOrDirectory);
+      for (String relFile : preserveRelativeFiles) {
+        File source = new File(mTargetBackupOrDirectory, relFile);
+        File dest = new File(mSourceFileOrDirectory, relFile);
+        if (source.exists()) {
+          log("...copying preserved file:", dest);
+          mFiles.copyFile(source, dest, true);
+        }
       }
     }
     return directory;
