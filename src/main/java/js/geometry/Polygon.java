@@ -46,27 +46,21 @@ public final class Polygon implements AbstractData {
 
   @Override
   public JSMap toJson() {
-    if (mJson == null) {
-      JSMap m = map();
-      JSList lst = list();
-      for (IPoint pt : vertices()) {
-        lst.add(pt.x);
-        lst.add(pt.y);
-      }
-      m.put("p", lst);
-      if (isOpen())
-        m.put("open", true);
-      mJson = m.lock();
+    JSMap m = map();
+    JSList lst = list();
+    for (IPoint pt : vertices()) {
+      lst.add(pt.x);
+      lst.add(pt.y);
     }
-    return mJson;
+    m.put("p", lst);
+    if (isOpen())
+      m.put("open", true);
+    return m;
   }
 
   @Override
   public String toString() {
-    if (mString == null) {
-      mString = toJson().toString();
-    }
-    return mString;
+    return toJson().toString();
   }
 
   @Override
@@ -702,8 +696,6 @@ public final class Polygon implements AbstractData {
   private Boolean mConvexFlag;
   private Float mPerimeter;
   private Float mSignedArea;
-  private JSMap mJson;
-  private String mString;
 
   /**
    * A side-effect free description
