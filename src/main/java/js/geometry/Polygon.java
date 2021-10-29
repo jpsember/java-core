@@ -38,6 +38,12 @@ import static js.base.Tools.*;
 
 public final class Polygon implements AbstractData {
 
+  private static final String KEY_POINTS = "pt";
+
+  // The key 'p' conflicts with the key used in ElementProperties, so I've renamed it to "pt"
+  //
+  private static final String KEY_OLDPOINTS = "p";
+
   // ------------------------------------------------------------------
   // AbstractData interface
   // ------------------------------------------------------------------
@@ -52,7 +58,7 @@ public final class Polygon implements AbstractData {
       lst.add(pt.x);
       lst.add(pt.y);
     }
-    m.put("p", lst);
+    m.put(KEY_POINTS, lst);
     if (isOpen())
       m.put("open", true);
     return m;
@@ -81,8 +87,18 @@ public final class Polygon implements AbstractData {
   @Override
   public Polygon parse(Object object) {
     JSMap m = (JSMap) object;
-    JSList lst = m.getList("p");
 
+    // Upgrade from old key to new if necessary
+    //
+    if (!m.containsKey(KEY_POINTS)) {
+      Object oldKeyValue = m.optUnsafe(KEY_OLDPOINTS);
+      if (oldKeyValue != null && oldKeyValue instanceof JSList) {
+        m.putUnsafe(KEY_POINTS, oldKeyValue);
+        m.remove(KEY_OLDPOINTS);
+      }
+    }
+
+    JSList lst = m.getList(KEY_POINTS);
     int[] coordinates = DataUtil.intArray(lst.wrappedList());
     return new Polygon(constructVertices(coordinates), m.opt("open"));
   }
