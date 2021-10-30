@@ -143,6 +143,16 @@ public final class Polygon implements AbstractData {
     return new Polygon(verts, false);
   }
 
+  public Polygon withVertices(Collection<IPoint> v) {
+    IPoint[] verts = new IPoint[v.size()];
+    int i = -1;
+    for (IPoint vert : v) {
+      i++;
+      verts[i] = vert;
+    }
+    return new Polygon(verts, mOpen);
+  }
+
   public static Polygon with(IRect rect) {
     List<IPoint> vertices = arrayList();
     for (int i = 0; i < 4; i++)
