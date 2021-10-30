@@ -232,6 +232,14 @@ public final class MyMath {
     return dist;
   }
 
+  public static FPoint pointOnCircle(FPoint origin, float angle, float radius) {
+    return pointOnCircle(origin.x, origin.y, angle, radius);
+  }
+
+  public static FPoint pointOnCircle(float originX, float originY, float angle, float radius) {
+    return new FPoint(originX + radius * (float) Math.cos(angle), originY + radius * (float) Math.sin(angle));
+  }
+
   public static FPoint linesIntersection(FPoint p1, FPoint p2, FPoint q1, FPoint q2, float[] iParam) {
     return linesIntersection(p1.x, p1.y, p2.x, p2.y, q1.x, q1.y, q2.x, q2.y, iParam);
   }
