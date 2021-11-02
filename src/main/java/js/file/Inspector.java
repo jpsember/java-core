@@ -44,7 +44,7 @@ public abstract class Inspector<T> extends BaseObject {
     int rval = random().nextInt(sampleCount());
     if (rval >= maxSamples())
       return;
-    String baseName = String.format("%04", rval);
+    String baseName = String.format("%04d", rval);
     File filename = new File(directory(), baseName);
     writeSample(item, filename);
   }
