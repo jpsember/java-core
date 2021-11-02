@@ -86,6 +86,16 @@ public final class JSList extends JSObject implements Iterable<Object> {
   }
 
   /**
+   * Construct a JSList containing a sequence of strings
+   */
+  public static JSList with(String... strings) {
+    JSList list = new JSList();
+    for (String s : strings)
+      list.add(s);
+    return list;
+  }
+
+  /**
    * Construct a JSList containing a sequence of JSMap representations of
    * AbstractData objects
    */

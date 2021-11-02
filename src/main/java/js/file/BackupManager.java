@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import js.base.BaseObject;
+import js.json.JSList;
 import js.parsing.RegExp;
 
 /**
@@ -90,32 +91,27 @@ public final class BackupManager extends BaseObject {
     mSourceFileOrDirectory = fileOrDirectory;
     File backupFile = new File(backupDirectory(), relativePath);
 
-    long timestamp = determineTimestampOfFileOrDir(fileOrDirectory);
+    long timestamp = currentTime();
     File target;
 
     List<File> existingBackups = existingBackups(backupFile);
     {
       String backupRelativePath = relativePath + "." + timestamp;
       target = new File(backupDirectory(), backupRelativePath);
-      log("...backup file       :", target);
-      if (target.exists()) {
-        log("...already exists, no backup being made");
-        return fileOrDirectory;
-      }
-      // If the most recent existing backup is the same age, do nothing.
-      // If it's newer, fail
+
+      // If the most recent existing backup is not older than our new timestamp, problem
       if (!existingBackups.isEmpty()) {
         File mostRecentBackup = last(existingBackups);
-        int compareResult = Files.COMPARATOR.compare(target, mostRecentBackup);
-        log("...most recent backup:", mostRecentBackup);
-        log("...compare result:", compareResult);
-        if (compareResult == 0) {
-          log("...file/directory timestamp is same as most recent backup, skipping.");
-          return fileOrDirectory;
+        long recentTimestamp = 0;
+        try {
+          String name = mostRecentBackup.getName();
+          recentTimestamp = Long.parseLong(name.substring(1 + name.lastIndexOf('.')));
+        } catch (Throwable t) {
+          throw FileException.withMessage("failed to parse timestamp from:", mostRecentBackup);
         }
-        if (compareResult < 0) {
-          throw badState("There is a newer backup file already!", INDENT, mostRecentBackup, CR, target);
-        }
+        if (recentTimestamp >= timestamp)
+          throw FileException.withMessage("most recent backup is newer than current time:",
+              Files.infoMap(mostRecentBackup));
       }
     }
 
@@ -138,7 +134,7 @@ public final class BackupManager extends BaseObject {
    * one, optionally preserving a set of files
    */
   public File backupAndDelete(File directory, String... preserveRelativeFiles) {
-    log("backupAndDelete:", directory, "preserving:", preserveRelativeFiles);
+    log("backupAndDelete:", directory, "preserving:", JSList.with(preserveRelativeFiles));
     boolean oldExists = directory.exists();
     if (!oldExists) {
       mFiles.mkdirs(directory);
@@ -171,12 +167,26 @@ public final class BackupManager extends BaseObject {
     return baseDirectory();
   }
 
-  /**
-   * Public for tests only
-   */
+  // ------------------------------------------------------------------
+  // For unit tests only
+  // ------------------------------------------------------------------
+
   public File getBackupDirectory() {
     testOnlyAssert();
     return backupDirectory();
+  }
+
+  public void setCurrentTime(long timeMs) {
+    testOnlyAssert();
+    mCurrentTimeMs = timeMs;
+  }
+
+  // ------------------------------------------------------------------
+
+  private long currentTime() {
+    if (mCurrentTimeMs != null)
+      return mCurrentTimeMs;
+    return System.currentTimeMillis();
   }
 
   private static boolean stringIsTimestampSuffix(String expr) {
@@ -242,37 +252,13 @@ public final class BackupManager extends BaseObject {
     }
   }
 
-  /**
-   * Determine the newest timestamp of files within a directory tree
-   */
-  private long determineTimestampOfFileOrDir(File fileOrDirectory) {
-    log("finding timestamp for:", fileOrDirectory);
-    Long newestTimestamp = null;
-    if (fileOrDirectory.isDirectory()) {
-      for (File childFile : new DirWalk(fileOrDirectory).files()) {
-        long mtime = childFile.lastModified();
-        if (newestTimestamp == null || newestTimestamp < mtime) {
-          newestTimestamp = mtime;
-          log("......newest timestamp now:", mtime, "for:", INDENT, childFile);
-        }
-      }
-      if (newestTimestamp == null) {
-        newestTimestamp = fileOrDirectory.lastModified();
-        log("...directory was empty");
-      }
-    } else {
-      newestTimestamp = fileOrDirectory.lastModified();
-    }
-    log("...returning timestamp:", newestTimestamp);
-    return newestTimestamp;
-  }
-
   private final Files mFiles;
   private final File mBaseDirectory;
   private File mBackupRootDirectory;
   private boolean mPrepared;
-  private int mMaxBackupsCount = 5;
+  private int mMaxBackupsCount = 10;
   private File mSourceFileOrDirectory;
   private File mTargetBackupOrDirectory;
+  private Long mCurrentTimeMs;
 
 }

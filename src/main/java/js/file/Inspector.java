@@ -33,20 +33,24 @@ import js.base.BaseObject;
 
 public abstract class Inspector<T> extends BaseObject {
 
-  public void setDirectory(File directory) {
+  public final void setDirectory(File directory) {
     checkState(mPreparedDirectory == null, "directory has already been prepared:", INDENT,
         mPreparedDirectory);
     mDirectory = directory;
   }
 
-  public void add(T item) {
+  public final void add(T item) {
     mSampleCount++;
-    int rval = random().nextInt(mSampleCount);
+    int rval = random().nextInt(sampleCount());
     if (rval >= maxSamples())
       return;
     String baseName = String.format("%04", rval);
     File filename = new File(directory(), baseName);
     writeSample(item, filename);
+  }
+
+  public final int sampleCount() {
+    return mSampleCount;
   }
 
   public abstract void writeSample(T item, File target);
