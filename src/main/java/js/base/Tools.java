@@ -526,6 +526,23 @@ public final class Tools {
   }
 
   // ------------------------------------------------------------------
+  // Timing utilities
+  // ------------------------------------------------------------------
+
+  public static void checkpoint(Object... messages) {
+    long currentCheckpoint = System.currentTimeMillis();
+    long last = mPreviousCheckpoint;
+    if (last == 0)
+      last = currentCheckpoint;
+    long elapsed = currentCheckpoint - last;
+    mPreviousCheckpoint = currentCheckpoint;
+    String timestamp = String.format("%5.3f |", elapsed / 1000f);
+    pr(insertStringToFront(timestamp, messages));
+  }
+
+  private static long mPreviousCheckpoint;
+
+  // ------------------------------------------------------------------
   // BasePrinter sentinel objects
   // ------------------------------------------------------------------
 
