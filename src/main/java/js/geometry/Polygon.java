@@ -129,20 +129,6 @@ public final class Polygon implements AbstractData {
     return target;
   }
 
-  /**
-   * For development: construct polygon from a list of coordinates
-   */
-  public static Polygon withVertices(float... coordinates) {
-    checkArgument(coordinates.length % 2 == 0 && coordinates.length >= 3 * 2);
-    List<IPoint> verts = arrayList();
-    int i = 0;
-    while (i < coordinates.length) {
-      verts.add(new IPoint(coordinates[i], coordinates[i + 1]));
-      i += 2;
-    }
-    return new Polygon(verts, false);
-  }
-
   public Polygon withVertices(Collection<IPoint> v) {
     IPoint[] verts = new IPoint[v.size()];
     int i = -1;

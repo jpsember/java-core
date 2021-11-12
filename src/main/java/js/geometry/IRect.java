@@ -120,6 +120,7 @@ public final class IRect implements AbstractData {
     this.height = h;
   }
 
+  @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
     IPoint loc = new IPoint(x, y);
