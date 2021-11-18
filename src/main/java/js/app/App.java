@@ -210,7 +210,7 @@ public abstract class App extends BaseObject {
 
   public final void setFiles(Files f) {
     checkState(mFilesObject == null, "Files already set");
-    mFilesObject = f.withDryRun(dryRun()).withVerbose(verbose());
+    mFilesObject = f.withDryRun(dryRun()); //.withVerbose(verbose());
   }
 
   public final Files files() {
