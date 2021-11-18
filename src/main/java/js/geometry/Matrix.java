@@ -236,6 +236,28 @@ public final class Matrix implements AbstractData {
     return new Matrix(na, nb, nc, nd, ntx, nty);
   }
 
+  public static Matrix preMultiply(Matrix... matrices) {
+    Matrix mPrev = null;
+    for (Matrix m : matrices) {
+      if (mPrev == null)
+        mPrev = m;
+      else
+        mPrev = Matrix.multiply(m, mPrev);
+    }
+    return mPrev;
+  }
+
+  public static Matrix postMultiply(Matrix... matrices) {
+    Matrix mPrev = null;
+    for (Matrix m : matrices) {
+      if (mPrev == null)
+        mPrev = m;
+      else
+        mPrev = Matrix.multiply(mPrev, m);
+    }
+    return mPrev;
+  }
+
   public Matrix invert() {
 
     MyMath.testForZero(d);
