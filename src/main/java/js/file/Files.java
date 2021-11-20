@@ -130,19 +130,6 @@ public final class Files extends BaseObject {
     return file;
   }
 
-  @Deprecated // Use assertExists
-  public static File mustExist(File file) {
-    return assertExists(file, null);
-  }
-
-  @Deprecated // Use assertDoesNotExist
-  public static File mustNotExist(File file) {
-    assertNonEmpty(file);
-    if (file.exists())
-      badArg("File or directory already exists:", file);
-    return file;
-  }
-
   public static File assertDoesNotExist(File file, String contextOrNull) {
     assertNonEmpty(file);
     if (file.exists())
@@ -700,7 +687,6 @@ public final class Files extends BaseObject {
     boolean deleted = file.delete();
     if (!deleted)
       throw FileException.withMessage("Failed to delete file:", file);
-
   }
 
   public File deletePeacefully(File file) {
@@ -1042,13 +1028,7 @@ public final class Files extends BaseObject {
 
   public final JSMap entityInfo() {
     if (mEntityInfo == null) {
-      File entityInfoFile = optFileWithinSecrets(SECRETS_FILE_ENTITY_INFO);
-      if (entityInfoFile.exists()) {
-        mEntityInfo = JSMap.from(entityInfoFile);
-      } else {
-        alert("No entity info file found:", INDENT, entityInfoFile);
-        mEntityInfo = map();
-      }
+      mEntityInfo = JSMap.from(fileWithinSecrets(SECRETS_FILE_ENTITY_INFO));
     }
     return mEntityInfo;
   }
@@ -1177,6 +1157,7 @@ public final class Files extends BaseObject {
       throw FileException.withCause(t, "Problem with json map:", INDENT, json, CR, t);
     }
   }
+  
   // ------------------------------------------------------------------
   // Logging information
   // ------------------------------------------------------------------
@@ -1214,11 +1195,6 @@ public final class Files extends BaseObject {
     }
     m.put("4 abs", absPath);
     return m;
-  }
-
-  @Deprecated // Use info(file) instead
-  public static JSMap info(String file) {
-    return infoMap(file);
   }
 
   /**
