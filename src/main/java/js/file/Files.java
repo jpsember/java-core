@@ -1003,8 +1003,7 @@ public final class Files extends BaseObject {
   }
 
   /**
-   * Get the project secrets directory. If not yet set, sets it to
-   * <project_directory>/secrets
+   * Get the project secrets directory: <project_directory>/secrets
    */
   public File projectSecretsDirectory() {
     if (mProjectSecretsDirectory == null)
@@ -1016,7 +1015,14 @@ public final class Files extends BaseObject {
    * Gets a file within the project directory; makes sure it exists
    */
   public File fileWithinProject(String relativePath) {
-    return assertExists(join(projectDirectory(), relativePath));
+    return assertExists(optFileWithinProject(relativePath));
+  }
+
+  /**
+   * Get a file within the project directory, which might not exist
+   */
+  public File optFileWithinProject(String relativePath) {
+    return join(projectDirectory(), relativePath);
   }
 
   /**
