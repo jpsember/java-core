@@ -996,6 +996,13 @@ public final class Files extends BaseObject {
   }
 
   /**
+   * Get file within project configuration directory
+   */
+  public File fileWithinProjectConfigDirectory(String path) {
+    return new File(projectConfigDirectory(), Files.assertRelative(path));
+  }
+
+  /**
    * Get the project secrets directory. If not yet set, sets it to
    * <project_directory>/secrets
    */
@@ -1157,7 +1164,7 @@ public final class Files extends BaseObject {
       throw FileException.withCause(t, "Problem with json map:", INDENT, json, CR, t);
     }
   }
-  
+
   // ------------------------------------------------------------------
   // Logging information
   // ------------------------------------------------------------------
