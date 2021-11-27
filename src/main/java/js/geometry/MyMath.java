@@ -367,6 +367,14 @@ public final class MyMath {
     return (v1 * (1 - parameter)) + v2 * parameter;
   }
 
+  public static float normalizeAngle(float angleRadians) {
+    final float CIRCLE = 2 * PI;
+    float result = myMod(angleRadians, CIRCLE);
+    if (result >= PI)
+      result -= CIRCLE;
+    return result;
+  }
+
   public static float polarAngle(FPoint ray) {
     return polarAngle(ray.x, ray.y);
   }
