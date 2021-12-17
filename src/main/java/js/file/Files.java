@@ -1066,6 +1066,14 @@ public final class Files extends BaseObject {
     }
   }
 
+  public static File createTempDir(String prefix) {
+    try {
+      return java.nio.file.Files.createTempDirectory(prefix).toFile();
+    } catch (IOException e) {
+      throw asFileException(e);
+    }
+  }
+
   /**
    * A static version of mkdirs, for internal use
    */
