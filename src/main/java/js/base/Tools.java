@@ -44,31 +44,6 @@ public final class Tools {
   }
 
   // ------------------------------------------------------------------
-  // Development mode
-  // ------------------------------------------------------------------
-
-  /**
-   * Determine if we're in development mode. If so, it will generate alert and
-   * todo messages
-   */
-  public static boolean devMode() {
-    if (sDevModeFlag == null)
-      setDevMode(true);
-    return sDevModeFlag;
-  }
-
-  /**
-   * Set development mode. This can only be set once. If it hasn't been
-   * explicitly set, it will be set true when devMode() is first called
-   */
-  public static void setDevMode(boolean flag) {
-    checkState(sDevModeFlag == null || sDevModeFlag == flag, "dev mode flag already set");
-    sDevModeFlag = flag;
-  }
-
-  private static Boolean sDevModeFlag;
-
-  // ------------------------------------------------------------------
   // 'Print once' reports
   // ------------------------------------------------------------------
 
@@ -127,8 +102,6 @@ public final class Tools {
 
   private static String reportMaxTimes(String type, int limit, int stackFrameSkipCount,
       Object... messageObjects) {
-    if (!devMode())
-      return null;
     StringBuilder sb = new StringBuilder();
     sb.append("*** ");
 

@@ -255,6 +255,9 @@ public final class Polygon implements AbstractData {
 
   public IRect bounds() {
     if (mBoundingRect == null) {
+      if (alert("extra logging") && !isWellDefined()) {
+        pr("attempt to construct bounds of ill defined poly:",INDENT,this);
+      }
       checkState(isWellDefined());
       mBoundingRect = IRect.rectContainingPoints(arrayList(mVerts));
     }
