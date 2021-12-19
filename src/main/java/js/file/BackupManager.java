@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import js.base.BaseObject;
-import js.json.JSList;
 import js.parsing.RegExp;
 
 /**
@@ -115,10 +114,9 @@ public final class BackupManager extends BaseObject {
       }
     }
 
-    if (fileOrDirectory.isDirectory()) {
+    if (fileOrDirectory.isDirectory())
       mFiles.copyDirectory(fileOrDirectory, target);
-      mTargetBackupOrDirectory = target;
-    } else
+    else
       mFiles.copyFile(fileOrDirectory, target);
 
     existingBackups.add(target);
@@ -143,35 +141,6 @@ public final class BackupManager extends BaseObject {
       Files.assertDirectoryExists(mSourceFileOrDirectory);
       mFiles.deleteDirectory(mSourceFileOrDirectory);
       mFiles.mkdirs(mSourceFileOrDirectory);
-    }
-    return directory;
-  }
-
-  /**
-   * Rebuild a directory (if it exists).
-   * 
-   * If directory already exists, make a backup of a directory, and create a new
-   * one, optionally preserving a set of files
-   */
-  @Deprecated // Is the preserve necessary?
-  public File backupAndDelete(File directory, String... preserveRelativeFiles) {
-    log("backupAndDelete:", directory, "preserving:", JSList.with(preserveRelativeFiles));
-    boolean oldExists = directory.exists();
-    if (!oldExists) {
-      mFiles.mkdirs(directory);
-    } else {
-      makeBackup(directory);
-      Files.assertDirectoryExists(mSourceFileOrDirectory);
-      mFiles.deleteDirectory(mSourceFileOrDirectory);
-      mFiles.mkdirs(mSourceFileOrDirectory);
-      for (String relFile : preserveRelativeFiles) {
-        File source = new File(mTargetBackupOrDirectory, relFile);
-        File dest = new File(mSourceFileOrDirectory, relFile);
-        if (source.exists()) {
-          log("...copying preserved file:", dest);
-          mFiles.copyFile(source, dest, true);
-        }
-      }
     }
     return directory;
   }
@@ -279,7 +248,6 @@ public final class BackupManager extends BaseObject {
   private boolean mPrepared;
   private int mMaxBackupsCount = 10;
   private File mSourceFileOrDirectory;
-  private File mTargetBackupOrDirectory;
   private Long mCurrentTimeMs;
 
 }
