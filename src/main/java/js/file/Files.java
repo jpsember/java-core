@@ -904,9 +904,27 @@ public final class Files extends BaseObject {
   }
 
   /**
+   * Make a backup of a directory, and create a new one
+   */
+  public File backupAndRebuild(File directory) {
+    if (dryRun())
+      throw notSupported("Should we have a null output stream?");
+    return backupManager().backupAndDelete(directory);
+  }
+
+  /**
+   * Make a backup of a directory, and create a new one
+   */
+  @Deprecated // rename to backupAndRebuild
+  public File rebuild(File directory) {
+    return backupAndRebuild(directory);
+  }
+
+  /**
    * Make a backup of a directory, and create a new one, optionally preserving a
    * set of files
    */
+  @Deprecated // Preserving files shouldn't be required
   public File rebuild(File directory, String... preserveRelativeFiles) {
     if (dryRun())
       throw notSupported("Should we have a null output stream?");

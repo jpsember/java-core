@@ -131,8 +131,29 @@ public final class BackupManager extends BaseObject {
    * Rebuild a directory (if it exists).
    * 
    * If directory already exists, make a backup of a directory, and create a new
+   * one
+   */
+  public File backupAndDelete(File directory) {
+    log("backupAndDelete:", directory);
+    boolean oldExists = directory.exists();
+    if (!oldExists) {
+      mFiles.mkdirs(directory);
+    } else {
+      makeBackup(directory);
+      Files.assertDirectoryExists(mSourceFileOrDirectory);
+      mFiles.deleteDirectory(mSourceFileOrDirectory);
+      mFiles.mkdirs(mSourceFileOrDirectory);
+    }
+    return directory;
+  }
+
+  /**
+   * Rebuild a directory (if it exists).
+   * 
+   * If directory already exists, make a backup of a directory, and create a new
    * one, optionally preserving a set of files
    */
+  @Deprecated // Is the preserve necessary?
   public File backupAndDelete(File directory, String... preserveRelativeFiles) {
     log("backupAndDelete:", directory, "preserving:", JSList.with(preserveRelativeFiles));
     boolean oldExists = directory.exists();
