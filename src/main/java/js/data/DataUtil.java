@@ -51,6 +51,16 @@ import js.json.JSMap;
  */
 public final class DataUtil {
 
+  /**
+   * The number of bytes in a kilobyte.
+   */
+  public static final long ONE_KB = 1024;
+
+  /**
+   * The number of bytes in a megabyte.
+   */
+  public static final long ONE_MB = ONE_KB * ONE_KB;
+
   public static final boolean NULL_LIST_ELEMENTS_ALLOWED = false;
 
   static {
