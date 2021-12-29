@@ -548,15 +548,39 @@ public final class DataUtil {
     return buffer.array();
   }
 
+  private static String removeDataTypeSuffix(String string, String optionalSuffix) {
+    if (string.length() >= 2) {
+      int suffixStart = string.length() - 2;
+      if (string.charAt(suffixStart) == '`') {
+        char existingSuffixChar = string.charAt(suffixStart + 1);
+        if (existingSuffixChar != optionalSuffix.charAt(1))
+          throw badArg("string has suffix", quote(string.charAt(suffixStart)), "expected",
+              quote(optionalSuffix));
+        string = string.substring(0, suffixStart);
+      }
+    }
+    return string;
+  }
+
   /**
    * Parse a base64 string to an array of bytes
    */
   public static byte[] parseBase64(String string) {
+    string = removeDataTypeSuffix(string, DATA_TYPE_SUFFIX_BYTE);
     return Base64.getDecoder().decode(string);
   }
 
+  private static final String DATA_TYPE_DELIMITER = "`";
+  private static final String DATA_TYPE_SUFFIX_BYTE = DATA_TYPE_DELIMITER + "b";
+  private static final String DATA_TYPE_SUFFIX_SHORT = DATA_TYPE_DELIMITER + "s";
+  private static final String DATA_TYPE_SUFFIX_INT = DATA_TYPE_DELIMITER + "i";
+  private static final String DATA_TYPE_SUFFIX_LONG = DATA_TYPE_DELIMITER + "l";
+
+  /**
+   * Encode a byte array as a Base64 string, with our data type suffix added
+   */
   public static String encodeBase64(byte[] byteArray) {
-    return Base64.getEncoder().encodeToString(byteArray);
+    return Base64.getEncoder().encodeToString(byteArray) + DATA_TYPE_SUFFIX_BYTE;
   }
 
   /**
@@ -564,15 +588,16 @@ public final class DataUtil {
    * an intermediate encoding)
    */
   public static short[] parseBase64Shorts(String string) {
-    return bytesToShortsLittleEndian(Base64.getDecoder().decode(string));
+    string = removeDataTypeSuffix(string, DATA_TYPE_SUFFIX_SHORT);
+       return bytesToShortsLittleEndian(Base64.getDecoder().decode(string));
   }
 
   /**
    * Encode an array of shorts to a Base64 string (using little-endian bytes as
-   * an intermediate encoding)
+   * an intermediate encoding); add our data type suffix
    */
   public static String encodeBase64(short[] shortArray) {
-    return Base64.getEncoder().encodeToString(shortsToBytesLittleEndian(shortArray));
+    return Base64.getEncoder().encodeToString(shortsToBytesLittleEndian(shortArray)) + DATA_TYPE_SUFFIX_SHORT;
   }
 
   /**
@@ -580,7 +605,8 @@ public final class DataUtil {
    * intermediate encoding)
    */
   public static int[] parseBase64Ints(String string) {
-    return bytesToIntsLittleEndian(Base64.getDecoder().decode(string));
+    string = removeDataTypeSuffix(string, DATA_TYPE_SUFFIX_INT);
+      return bytesToIntsLittleEndian(Base64.getDecoder().decode(string));
   }
 
   /**
@@ -588,24 +614,25 @@ public final class DataUtil {
    * intermediate encoding)
    */
   public static long[] parseBase64Longs(String string) {
-    return bytesToLongsLittleEndian(Base64.getDecoder().decode(string));
+    string = removeDataTypeSuffix(string, DATA_TYPE_SUFFIX_LONG);
+     return bytesToLongsLittleEndian(Base64.getDecoder().decode(string));
   }
 
   /**
    * Encode an array of longs to a Base64 string (using little-endian bytes as
-   * an intermediate encoding)
+   * an intermediate encoding); add our data type suffix
    */
   public static String encodeBase64(long[] intArray) {
     byte[] bytes = longsToBytesLittleEndian(intArray);
-    return Base64.getEncoder().encodeToString(bytes);
+    return Base64.getEncoder().encodeToString(bytes) + DATA_TYPE_SUFFIX_LONG;
   }
 
   /**
    * Encode an array of ints to a Base64 string (using little-endian bytes as an
-   * intermediate encoding)
+   * intermediate encoding); add our data type suffix
    */
   public static String encodeBase64(int[] intArray) {
-    return Base64.getEncoder().encodeToString(intsToBytesLittleEndian(intArray));
+    return Base64.getEncoder().encodeToString(intsToBytesLittleEndian(intArray)) + DATA_TYPE_SUFFIX_INT;
   }
 
   /**

@@ -27,6 +27,7 @@ package js.data;
 import static js.base.Tools.*;
 
 import java.util.Arrays;
+import java.util.List;
 
 import js.json.JSList;
 
@@ -48,8 +49,11 @@ public class ByteArray implements AbstractData {
 
   @Override
   public JSList toJson() {
-    String encoded = DataUtil.encodeBase64(mArray);
-    return new JSList().add(encoded);
+    List<Byte> wrapped = arrayList();
+    for (byte x : mArray)
+      wrapped.add(x);
+    JSList output = JSList.withUnsafeList(wrapped);
+    return output;
   }
 
   @Override
@@ -60,7 +64,14 @@ public class ByteArray implements AbstractData {
   @Override
   public ByteArray parse(Object object) {
     JSList source = (JSList) object;
-    return with(DataUtil.parseBase64(source.getString(0)));
+    @SuppressWarnings("unchecked")
+    List<Number> byteList = (List<Number>) source.wrappedList();
+    byte[] w = new byte[byteList.size()];
+    for (int i = 0; i < w.length; i++)
+      w[i] = byteList.get(i).byteValue();
+    ByteArray result = new ByteArray();
+    result.mArray = w;
+    return result;
   }
 
   @Override
