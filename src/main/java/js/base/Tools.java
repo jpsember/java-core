@@ -783,6 +783,23 @@ public final class Tools {
       list.subList(start, end).clear();
   }
 
+  /**
+   * Remove all elements at or beyond a particular position; adjust arguments
+   * into range, and do nothing if appropriate
+   */
+  public static <T> void removeAllButFirstN(List<T> list, int start) {
+    remove(list, start, list.size());
+  }
+
+  /**
+   * Remove all elements except the last n, doing nothing if there are <= n
+   * elements
+   */
+  public static <T> void removeAllButLastN(List<T> list, int n) {
+    remove(list, 0, list.size() - n);
+  }
+
+  @Deprecated // Rename to removeAllButFirstN
   public static <T> void remove(List<T> list, int start) {
     remove(list, start, list.size());
   }

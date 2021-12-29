@@ -699,7 +699,7 @@ public final class Polygon implements AbstractData {
       path.set(destination, current);
       destination++;
     }
-    remove(path, destination);
+    removeAllButFirstN(path, destination);
   }
 
   private final IPoint[] mVerts;
