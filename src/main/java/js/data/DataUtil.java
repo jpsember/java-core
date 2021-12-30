@@ -570,11 +570,11 @@ public final class DataUtil {
     return Base64.getDecoder().decode(string);
   }
 
-  private static final String DATA_TYPE_DELIMITER = "`";
-  private static final String DATA_TYPE_SUFFIX_BYTE = DATA_TYPE_DELIMITER + "b";
-  private static final String DATA_TYPE_SUFFIX_SHORT = DATA_TYPE_DELIMITER + "s";
-  private static final String DATA_TYPE_SUFFIX_INT = DATA_TYPE_DELIMITER + "i";
-  private static final String DATA_TYPE_SUFFIX_LONG = DATA_TYPE_DELIMITER + "l";
+  public static final String DATA_TYPE_DELIMITER = "`";
+  public static final String DATA_TYPE_SUFFIX_BYTE = DATA_TYPE_DELIMITER + "b";
+  public static final String DATA_TYPE_SUFFIX_SHORT = DATA_TYPE_DELIMITER + "s";
+  public static final String DATA_TYPE_SUFFIX_INT = DATA_TYPE_DELIMITER + "i";
+  public static final String DATA_TYPE_SUFFIX_LONG = DATA_TYPE_DELIMITER + "l";
 
   /**
    * Encode a byte array as a Base64 string, with our data type suffix added
@@ -589,7 +589,7 @@ public final class DataUtil {
    */
   public static short[] parseBase64Shorts(String string) {
     string = removeDataTypeSuffix(string, DATA_TYPE_SUFFIX_SHORT);
-       return bytesToShortsLittleEndian(Base64.getDecoder().decode(string));
+    return bytesToShortsLittleEndian(Base64.getDecoder().decode(string));
   }
 
   /**
@@ -606,7 +606,7 @@ public final class DataUtil {
    */
   public static int[] parseBase64Ints(String string) {
     string = removeDataTypeSuffix(string, DATA_TYPE_SUFFIX_INT);
-      return bytesToIntsLittleEndian(Base64.getDecoder().decode(string));
+    return bytesToIntsLittleEndian(Base64.getDecoder().decode(string));
   }
 
   /**
@@ -615,7 +615,7 @@ public final class DataUtil {
    */
   public static long[] parseBase64Longs(String string) {
     string = removeDataTypeSuffix(string, DATA_TYPE_SUFFIX_LONG);
-     return bytesToLongsLittleEndian(Base64.getDecoder().decode(string));
+    return bytesToLongsLittleEndian(Base64.getDecoder().decode(string));
   }
 
   /**

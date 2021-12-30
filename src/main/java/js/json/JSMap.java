@@ -59,6 +59,10 @@ public final class JSMap extends JSObject {
     return new JSMap(content);
   }
 
+  protected JSMap(Map<String, Object> wrappedMap) {
+    mMap = wrappedMap;
+  }
+
   @SuppressWarnings("unchecked")
   public static JSMap from(Map map) {
     JSMap jsMap = new JSMap();

@@ -31,6 +31,7 @@ import static js.json.JSUtils.*;
 import java.util.*;
 
 import js.data.AbstractData;
+import js.data.ByteArray;
 import js.data.DataUtil;
 import js.data.IntArray;
 import js.data.LongArray;
@@ -56,7 +57,7 @@ public final class JSList extends JSObject implements Iterable<Object> {
   }
 
   @SuppressWarnings("unchecked")
-  private JSList(List unsafeList) {
+  protected JSList(List unsafeList) {
     mList = unsafeList;
   }
 
@@ -83,6 +84,13 @@ public final class JSList extends JSObject implements Iterable<Object> {
    */
   public static JSList with(short... shorts) {
     return ShortArray.with(shorts).toJson();
+  }
+
+  /**
+   * Construct a JSList containing a sequence of bytes
+   */
+  public static JSList with(byte... bytes) {
+    return ByteArray.with(bytes).toJson();
   }
 
   /**
