@@ -1298,6 +1298,8 @@ public final class Files extends BaseObject {
    */
   public static final Comparator<File> COMPARATOR = (File x, File y) -> x.getPath().compareTo(y.getPath());
 
+  public static final File[] EMPTY_FILE_LIST = new File[0];
+
   // ------------------------------------------------------------------
   // Backups
   // ------------------------------------------------------------------
