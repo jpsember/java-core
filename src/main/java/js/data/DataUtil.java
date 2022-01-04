@@ -752,9 +752,9 @@ public final class DataUtil {
   /**
    * Get a 31 bit, unsigned checksum of a byte array
    */
-  public static int checksum(byte[] fileBytes) {
+  public static int checksum(byte[] bytes) {
     Checksum cs = new CRC32();
-    cs.update(fileBytes, 0, fileBytes.length);
+    cs.update(bytes, 0, bytes.length);
     return (int) (cs.getValue() & 0x7fff);
   }
 

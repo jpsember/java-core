@@ -1241,6 +1241,14 @@ public final class Files extends BaseObject {
     return output;
   }
 
+  public static ZipFile zipFile(File file) {
+    try {
+      return new ZipFile(file);
+    } catch (IOException e) {
+      throw asFileException(e);
+    }
+  }
+
   public static void unzip(File zipFile, File targetDirectoryOrNull, Predicate<File> filterOrNull) {
     File targetDirectory = targetDirectoryOrNull;
     if (targetDirectoryOrNull == null)
@@ -1248,7 +1256,7 @@ public final class Files extends BaseObject {
 
     ZipFile zipFileObj = null;
     try {
-      zipFileObj = new ZipFile(zipFile);
+      zipFileObj = zipFile(zipFile);
       for (ZipEntry entry : getZipEntries(zipFileObj)) {
         File entryDestination = new File(targetDirectory, entry.getName());
         if (filterOrNull != null && !filterOrNull.test(entryDestination))
