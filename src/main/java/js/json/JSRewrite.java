@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
+import js.data.DataUtil;
+
 public class JSRewrite {
 
   /**
@@ -84,4 +86,35 @@ public class JSRewrite {
     return rewrite((Boolean) value);
   }
 
+  /**
+   * A rewriter that converts datagen representations of arrays of primitive
+   * values from their Base64 (variant) forms to standard json lists
+   */
+  public static final JSRewrite CONVERT_DATA_TO_JSON_REWRITER = new JSRewrite() {
+
+    private final char DELIM = DataUtil.DATA_TYPE_DELIMITER.charAt(0);
+
+    @Override
+    public Object rewrite(String string) {
+      Object output = string;
+      if (string.length() >= 2 && string.charAt(string.length() - 2) == DELIM) {
+        String suffix = string.substring(string.length() - 2);
+        switch (suffix) {
+        case DataUtil.DATA_TYPE_SUFFIX_BYTE:
+          output = JSList.with(DataUtil.parseBase64(string));
+          break;
+        case DataUtil.DATA_TYPE_SUFFIX_SHORT:
+          output = JSList.with(DataUtil.parseBase64Shorts(string));
+          break;
+        case DataUtil.DATA_TYPE_SUFFIX_INT:
+          output = JSList.with(DataUtil.parseBase64Ints(string));
+          break;
+        case DataUtil.DATA_TYPE_SUFFIX_LONG:
+          output = JSList.with(DataUtil.parseBase64Longs(string));
+          break;
+        }
+      }
+      return output;
+    }
+  };
 }

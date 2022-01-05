@@ -1279,6 +1279,15 @@ public final class Files extends BaseObject {
     }
   }
 
+  public static byte[] readZipEntryContents(ZipFile zipFile, ZipEntry entry) {
+    try {
+      InputStream in = zipFile.getInputStream(entry);
+      return toByteArray(in);
+    } catch (IOException e) {
+      throw asFileException(e);
+    }
+  }
+
   // ------------------------------------------------------------------
   // Constants
   // ------------------------------------------------------------------
