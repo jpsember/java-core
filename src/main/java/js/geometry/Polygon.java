@@ -675,33 +675,6 @@ public final class Polygon implements AbstractData {
     }
   }
 
-  /**
-   * Remove polygon vertices that lie on the same axis-aligned segment as their
-   * neighbors
-   */
-  public static void filterColinearVertices(List<IPoint> path) {
-    int len = path.size();
-    if (len == 0)
-      return;
-    IPoint ptPrev = last(path);
-    int cursor = 0;
-    int destination = 0;
-    while (cursor < len) {
-      IPoint current = path.get(cursor);
-      cursor++;
-      IPoint next = (cursor == len) ? path.get(0) : path.get(cursor);
-      IPoint prev = ptPrev;
-      ptPrev = current;
-      if ((prev.x == next.x && prev.x == current.x) || (prev.y == next.y && prev.y == current.y)) {
-        continue;
-      }
-
-      path.set(destination, current);
-      destination++;
-    }
-    removeAllButFirstN(path, destination);
-  }
-
   private final IPoint[] mVerts;
   private final boolean mOpen;
   private IRect mBoundingRect;

@@ -430,6 +430,15 @@ public final class JSList extends JSObject implements Iterable<Object> {
     return DataUtil.castingIterable(iterator());
   }
 
+  /**
+   * Return either this list, or its first element if it has exactly one element
+   */
+  public Object orSingleElement() {
+    if (size() == 1)
+      return getUnsafe(0);
+    return this;
+  }
+
   private void prettyPrintTo(StringBuilder stringBuilder, int indent) {
     int initialAdjustment = 0;
     indent += 2;
