@@ -118,15 +118,19 @@ public final class Polygon implements AbstractData {
     return mVerts.length;
   }
 
+  @Deprecated
   public static List<IPoint> extractVertices(List<IPoint> targetOrNull, Iterable<Polygon> polygons) {
     List<IPoint> target = targetOrNull;
     if (target == null)
       target = arrayList();
-    for (Polygon p : polygons) {
-      for (int i = 0; i < p.numVertices(); i++)
-        target.add(p.vertex(i));
-    }
+    for (Polygon p : polygons)
+      p.extractVertices(target);
     return target;
+  }
+
+  public void extractVertices(List<IPoint> target) {
+    for (IPoint v : mVerts)
+      target.add(v);
   }
 
   public Polygon withVertices(Collection<IPoint> v) {
