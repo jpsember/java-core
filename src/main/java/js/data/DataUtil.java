@@ -727,6 +727,7 @@ public final class DataUtil {
     m.put(String.class, (x) -> x);
     m.put(File.class, (x) -> new File(x));
     m.put(Integer.class, (x) -> Integer.parseInt(x));
+    m.put(Long.class, (x) -> Long.parseLong(x));
     m.put(Float.class, DataUtil::guardedParseFloat);
     m.put(Double.class, DataUtil::guardedParseDouble);
   }

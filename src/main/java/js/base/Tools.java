@@ -33,6 +33,7 @@ import js.file.Files;
 import js.geometry.MyMath;
 import js.json.JSList;
 import js.json.JSMap;
+import js.system.MemoryMonitor;
 
 public final class Tools {
 
@@ -876,6 +877,10 @@ public final class Tools {
       c = (Class) object;
     map.put("", c.getSimpleName());
     return map;
+  }
+
+  public static MemoryMonitor mem() {
+    return MemoryMonitor.sharedInstance();
   }
 
 }
