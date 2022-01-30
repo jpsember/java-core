@@ -748,6 +748,7 @@ public final class Files extends BaseObject {
    */
   public static byte[] toByteArray(InputStream stream) {
     try {
+      mem().register(stream, "toByteArray");
       byte[] data = IOUtils.toByteArray(stream);
       stream.close();
       return data;
@@ -1111,7 +1112,9 @@ public final class Files extends BaseObject {
 
   public static FileInputStream openInputStream(File file) {
     try {
-      return FileUtils.openInputStream(file);
+      FileInputStream stream = FileUtils.openInputStream(file);
+      mem().register(stream, file);
+      return stream;
     } catch (IOException e) {
       throw asFileException(e);
     }

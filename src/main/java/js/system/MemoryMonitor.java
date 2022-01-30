@@ -95,13 +95,16 @@ public final class MemoryMonitor extends BaseObject {
   /**
    * Thread safe
    */
-  public void register(Object object, String message) {
+  public void register(Object object, Object messageObjectOrNull) {
     if (!active())
       return;
     if (object == null)
       return;
 
     ClassUsage usage = getUsage(object.getClass());
+    String message = "";
+    if (messageObjectOrNull != null)
+      message = messageObjectOrNull.toString();
     usage.register(object, message);
   }
 
