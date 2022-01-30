@@ -125,8 +125,10 @@ public final class Tools {
     Integer reportCount;
     synchronized (sReportCountMap) {
       reportCount = sReportCountMap.get(reportText);
-      if (reportCount == null)
+      if (reportCount == null) {
         reportCount = 0;
+        mem().monitorSize("base reports", sReportCountMap);
+      }
       sReportCountMap.put(reportText, reportCount + 1);
       // TODO: add ability to track size of objects such as this
     }

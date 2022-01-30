@@ -2,8 +2,9 @@ package js.system;
 
 import static js.base.Tools.*;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.WeakHashMap;
 
 import js.base.BaseObject;
@@ -64,6 +65,33 @@ public final class MemoryMonitor extends BaseObject {
     register(object, null);
   }
 
+  private static final int DEFAULT_MIN_ALERT_SIZE = 10;
+
+  public void monitorSize(String name, Collection collection) {
+    monitorSize(name, collection, DEFAULT_MIN_ALERT_SIZE);
+  }
+
+  public void monitorSize(String name, Collection collection, int minAlertSize) {
+    if (active())
+      auxMonitorSize(name, minAlertSize, collection.size());
+  }
+
+  public void monitorSize(String name, Map map) {
+    monitorSize(name, map, DEFAULT_MIN_ALERT_SIZE);
+  }
+
+  public void monitorSize(String name, Map map, int minAlertSize) {
+    if (active())
+      auxMonitorSize(name, minAlertSize, map.size());
+  }
+
+  private void auxMonitorSize(String name, int minAlertSize, int currentSize) {
+    // Ensure that a monitor exists with this name; and update its size to currentSize
+    Tracker t = getMonitor(name);
+    t.setMinSizeForAlert(minAlertSize);
+    t.updateSize(currentSize);
+  }
+
   /**
    * Thread safe
    */
@@ -75,25 +103,32 @@ public final class MemoryMonitor extends BaseObject {
 
     ClassUsage usage = getUsage(object.getClass());
     usage.register(object, message);
-    if (false && verbose())
-      log("registering:", object.getClass(), "count:", usage.size(), nullToEmpty(message));
   }
 
   @Override
   public JSMap toJson() {
     JSMap m = map();
-    synchronized (mClassMap) {
-      for (Entry<Class, ClassUsage> entry : mClassMap.entrySet()) {
-        ClassUsage usage = entry.getValue();
-        usage.readStatus(false);
-        m.put(entry.getKey().getName(), usage.statusMessage());
-      }
+    for (Tracker tracker : buildTrackerList()) {
+      tracker.readStatus(false);
+      m.put(tracker.label(), tracker.statusMessage());
     }
     return m;
   }
 
+  private List<Tracker> buildTrackerList() {
+    List<Tracker> trackers = arrayList();
+
+    synchronized (mClassMap) {
+      trackers.addAll(mClassMap.values());
+    }
+
+    synchronized (mCollectionMap) {
+      trackers.addAll(mCollectionMap.values());
+    }
+    return trackers;
+  }
+
   public void doMaintenance() {
-    todo("Add ability to report on growth of objects such as maps or arrays");
     mStarted = true;
     long currentTime = System.currentTimeMillis();
     if (mPrevTime != 0 && currentTime - mPrevTime < mMaintenanceIntervalMs)
@@ -108,14 +143,12 @@ public final class MemoryMonitor extends BaseObject {
     JSMap m = map();
     JSMap allocMap = map();
 
-    synchronized (mClassMap) {
-      for (Entry<Class, ClassUsage> entry : mClassMap.entrySet()) {
-        ClassUsage usage = entry.getValue();
-        usage.readStatus(true);
-        if (usage.statusAlert() != null)
-          allocMap.put(entry.getKey().getName(), usage.statusMessage());
-      }
+    for (Tracker usage : buildTrackerList()) {
+      usage.readStatus(false);
+      if (usage.statusAlert() != null)
+        m.put(usage.label(), usage.statusMessage());
     }
+
     if (!allocMap.isEmpty())
       m.put("objects", allocMap);
 
@@ -125,6 +158,25 @@ public final class MemoryMonitor extends BaseObject {
       m.put("", "================= Memory Monitor =================");
       pr(m);
     }
+  }
+
+  /**
+   * Get monitor for a collection
+   * 
+   * Thread safe
+   */
+  private Tracker getMonitor(String name) {
+    Tracker usage = mCollectionMap.get(name);
+    if (usage == null) {
+      // Avoid race condition that could cause construction of two maps for a particular class
+      synchronized (mCollectionMap) {
+        usage = mCollectionMap.get(name);
+        if (usage == null)
+          mCollectionMap.put(name, new Tracker(name));
+      }
+      usage = mCollectionMap.get(name);
+    }
+    return usage;
   }
 
   /**
@@ -139,7 +191,7 @@ public final class MemoryMonitor extends BaseObject {
       synchronized (mClassMap) {
         usage = mClassMap.get(klass);
         if (usage == null)
-          mClassMap.put(klass, new ClassUsage());
+          mClassMap.put(klass, new ClassUsage(klass.getName()));
       }
       usage = mClassMap.get(klass);
     }
@@ -162,10 +214,14 @@ public final class MemoryMonitor extends BaseObject {
     }
   }
 
-  private static class ClassUsage {
+  private static class Tracker {
 
-    public void setMinSizeForAlert(int size) {
-      synchronized (mUsageMap) {
+    public Tracker(String label) {
+      mLabel = label;
+    }
+
+    public final void setMinSizeForAlert(int size) {
+      synchronized (this) {
         if (mMinSizeForAlert == 0)
           mMinSizeForAlert = size;
         else
@@ -173,28 +229,26 @@ public final class MemoryMonitor extends BaseObject {
       }
     }
 
-    public void register(Object object, String message) {
-      message = ifNullOrEmpty(message, "");
-      synchronized (mUsageMap) {
-        mUsageMap.put(object, message);
-      }
-    }
-
     public int size() {
-      synchronized (mUsageMap) {
-        return mUsageMap.size();
-      }
+      return mSize;
     }
 
-    private static final float ALERT_GROWTH_FACTOR = 1.1f;
+    public String label() {
+      return mLabel;
+    }
 
-    public void readStatus(boolean update) {
-      synchronized (mUsageMap) {
+    public final void readStatus(boolean update) {
+      final float ALERT_GROWTH_FACTOR = 1.1f;
+      synchronized (this) {
         int size = size();
         String alert = null;
 
-        if (mNextAlertSize == 0)
-          mNextAlertSize = Math.max(1, mMinSizeForAlert);
+        if (mNextAlertSize == 0) {
+          mNextAlertSize = mMinSizeForAlert;
+          if (mNextAlertSize == 0)
+            mNextAlertSize = DEFAULT_MIN_ALERT_SIZE;
+        }
+
         if (size > mNextAlertSize) {
           if (update)
             mNextAlertSize = Math.round(size * ALERT_GROWTH_FACTOR);
@@ -206,23 +260,53 @@ public final class MemoryMonitor extends BaseObject {
       }
     }
 
-    public String statusMessage() {
+    public final String statusMessage() {
       return mStatusMessage;
     }
 
-    public String statusAlert() {
+    public final String statusAlert() {
       return mStatusAlert;
     }
 
-    private WeakHashMap<Object, String> mUsageMap = new WeakHashMap<>();
+    public void updateSize(int size) {
+      mSize = size;
+    }
+
+    private int mSize;
     private int mNextAlertSize;
     private int mMinSizeForAlert;
     private String mStatusAlert;
     private String mStatusMessage;
+    private final String mLabel;
+  }
+
+  private static class ClassUsage extends Tracker {
+
+    public ClassUsage(String label) {
+      super(label);
+    }
+
+    public void register(Object object, String message) {
+      message = ifNullOrEmpty(message, "");
+      synchronized (this) {
+        mUsageMap.put(object, message);
+      }
+    }
+
+    @Override
+    public int size() {
+      synchronized (this) {
+        return mUsageMap.size();
+      }
+    }
+
+    private WeakHashMap<Object, String> mUsageMap = new WeakHashMap<>();
   }
 
   private boolean mActive;
   private Map<Class, ClassUsage> mClassMap = concurrentHashMap();
+  private Map<String, Tracker> mCollectionMap = concurrentHashMap();
+
   private boolean mStarted;
   private long mPrevTime;
   private long mInitialReportDelay = DateTimeTools.SECONDS(30);
