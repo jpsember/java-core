@@ -144,7 +144,7 @@ public final class MemoryMonitor extends BaseObject {
     JSMap allocMap = map();
 
     for (Tracker usage : buildTrackerList()) {
-      usage.readStatus(false);
+      usage.readStatus(true);
       if (usage.statusAlert() != null)
         m.put(usage.label(), usage.statusMessage());
     }
