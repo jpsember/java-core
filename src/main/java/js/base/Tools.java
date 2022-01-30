@@ -128,6 +128,7 @@ public final class Tools {
       if (reportCount == null)
         reportCount = 0;
       sReportCountMap.put(reportText, reportCount + 1);
+      // TODO: add ability to track size of objects such as this
     }
     if (reportCount >= limit)
       return null;
