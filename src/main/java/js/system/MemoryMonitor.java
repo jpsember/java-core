@@ -207,8 +207,8 @@ public final class MemoryMonitor extends BaseObject {
       m.put("memory_init", "Baseline memory set to: " + memUsed + " kb");
     }
 
-    // Every increase of a couple of megabytes should be reported
-    if ((memUsed - mPrevMemoryUsed) > 2 * 1024) {
+    final double ALERT_GROWTH_FACTOR = 1.1;
+    if (memUsed > mPrevMemoryUsed * ALERT_GROWTH_FACTOR) {
       m.put("memory used (kb)", memUsed);
       mPrevMemoryUsed = memUsed;
     }
