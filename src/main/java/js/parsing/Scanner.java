@@ -192,9 +192,21 @@ public final class Scanner {
     mHistoryCursor -= count;
   }
 
-  //  public int readInt() {
-  //    return (int) ensureIntegerValue(read(NUMBER).text(), Integer.MIN_VALUE, Integer.MAX_VALUE);
-  //  }
+  public int readInt(int tokenId) {
+    return (int) ensureIntegerValue(read(tokenId).text(), Integer.MIN_VALUE, Integer.MAX_VALUE);
+  }
+
+  public static long ensureIntegerValue(String numberString, long min, long max) {
+    try {
+      long value = Long.parseLong(numberString);
+      if (value < min || value > max)
+        throw new IllegalArgumentException(
+            "integral value out of range of " + min + "..." + max + ": " + numberString);
+      return value;
+    } catch (Throwable t) {
+      throw badArg("expected an integer, not:", quote(numberString));
+    }
+  }
 
   private static final int EPSILON = -1;
 
