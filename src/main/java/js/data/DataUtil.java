@@ -763,7 +763,7 @@ public final class DataUtil {
    * Get a 31 bit, unsigned checksum of a file's contents
    */
   public static int checksum(File file) {
-    return checksum(Files.toByteArray(file));
+    return checksum(Files.toByteArray(file, "checksum"));
   }
 
   public static String hashOf(byte[] bytes) {

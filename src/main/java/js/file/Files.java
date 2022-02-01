@@ -206,7 +206,7 @@ public final class Files extends BaseObject {
    * Read a byte array from a resource
    */
   public static byte[] toByteArray(Class theClass, String resourceName) {
-    return Files.toByteArray(openResource(theClass, resourceName));
+    return Files.toByteArray(openResource(theClass, resourceName), resourceName);
   }
 
   /**
@@ -735,9 +735,21 @@ public final class Files extends BaseObject {
   /**
    * Read file to byte array
    */
+  @Deprecated // Add some context
   public static byte[] toByteArray(File path) {
     try {
-      return toByteArray(new FileInputStream(path));
+      return toByteArray(new FileInputStream(path), null);
+    } catch (IOException e) {
+      throw asFileException(e);
+    }
+  }
+
+  /**
+   * Read file to byte array, with context (for tracking down memory leaks)
+   */
+  public static byte[] toByteArray(File path, String contextOrNull) {
+    try {
+      return toByteArray(new FileInputStream(path), contextOrNull);
     } catch (IOException e) {
       throw asFileException(e);
     }
@@ -746,9 +758,10 @@ public final class Files extends BaseObject {
   /**
    * Read InputStream to byte array
    */
-  public static byte[] toByteArray(InputStream stream) {
+  public static byte[] toByteArray(InputStream stream, String descriptionOrNull) {
     try {
-      mem().register(stream, "toByteArray");
+      String description = ifNullOrEmpty(descriptionOrNull, "toByteArray");
+      mem().register(stream, description);
       byte[] data = IOUtils.toByteArray(stream);
       stream.close();
       return data;
@@ -825,8 +838,8 @@ public final class Files extends BaseObject {
   /**
    * Read a number of floats from file, little-endian
    */
-  public static float[] readFloatsLittleEndian(File file) {
-    byte[] bytes = toByteArray(file);
+  public static float[] readFloatsLittleEndian(File file, String context) {
+    byte[] bytes = toByteArray(file, context);
     ByteBuffer byteBuffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
     float[] dest = new float[bytes.length / Float.BYTES];
     byteBuffer.asFloatBuffer().get(dest);
@@ -1285,7 +1298,7 @@ public final class Files extends BaseObject {
   public static byte[] readZipEntryContents(ZipFile zipFile, ZipEntry entry) {
     try {
       InputStream in = zipFile.getInputStream(entry);
-      return toByteArray(in);
+      return toByteArray(in, "readZipEntryContents");
     } catch (IOException e) {
       throw asFileException(e);
     }

@@ -113,7 +113,7 @@ public final class MemoryMonitor extends BaseObject {
     JSMap m = map();
     for (Tracker tracker : buildTrackerList()) {
       tracker.readStatus(false);
-      m.put(tracker.label(), tracker.statusMessage());
+      m.put(tracker.label(), tracker.statusMap());
     }
     return m;
   }
@@ -148,8 +148,8 @@ public final class MemoryMonitor extends BaseObject {
 
     for (Tracker usage : buildTrackerList()) {
       usage.readStatus(true);
-      if (usage.statusAlert() != null)
-        m.put(usage.label(), usage.statusMessage());
+      if (usage.statusMap() != null)
+        m.put(usage.label(), usage.statusMap());
     }
 
     if (!allocMap.isEmpty())
@@ -219,6 +219,9 @@ public final class MemoryMonitor extends BaseObject {
 
   private static class Tracker {
 
+    protected void storeAlertInfo(JSMap m) {
+    }
+
     public Tracker(String label) {
       mLabel = label;
     }
@@ -257,18 +260,18 @@ public final class MemoryMonitor extends BaseObject {
             mNextAlertSize = Math.round(size * ALERT_GROWTH_FACTOR);
           alert = "***";
         }
-        mStatusAlert = alert;
-        String message = String.format("%3s %5d", nullToEmpty(alert), size);
-        mStatusMessage = message;
+        mStatusMap = null;
+        if (alert != null) {
+          JSMap m = map();
+          m.put("*** size", size);
+          storeAlertInfo(m);
+          mStatusMap = m;
+        }
       }
     }
 
-    public final String statusMessage() {
-      return mStatusMessage;
-    }
-
-    public final String statusAlert() {
-      return mStatusAlert;
+    public final JSMap statusMap() {
+      return mStatusMap;
     }
 
     public void updateSize(int size) {
@@ -278,8 +281,7 @@ public final class MemoryMonitor extends BaseObject {
     private int mSize;
     private int mNextAlertSize;
     private int mMinSizeForAlert;
-    private String mStatusAlert;
-    private String mStatusMessage;
+    private JSMap mStatusMap;
     private final String mLabel;
   }
 
@@ -301,6 +303,28 @@ public final class MemoryMonitor extends BaseObject {
       synchronized (this) {
         return mUsageMap.size();
       }
+    }
+
+    @Override
+    protected void storeAlertInfo(JSMap m) {
+
+      Map<String, Integer> freqMap = hashMap();
+      List<String> labels = arrayList();
+      synchronized (this) {
+        labels.addAll(mUsageMap.values());
+      }
+      for (String label : labels) {
+        Integer val = freqMap.get(label);
+        if (val == null)
+          val = 0;
+        freqMap.put(label, val + 1);
+      }
+
+      List<String> sortedKeys = arrayList();
+      sortedKeys.addAll(freqMap.keySet());
+      sortedKeys.sort((a, b) -> freqMap.get(b) - freqMap.get(a));
+      for (String label : sortedKeys)
+        m.putNumbered(label, freqMap.get(label));
     }
 
     private WeakHashMap<Object, String> mUsageMap = new WeakHashMap<>();
