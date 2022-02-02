@@ -67,6 +67,11 @@ public final class MemoryMonitor extends BaseObject {
 
   private static final int DEFAULT_MIN_ALERT_SIZE = 10;
 
+  public void monitorSize(Class klass, Collection collection) {
+    if (active())
+      monitorSize(klass.getName(), collection, DEFAULT_MIN_ALERT_SIZE);
+  }
+
   public void monitorSize(String name, Collection collection) {
     monitorSize(name, collection, DEFAULT_MIN_ALERT_SIZE);
   }
@@ -74,6 +79,11 @@ public final class MemoryMonitor extends BaseObject {
   public void monitorSize(String name, Collection collection, int minAlertSize) {
     if (active())
       auxMonitorSize(name, minAlertSize, collection.size());
+  }
+
+  public void monitorSize(Class klass, Map map) {
+    if (active())
+      monitorSize(klass.getName(), map);
   }
 
   public void monitorSize(String name, Map map) {
