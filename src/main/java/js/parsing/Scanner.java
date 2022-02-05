@@ -32,7 +32,9 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.util.List;
 
-public final class Scanner {
+import js.base.BaseObject;
+
+public final class Scanner extends BaseObject {
 
   private static final int SKIP_ID_NONE = -10000;
 
@@ -60,6 +62,10 @@ public final class Scanner {
 
   public void setSourceDescription(String description) {
     mSourceDescription = description;
+  }
+
+  protected String supplyName() {
+    return mSourceDescription;
   }
 
   private String mSourceDescription;
@@ -144,6 +150,10 @@ public final class Scanner {
 
   public Token read(int tokenId) {
     Token token = peek();
+    if (verbose()) {
+      log("read", token, tokenId >= 0 ? "(expected: " + tokenId + ")" : "");
+    }
+
     if (token == null)
       throw new ScanException(null, "no more tokens");
     if (!mAcceptUnknownTokens && token.isUnknown())

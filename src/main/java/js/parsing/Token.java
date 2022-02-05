@@ -54,7 +54,9 @@ public final class Token {
     sb.append(")");
     tab(sb, 25);
     sb.append(" : ");
+    sb.append('\"');
     sb.append(mText);
+    sb.append('\"');
     return sb.toString();
   }
 
