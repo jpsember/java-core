@@ -1194,6 +1194,12 @@ public final class Files extends BaseObject {
     }
   }
 
+  public static <T extends AbstractData> T parseAbstractData(T prototype, JSMap json) {
+    if (json == null)
+      throw badArg("no JSMap provided");
+    return parseAbstractDataOpt(prototype, json);
+  }
+  
   // ------------------------------------------------------------------
   // Logging information
   // ------------------------------------------------------------------

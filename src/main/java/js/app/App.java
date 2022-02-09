@@ -36,6 +36,7 @@ import js.base.BasePrinter;
 import js.data.DataUtil;
 import js.file.Files;
 import js.geometry.MyMath;
+import js.json.JSList;
 
 public abstract class App extends BaseObject {
 
@@ -110,6 +111,9 @@ public abstract class App extends BaseObject {
       oper.setVerbose(verbose());
       oper.processArgs();
       oper.perform();
+      if (cmdLineArgs().hasNextArg()) {
+        pr("*** Ignoring remaining arguments:", JSList.with(cmdLineArgs().getExtras()));
+      }
     } catch (ExitOperImmediately e) {
     }
   }

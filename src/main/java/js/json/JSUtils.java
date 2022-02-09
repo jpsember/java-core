@@ -76,6 +76,7 @@ public final class JSUtils {
         c = 't';
         break;
       default:
+        // Remove the '|| c > 126' to leave text as unicode
         if (c < ' ' || c > 126) {
           destStringBuilder.append("\\u");
           toHex(destStringBuilder, (int) c, 4);
