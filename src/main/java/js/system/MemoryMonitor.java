@@ -216,7 +216,12 @@ public final class MemoryMonitor extends BaseObject {
     long memUsed = SystemUtil.memoryUsed() / 1024;
     if (mBaselineMemUsedKb == 0) {
       mBaselineMemUsedKb = memUsed;
-      mPrevMemoryUsed = memUsed;
+      
+      // Set initial previous memory used to something fairly large, to avoid 
+      // a bunch of extra logging messages while memory usage slowly grows to 
+      // its 'normal' range
+      
+      mPrevMemoryUsed = memUsed * 2;
       m.put("memory_init", "Baseline memory set to: " + memUsed + " kb");
     }
 
