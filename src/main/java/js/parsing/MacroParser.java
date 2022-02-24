@@ -101,7 +101,7 @@ public final class MacroParser extends BaseObject {
     }
 
     StringBuilder output = new StringBuilder();
-    int index = -1;
+    int index = INIT_INDEX;
     for (String fragment : fragments) {
       index++;
       if ((index & 1) == 1) {

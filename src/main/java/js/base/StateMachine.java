@@ -55,7 +55,7 @@ public final class StateMachine extends BaseObject implements AbstractData {
   @Override
   public JSMap toJson() {
     JSMap m = super.toJson();
-    int cursor = -1;
+    int cursor = INIT_INDEX;
     for (String name : mOrderedStateNames) {
       cursor++;
       State s = stateWithName(name);

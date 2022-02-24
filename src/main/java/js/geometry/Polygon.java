@@ -135,7 +135,7 @@ public final class Polygon implements AbstractData {
 
   public Polygon withVertices(Collection<IPoint> v) {
     IPoint[] verts = new IPoint[v.size()];
-    int i = -1;
+    int i = INIT_INDEX;
     for (IPoint vert : v) {
       i++;
       verts[i] = vert;

@@ -45,6 +45,35 @@ public final class Tools {
   }
 
   // ------------------------------------------------------------------
+  // Supporting idiomatic expressions
+  // ------------------------------------------------------------------
+
+  /**
+   * 
+   * Initial value for counters used in for-each loops where the item index is
+   * required as well, e.g.
+   * 
+   * <pre>
+   * 
+   * int i = INIT_INDEX;
+   * for (String s : stringCollection) {
+   *   i++;
+   *   
+   *   if (i == ...) ...
+   *   ...
+   * }
+   *   
+   * I haven't found a cleaner way to accomplish this.
+   * 
+   * </pre>
+   * 
+   * Using this symbolic constant is a good way to indicate this technique is
+   * being used.
+   * 
+   */
+  public static final int INIT_INDEX = -1;
+
+  // ------------------------------------------------------------------
   // 'Print once' reports
   // ------------------------------------------------------------------
 
