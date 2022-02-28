@@ -75,6 +75,10 @@ public final class JSMap extends JSObject {
     return jsMap;
   }
 
+  public static JSMap fromResource(Class theClass, String resourceName) {
+    return new JSMap(Files.readString(theClass, resourceName));
+  }
+
   public static JSMap fromFileIfExists(File file) {
     String content = Files.readString(file, "{}");
     return new JSMap(content);
