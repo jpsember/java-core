@@ -247,7 +247,7 @@ public final class StateMachine extends BaseObject implements AbstractData {
    * Convenience method to throw an IllegalStateException
    */
   public IllegalStateException unsupported() {
-    throw new UnsupportedOperationException("Unsupported state: \n" + toJson().prettyPrint());
+    throw notSupported("Unsupported state:", toJson().prettyPrint());
   }
 
   /**

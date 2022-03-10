@@ -308,6 +308,17 @@ public final class Matrix implements AbstractData {
     return from(graphics.getTransform());
   }
 
+  private static final boolean nearZero(float v) {
+    return Math.abs(v) <= 1e-8f;
+  }
+
+  public Matrix assertInvertible() {
+    if ((nearZero(a) && nearZero(b)) || (nearZero(c) && nearZero(d))) {
+      throw badArg("Matrix is not invertible:", INDENT, this);
+    }
+    return this;
+  }
+
   @Override
   public boolean equals(Object object) {
     if (object == null || !(object instanceof Matrix))

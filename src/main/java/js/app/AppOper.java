@@ -99,6 +99,10 @@ public abstract class AppOper extends BaseObject {
     return false;
   }
 
+  private String defaultArgsFilename() {
+    return userCommand() + "-args.json";
+  }
+
   final void processArgs() {
     CmdLineArgs a = app().cmdLineArgs();
     while (a.handlingArgs()) {
@@ -113,8 +117,10 @@ public abstract class AppOper extends BaseObject {
       AbstractData data = defaultArgs();
       if (data == null) {
         pr("*** json arguments aren't supported for:", userCommand());
-      } else
+      } else {
+        pr("# Default arguments will be read from:", defaultArgsFilename());
         pr(config());
+      }
       throw new ExitOperImmediately();
     }
 
@@ -126,7 +132,8 @@ public abstract class AppOper extends BaseObject {
 
       // If no args file was specified, and there are multiple user operations, choose an appropriate default
       if (app().hasMultipleOperations()) {
-        argsFile = Files.ifEmpty(argsFile, userCommand() + "-args.json");
+        argsFile = Files.ifEmpty(argsFile, defaultArgsFilename());
+        log("Args file:", argsFile);
       }
 
       if (!argsFile.exists()) {
