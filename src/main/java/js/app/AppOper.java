@@ -118,7 +118,7 @@ public abstract class AppOper extends BaseObject {
       if (data == null) {
         pr("*** json arguments aren't supported for:", userCommand());
       } else {
-        pr("# Default arguments will be read from:", defaultArgsFilename());
+        pr("// Default arguments will be read from:", defaultArgsFilename());
         pr(config());
       }
       throw new ExitOperImmediately();
