@@ -129,12 +129,8 @@ public abstract class AppOper extends BaseObject {
 
       // Start with the args file that the user supplied as the command line argument (if any)
       File argsFile = app().argsFile();
-
-      // If no args file was specified, and there are multiple user operations, choose an appropriate default
-      if (app().hasMultipleOperations()) {
-        argsFile = Files.ifEmpty(argsFile, defaultArgsFilename());
-        log("Args file:", argsFile);
-      }
+      argsFile = Files.ifEmpty(argsFile, defaultArgsFilename());
+      log("Args file:", argsFile);
 
       if (!argsFile.exists()) {
         if (argsFileMustExist())
