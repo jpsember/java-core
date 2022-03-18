@@ -676,7 +676,7 @@ public final class DataUtil {
   public static <T extends AbstractData> List<T> parseListOfObjects(T defaultInstance,
       JSList sourceListOrNull, boolean nullIfSourceNull) {
     if (sourceListOrNull == null)
-      return emptyList();
+      return nullIfSourceNull ? null : emptyList();
     List<T> items = new ArrayList<>(sourceListOrNull.size());
     for (Object obj : sourceListOrNull.wrappedList()) {
       if (NULL_LIST_ELEMENTS_ALLOWED) {
