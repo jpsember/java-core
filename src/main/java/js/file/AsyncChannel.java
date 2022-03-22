@@ -28,7 +28,6 @@ import java.io.File;
 import java.util.List;
 
 import js.base.BaseObject;
-import js.base.DateTimeTools;
 
 import static js.base.Tools.*;
 
@@ -77,7 +76,7 @@ public class AsyncChannel extends BaseObject {
   public final AsyncChannel withName(String name) {
     assertConfigurable();
     if (mName != null)
-      throw badState("already given a name");
+      alert("AsyncChannel already has a name:", mName, "; overriding with:", name);
     mName = name;
     return this;
   }
@@ -144,7 +143,6 @@ public class AsyncChannel extends BaseObject {
   public final void update() {
     lock();
     checkNotNull(mHandler, "please provide a Handler", name());
-    updateMaintenanceTime();
     if (verbose())
       log("update, examining files in:", directory(), "with extension:", mExtension);
 
@@ -178,9 +176,6 @@ public class AsyncChannel extends BaseObject {
    */
   public final int send(byte[] messageBytes) {
     lock();
-
-    verifyMaintenanceCalled();
-
     int messageNumber = mMessageNumber;
     mMessageNumber++;
     String messageName = nullToEmpty(mFilenamePrefix) + messageNumber + "." + RENAME_EXTENSION;
@@ -252,27 +247,6 @@ public class AsyncChannel extends BaseObject {
     }
   }
 
-  // I now suspect that update() only needs to be called by some channels (e.g. input channels)
-  private static final boolean VERIFY_MAINTENANCE = true && alert("verifying .update() called");
-
-  private void updateMaintenanceTime() {
-    if (!VERIFY_MAINTENANCE)
-      return;
-    mLastMaintenanceTime = System.currentTimeMillis();
-  }
-
-  private void verifyMaintenanceCalled() {
-    if (!VERIFY_MAINTENANCE)
-      return;
-    if (mHandler == null)
-      return;
-    long current = System.currentTimeMillis();
-    if (mLastMaintenanceTime == 0)
-      updateMaintenanceTime();
-    if (current - mLastMaintenanceTime > DateTimeTools.SECONDS(10))
-      die("AsyncChannel update is never called!", name());
-  }
-
   private boolean mLocked;
   private String mExtension = "bin";
   private File mDirectory;
@@ -282,6 +256,5 @@ public class AsyncChannel extends BaseObject {
   private Handler mHandler;
   private float mMinAvgIntervalSec;
   private List<Long> mHistory;
-  private long mLastMaintenanceTime;
 
 }
