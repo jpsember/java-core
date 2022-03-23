@@ -39,9 +39,8 @@ public class BaseObject {
   // ------------------------------------------------------------------
 
   public final String name() {
-    if (mName == null) {
-      mName = nullToEmpty(supplyName());
-    }
+    if (!hasName())
+      setName(nullToEmpty(supplyName()));
     return mName;
   }
 
@@ -52,6 +51,16 @@ public class BaseObject {
    */
   protected String supplyName() {
     return getClass().getSimpleName();
+  }
+
+  @SuppressWarnings("unchecked")
+  public final <T extends BaseObject> T setName(String name) {
+    mName = checkNotNull(name);
+    return (T) this;
+  }
+
+  protected boolean hasName() {
+    return mName != null;
   }
 
   private String mName;

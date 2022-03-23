@@ -40,14 +40,6 @@ public final class ExecutionContext extends BaseObject {
   }
 
   /**
-   * Set name (for unit test only)
-   */
-  public void setName(String unitTestName) {
-    testOnlyAssert();
-    mUnitTestName = unitTestName;
-  }
-
-  /**
    * If in a unit test, and the context is no longer valid, throws an
    * EndTestException; otherwise, returns true
    */
@@ -58,12 +50,12 @@ public final class ExecutionContext extends BaseObject {
   }
 
   private boolean withinUnitTest() {
-    return mUnitTestName != null;
+    return hasName();
   }
 
   @Override
   protected String supplyName() {
-    return ifNullOrEmpty(mUnitTestName, "PRODUCTION");
+    return "PRODUCTION";
   }
 
   // ------------------------------------------------------------------
@@ -97,6 +89,5 @@ public final class ExecutionContext extends BaseObject {
   private final TimeManager mTimeManager;
   private Throwable mException;
   private boolean mUnitTestNoLongerValid;
-  private String mUnitTestName;
 
 }
