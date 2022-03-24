@@ -531,6 +531,12 @@ public final class Tools {
     return value;
   }
 
+  public static String checkNonEmpty(String charSeq, Object... messages) {
+    if (nullOrEmpty(charSeq))
+      throw badArg("Null or empty string!", INDENT, BasePrinter.toString(messages));
+    return charSeq;
+  }
+
   // ------------------------------------------------------------------
   // Timing utilities
   // ------------------------------------------------------------------

@@ -82,8 +82,7 @@ public class AsyncChannel extends BaseObject {
   }
 
   public final AsyncChannel withHandler(Handler handler) {
-    todo(
-        "if strangely large number of files appear in input, discard them all with a log message instead of attempting to process them");
+    // TODO: if strangely large number of files appear in input, discard them all with a log message instead of attempting to process them 
     assertConfigurable();
     mHandler = handler;
     return this;
