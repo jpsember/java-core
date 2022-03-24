@@ -247,7 +247,7 @@ public class AsyncChannel extends BaseObject {
   }
 
   private boolean mLocked;
-  private String mExtension = "bin";
+  private String mExtension = Files.EXT_BIN;
   private File mDirectory;
   private int mMessageNumber;
   private String mFilenamePrefix;

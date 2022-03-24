@@ -1199,7 +1199,7 @@ public final class Files extends BaseObject {
       throw badArg("no JSMap provided");
     return parseAbstractDataOpt(prototype, json);
   }
-  
+
   // ------------------------------------------------------------------
   // Logging information
   // ------------------------------------------------------------------
@@ -1381,6 +1381,7 @@ public final class Files extends BaseObject {
   // File extensions
   // ------------------------------------------------------------------
 
+  public static final String EXT_BIN = "bin";
   public static final String EXT_JSON = "json";
   public static final String EXT_ZIP = "zip";
 
