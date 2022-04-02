@@ -51,7 +51,8 @@ public abstract class App extends BaseObject {
     mOperMap = hashMap();
     mOrderedOperCommands = arrayList();
     registerOperations();
-
+    mOrderedOperCommands.sort(null);
+    
     cmdLineArgs().parse(cmdLineArguments);
     if (cmdLineArgs().helpShown())
       return;

@@ -155,13 +155,20 @@ public final class DataUtil {
   /**
    * Verify int array has a particular length
    */
+  @Deprecated // Use assertLength(int arrayLength)
   public static int[] assertLength(int[] array, int expectedLength, String contextOrNull) {
-    if (array.length != expectedLength)
-      throw badArg("Unexpected array length", array.length, ", expected", expectedLength,
-          ifNullOrEmpty(contextOrNull, "(no context given)"));
+    assertLength(array.length,expectedLength,contextOrNull);
     return array;
   }
-
+  
+  /**
+   * Verify array has a particular length
+   */
+  public static void assertLength(int arrayLength, int expectedLength, String contextOrNull) {
+    if (arrayLength != expectedLength)
+      throw badArg("Unexpected array length", arrayLength, ", expected", expectedLength,
+          ifNullOrEmpty(contextOrNull, "(no context given)"));
+  }
   /**
    * Construct float array of a particular size, or use supplied one (which must
    * be the requested size)

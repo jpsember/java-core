@@ -110,16 +110,20 @@ public class IPoint implements AbstractData {
     this.y = dimension.height;
   }
 
+  public static IPoint with(int x, int y) {
+    return new IPoint(x, y);
+  }
+
   public static IPoint sum(IPoint a, IPoint b) {
-    return new IPoint(a.x + b.x, a.y + b.y);
+    return with(a.x + b.x, a.y + b.y);
   }
 
   public static IPoint difference(IPoint a, IPoint b) {
-    return new IPoint(a.x - b.x, a.y - b.y);
+    return with(a.x - b.x, a.y - b.y);
   }
 
   public IPoint negate() {
-    return new IPoint(-x, -y);
+    return with(-x, -y);
   }
 
   public IPoint sumWith(IPoint other) {
@@ -131,23 +135,23 @@ public class IPoint implements AbstractData {
   }
 
   public IPoint sumWith(int x, int y) {
-    return new IPoint(this.x + x, this.y + y);
+    return with(this.x + x, this.y + y);
   }
 
   public IPoint withX(int x) {
-    return new IPoint(x, this.y);
+    return with(x, this.y);
   }
 
   public IPoint withY(int y) {
-    return new IPoint(this.x, y);
+    return with(this.x, y);
   }
 
   public IPoint withX(float x) {
-    return new IPoint((int) x, this.y);
+    return with((int) x, this.y);
   }
 
   public IPoint withY(float y) {
-    return new IPoint(this.x, (int) y);
+    return with(this.x, (int) y);
   }
 
   public IPoint scaledBy(float scaleFactor) {
