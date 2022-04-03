@@ -143,12 +143,14 @@ public abstract class App extends BaseObject {
   private static final String CLARG_GEN_ARGS = "gen-args";
   private static final String CLARG_ARGS_FILE = "args";
   private static final String CLARG_SHOW_EXCEPTIONS = "exceptions";
-
+  public static final String CLARG_VALIDATE_KEYS = "check-keys";
+  
   public final CmdLineArgs cmdLineArgs() {
     if (mCmdLineArgs == null) {
       CmdLineArgs ca = mCmdLineArgs = new CmdLineArgs();
       if (supportArgsFile()) {
         ca.add(CLARG_ARGS_FILE).def("").desc("Specify file containing arguments").shortName("a");
+        ca.add(CLARG_VALIDATE_KEYS).desc("Check for extraneous keys").shortName("K");
         ca.add(CLARG_GEN_ARGS).desc("Generate default operation arguments").shortName("g");
       }
 

@@ -28,6 +28,7 @@ import static js.base.Tools.*;
 
 import java.io.File;
 import java.util.List;
+import java.util.Set;
 
 import js.base.BaseObject;
 import js.base.BasePrinter;
@@ -35,6 +36,7 @@ import js.data.AbstractData;
 import js.data.Accessor;
 import js.data.DataUtil;
 import js.file.Files;
+import js.json.JSMap;
 
 public abstract class AppOper extends BaseObject {
 
@@ -133,9 +135,24 @@ public abstract class AppOper extends BaseObject {
 
       if (!argsFile.exists()) {
         if (argsFileMustExist())
-          throw die("No args file specified, and no default found at:", argsFile);
+          throw setError("No args file specified, and no default found at:", argsFile);
       } else {
         mJsonArgs = Files.parseAbstractData(mJsonArgs, argsFile);
+        if (a.get(App.CLARG_VALIDATE_KEYS)) {
+          //
+          // Generate a JSMap A from the parsed arguments
+          // Re-parse the args file to a JSMap B.
+          // See if B.keys - A.keys is nonempty... if so, that's a problem.
+          //
+          // NOTE: this will only check the top-level JSMap, not any nested maps.
+          //
+          Set<String> keysA = mJsonArgs.toJson().asMap().keySet();
+          JSMap json = JSMap.fromFileIfExists(argsFile);
+          Set<String> keysB = json.keySet();
+          keysB.removeAll(keysA);
+          if (!keysB.isEmpty())
+            throw setError("Unexpected keys in", argsFile, INDENT, keysB);
+        }
       }
 
       AbstractData argsBuilder = mJsonArgs.toBuilder();
