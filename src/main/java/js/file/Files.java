@@ -47,6 +47,7 @@ import js.base.BasePrinter;
 import js.base.SystemCall;
 import js.file.DirWalk;
 import js.data.AbstractData;
+import js.data.DataUtil;
 import js.json.JSMap;
 import js.json.JSObject;
 
@@ -804,6 +805,11 @@ public final class Files extends BaseObject {
     }
   }
 
+  public void writeIntsLittleEndian(int[] ints, OutputStream s) {
+    byte[] bytes = DataUtil.intsToBytesLittleEndian(ints);
+    write(bytes, s);
+  }
+
   /**
    * Write a number of floats to output stream, little-endian
    */
@@ -818,10 +824,7 @@ public final class Files extends BaseObject {
    */
   public static float[] readFloatsLittleEndian(InputStream inputStream, int length) {
     byte[] bytes = readBytes(inputStream, length * Float.BYTES);
-    ByteBuffer byteBuffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
-    float[] dest = new float[length];
-    byteBuffer.asFloatBuffer().get(dest);
-    return dest;
+    return DataUtil.bytesToFloatsLittleEndian(bytes);
   }
 
   /**
@@ -829,10 +832,7 @@ public final class Files extends BaseObject {
    */
   public static float[] readFloatsBigEndian(InputStream inputStream, int length) {
     byte[] bytes = readBytes(inputStream, length * Float.BYTES);
-    ByteBuffer byteBuffer = ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN);
-    float[] dest = new float[length];
-    byteBuffer.asFloatBuffer().get(dest);
-    return dest;
+    return DataUtil.bytesToFloatsBigEndian(bytes);
   }
 
   /**
@@ -920,10 +920,15 @@ public final class Files extends BaseObject {
   /**
    * Make a backup of a directory, and create a new one
    */
-  public File backupAndRebuild(File directory) {
+  public File backupAndRemake(File directory) {
     if (dryRun())
       throw notSupported("Should we have a null output stream?");
     return backupManager().backupAndDelete(directory);
+  }
+
+  @Deprecated // Call backupAndRemake instead
+  public File backupAndRebuild(File directory) {
+    return backupAndRemake(directory);
   }
 
   /**

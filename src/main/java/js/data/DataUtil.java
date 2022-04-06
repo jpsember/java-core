@@ -157,10 +157,10 @@ public final class DataUtil {
    */
   @Deprecated // Use assertLength(int arrayLength)
   public static int[] assertLength(int[] array, int expectedLength, String contextOrNull) {
-    assertLength(array.length,expectedLength,contextOrNull);
+    assertLength(array.length, expectedLength, contextOrNull);
     return array;
   }
-  
+
   /**
    * Verify array has a particular length
    */
@@ -169,6 +169,7 @@ public final class DataUtil {
       throw badArg("Unexpected array length", arrayLength, ", expected", expectedLength,
           ifNullOrEmpty(contextOrNull, "(no context given)"));
   }
+
   /**
    * Construct float array of a particular size, or use supplied one (which must
    * be the requested size)
@@ -542,6 +543,26 @@ public final class DataUtil {
       byteIndex += Long.BYTES;
     }
     return result;
+  }
+
+  /**
+   * Read big-endian floats from byte array
+   */
+  public static float[] bytesToFloatsBigEndian(byte[] bytes) {
+    ByteBuffer byteBuffer = ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN);
+    float[] dest = new float[bytes.length / Float.BYTES];
+    byteBuffer.asFloatBuffer().get(dest);
+    return dest;
+  }
+
+  /**
+   * Read little-endian floats from byte array
+   */
+  public static float[] bytesToFloatsLittleEndian(byte[] bytes) {
+    ByteBuffer byteBuffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
+    float[] dest = new float[bytes.length / Float.BYTES];
+    byteBuffer.asFloatBuffer().get(dest);
+    return dest;
   }
 
   public static byte[] toByteArray(float[] floats) {
