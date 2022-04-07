@@ -28,6 +28,7 @@ import static js.base.Tools.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.security.MessageDigest;
@@ -97,6 +98,17 @@ public final class DataUtil {
     @SuppressWarnings("unchecked")
     T result = (T) dataOrNull.build().toBuilder();
     return result;
+  }
+
+  @SuppressWarnings("unchecked")
+  public static <T extends AbstractData> T defaultValue(AbstractData data) {
+    checkNotNull(data);
+    try {
+      Field field = data.getClass().getField("DEFAULT_INSTANCE");
+      return (T) field.get(data);
+    } catch (Throwable t) {
+      throw badArgWithCause(t, "Failed to get default value for AbstractData", data.getClass());
+    }
   }
 
   public static String convertCamelCaseToUnderscores(String string) {
