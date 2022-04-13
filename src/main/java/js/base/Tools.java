@@ -451,7 +451,7 @@ public final class Tools {
 
   public static String trimRight(String string) {
     int cursor = string.length();
-    while (cursor - 1 > 0 && string.charAt(cursor - 1) <= ' ')
+    while (cursor > 0 && string.charAt(cursor - 1) <= ' ')
       cursor--;
     return string.substring(0, cursor);
   }
