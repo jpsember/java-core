@@ -94,12 +94,6 @@ public final class MacroParser extends BaseObject {
     checkNotNull(mapper, "no mapper given");
     lock();
     List<String> fragments = mFragments;
-
-    if (false && verbose()) {
-      for (int i = 0; i < fragments.size(); i++)
-        log("...fragment", i, ":", INDENT, fragments.get(i));
-    }
-
     StringBuilder output = new StringBuilder();
     int index = INIT_INDEX;
     for (String fragment : fragments) {
@@ -111,14 +105,14 @@ public final class MacroParser extends BaseObject {
         if (text == null) {
           text = mDefaultValue;
           if (text == null)
-            throw new IllegalArgumentException("no value returned for key: " + key);
+            throw badArg("no value returned for key:", key);
 
           if (text.endsWith("@")) {
             text = text.substring(0, text.length() - 1) + "'" + key + "'";
           }
         }
         if (verbose())
-          log("...macro:", key, "=>", INDENT, text);
+          log("...macro:", quote(key), "=>", quote(text));
         output.append(text);
       } else {
         if (verbose())

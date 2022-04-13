@@ -411,6 +411,20 @@ public final class Tools {
   }
 
   /**
+   * Insert '|' characters at the start of each line (to prevent the pr() method
+   * from messing with linefeeds)
+   */
+  public static String insertLeftMargin(Object object) {
+    StringBuilder sb = new StringBuilder();
+    for (String line : split(object.toString(), '\n')) {
+      sb.append('|');
+      sb.append(line);
+      sb.append('\n');
+    }
+    return sb.toString();
+  }
+
+  /**
    * Split a string by a character into a list of strings
    */
   public static List<String> split(String string, char delimeter) {

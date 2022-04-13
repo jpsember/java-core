@@ -101,7 +101,7 @@ public final class DataUtil {
   }
 
   @SuppressWarnings("unchecked")
-  public static <T extends AbstractData> T defaultValue(AbstractData data) {
+  public static <T extends AbstractData> T defaultInstance(AbstractData data) {
     checkNotNull(data);
     try {
       Field field = data.getClass().getField("DEFAULT_INSTANCE");
