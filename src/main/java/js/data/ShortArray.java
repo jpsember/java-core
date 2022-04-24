@@ -64,7 +64,6 @@ public class ShortArray implements AbstractData {
   @Override
   public ShortArray parse(Object object) {
     JSList source = (JSList) object;
-    @SuppressWarnings("unchecked")
     List<Number> sourceList = (List<Number>) source.wrappedList();
     short[] w = new short[sourceList.size()];
     for (int i = 0; i < w.length; i++)

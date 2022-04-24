@@ -63,7 +63,6 @@ public class FloatArray implements AbstractData {
   @Override
   public FloatArray parse(Object object) {
     JSList source = (JSList) object;
-    @SuppressWarnings("unchecked")
     List<Number> sourceList = (List<Number>) source.wrappedList();
     float[] w = new float[sourceList.size()];
     for (int i = 0; i < w.length; i++)

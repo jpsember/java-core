@@ -32,7 +32,6 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import js.base.BaseObject;
-import js.file.Files;
 import js.parsing.RegExp;
 
 public final class DirWalk extends BaseObject {

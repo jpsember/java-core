@@ -45,7 +45,6 @@ import static js.base.Tools.*;
 import js.base.BaseObject;
 import js.base.BasePrinter;
 import js.base.SystemCall;
-import js.file.DirWalk;
 import js.data.AbstractData;
 import js.data.DataUtil;
 import js.json.JSMap;
@@ -1187,7 +1186,6 @@ public final class Files extends BaseObject {
     }
   }
 
-  @SuppressWarnings("unchecked")
   public static <T extends AbstractData> T parseAbstractDataOpt(T prototype, JSMap json) {
     try {
       T result = (T) prototype.build();

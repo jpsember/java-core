@@ -53,7 +53,6 @@ public class BaseObject {
     return getClass().getSimpleName();
   }
 
-  @SuppressWarnings("unchecked")
   public final <T extends BaseObject> T setName(String name) {
     mName = checkNotNull(name);
     return (T) this;

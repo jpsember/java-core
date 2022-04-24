@@ -65,7 +65,7 @@ public class LongArray implements AbstractData {
   @Override
   public LongArray parse(Object object) {
     JSList source = (JSList) object;
-    @SuppressWarnings("unchecked")
+    
     List<Number> sourceList = (List<Number>) source.wrappedList();
     long[] w = new long[sourceList.size()];
     for (int i = 0; i < w.length; i++)

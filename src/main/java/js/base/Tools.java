@@ -740,9 +740,7 @@ public final class Tools {
     Map<K, V> map = concurrentHashMap();
     int i = 0;
     while (i < keysAndValuesList.length) {
-      @SuppressWarnings("unchecked")
       K key = (K) keysAndValuesList[i];
-      @SuppressWarnings("unchecked")
       V value = (V) keysAndValuesList[i + 1];
       i += 2;
       if (map.containsKey(key))
@@ -755,7 +753,6 @@ public final class Tools {
   /**
    * Convenience method to return pair of appropriate type, given arguments
    */
-  @SuppressWarnings("unchecked")
   public static <T1, T2> Pair<T1, T2> pair(T1 first, T2 second) {
     return new Pair(first, second);
   }

@@ -95,12 +95,10 @@ public final class DataUtil {
         throw badArg("No prototype supplied");
       dataOrNull = prototype;
     }
-    @SuppressWarnings("unchecked")
     T result = (T) dataOrNull.build().toBuilder();
     return result;
   }
 
-  @SuppressWarnings("unchecked")
   public static <T extends AbstractData> T defaultInstance(AbstractData data) {
     checkNotNull(data);
     try {
@@ -252,12 +250,10 @@ public final class DataUtil {
   private static final List IMMUTABLE_EMPTY_LIST = new ArrayList(0);
   private static final Map IMMUTABLE_EMPTY_MAP = Collections.unmodifiableMap(hashMap());
 
-  @SuppressWarnings("unchecked")
   public static <T> List<T> emptyList() {
     return IMMUTABLE_EMPTY_LIST;
   }
 
-  @SuppressWarnings("unchecked")
   public static <K, V> Map<K, V> emptyMap() {
     return IMMUTABLE_EMPTY_MAP;
   }
@@ -685,7 +681,6 @@ public final class DataUtil {
       // If it's an enum type, use an enum parser
       if (dataTypeClass.getSuperclass() == java.lang.Enum.class) {
         parser = new Function<String, Object>() {
-          @SuppressWarnings("unchecked")
           @Override
           public Object apply(String t) {
             return Enum.valueOf(dataTypeClass, valueAsString.toUpperCase());
@@ -705,14 +700,12 @@ public final class DataUtil {
     }
   }
 
-  @SuppressWarnings("unchecked")
   public static <T> List<T> parseListOfObjects(JSList sourceListOrNull, boolean nullIfSourceNull) {
     if (sourceListOrNull == null)
       return nullIfSourceNull ? null : emptyList();
     return (List<T>) immutableCopyOf(sourceListOrNull.wrappedList());
   }
 
-  @SuppressWarnings("unchecked")
   public static <T extends AbstractData> List<T> parseListOfObjects(T defaultInstance,
       JSList sourceListOrNull, boolean nullIfSourceNull) {
     if (sourceListOrNull == null)
@@ -750,7 +743,6 @@ public final class DataUtil {
             return generalIterator.hasNext();
           }
 
-          @SuppressWarnings("unchecked")
           @Override
           public T next() {
             return (T) generalIterator.next();
@@ -1145,7 +1137,6 @@ public final class DataUtil {
    *          returned
    * @return value, either optionalField or B
    */
-  @SuppressWarnings("unchecked")
   public static <F extends AbstractData> F resolveField(File baseDirectoryOrNull, F fieldPrototype,
       F optionalField, File path) {
     if (optionalField != null)

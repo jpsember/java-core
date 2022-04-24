@@ -35,7 +35,6 @@ public final class JSUtils {
    * @throws IllegalArgumentException
    *           if bad format in input
    */
-  @SuppressWarnings("unchecked")
   public static <T> T parse(CharSequence s) {
     JSParser p = new JSParser(s);
     Object value = p.readValue();
@@ -135,7 +134,6 @@ public final class JSUtils {
 
   private static JSMap toMap(Map map) {
     JSMap jsMap = new JSMap();
-    @SuppressWarnings("unchecked")
     Map<Object, Object> map2 = (Map<Object, Object>) map;
     for (Map.Entry<Object, Object> entry : map2.entrySet()) {
       String key = entry.getKey().toString();

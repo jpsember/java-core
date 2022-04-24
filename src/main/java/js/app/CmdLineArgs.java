@@ -671,7 +671,6 @@ public final class CmdLineArgs extends BaseObject {
    * Use the default's class to determine how to parse the value from the string
    * following the argument name.
    */
-  @SuppressWarnings("unchecked")
   public final <T extends Object> T nextArgIf(String name, T defaultValue) {
     checkNotNull(defaultValue);
     T effectiveDefault = (T) mArgValueMap.get(name);

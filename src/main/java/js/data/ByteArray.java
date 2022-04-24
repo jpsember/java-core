@@ -64,7 +64,6 @@ public class ByteArray implements AbstractData {
   @Override
   public ByteArray parse(Object object) {
     JSList source = (JSList) object;
-    @SuppressWarnings("unchecked")
     List<Number> byteList = (List<Number>) source.wrappedList();
     byte[] w = new byte[byteList.size()];
     for (int i = 0; i < w.length; i++)

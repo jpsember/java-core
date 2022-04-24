@@ -56,7 +56,6 @@ public final class JSList extends JSObject implements Iterable<Object> {
     p.assertCompleted();
   }
 
-  @SuppressWarnings("unchecked")
   protected JSList(List unsafeList) {
     mList = unsafeList;
   }
@@ -124,7 +123,6 @@ public final class JSList extends JSObject implements Iterable<Object> {
     return list;
   }
 
-  @SuppressWarnings("unchecked")
   public static JSList withUnsafeList(List<?> unsafeList) {
     checkNotNull(unsafeList);
     JSList result = new JSList();
@@ -280,7 +278,6 @@ public final class JSList extends JSObject implements Iterable<Object> {
     return mList.get(index);
   }
 
-  @SuppressWarnings("unchecked")
   public <T> T get(int index) {
     return (T) mList.get(index);
   }

@@ -32,7 +32,6 @@ import java.util.function.Consumer;
 
 import static js.base.Tools.*;
 
-import js.base.BaseObject;
 import js.data.AbstractData;
 import js.json.JSList;
 import js.json.JSMap;

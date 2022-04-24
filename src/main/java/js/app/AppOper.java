@@ -52,7 +52,6 @@ public abstract class AppOper extends BaseObject {
     mApp = app;
   }
 
-  @SuppressWarnings("unchecked")
   public final <T extends App> T app() {
     return (T) mApp;
   }
@@ -131,9 +130,20 @@ public abstract class AppOper extends BaseObject {
       // Start with the args file that the user supplied as the command line argument (if any)
       File argsFile = app().argsFile();
       argsFile = Files.ifEmpty(argsFile, defaultArgsFilename());
-      log("Args file:", argsFile);
 
       if (!argsFile.exists()) {
+        // If there is a version of the args file with underscores instead, raise hell
+        {
+          String name = argsFile.getName();
+          String fixed = name.replace('_', '-');
+          if (!fixed.equals(name)) {
+            File fixedFile = new File(Files.parent(argsFile), fixed);
+            if (fixedFile.exists())
+              setError("Could not find arguments file:", argsFile,
+                  "but did find one with different spelling:", fixedFile, "(assuming this is a mistake)");
+          }
+        }
+
         if (argsFileMustExist())
           throw setError("No args file specified, and no default found at:", argsFile);
       } else {
@@ -170,6 +180,8 @@ public abstract class AppOper extends BaseObject {
           a.nextArg();
         } catch (IllegalArgumentException e) {
           log("no accessor built for arg:", key, e.getMessage());
+          if (alert("for now, throwing exception"))
+            throw e;
           break;
         }
         Object value = accessor.get();
@@ -239,7 +251,6 @@ public abstract class AppOper extends BaseObject {
    * Get the json arguments that were provided by the user (which may be the
    * default ones)
    */
-  @SuppressWarnings("unchecked")
   public <T extends AbstractData> T config() {
     argsSupported();
     checkNotNull(mJsonArgs, "No default args supported");

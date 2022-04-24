@@ -74,7 +74,6 @@ public class IntArray implements AbstractData {
   @Override
   public IntArray parse(Object object) {
     JSList source = (JSList) object;
-    @SuppressWarnings("unchecked")
     List<Number> sourceList = (List<Number>) source.wrappedList();
     int[] w = new int[sourceList.size()];
     for (int i = 0; i < w.length; i++)
