@@ -137,6 +137,17 @@ public class ByteArray implements AbstractData {
     return get(size() - 1);
   }
 
+  public static ByteArray from(JSList jsonList) {
+    List<? extends Object> list = jsonList.wrappedList();
+    int size = list.size();
+    byte[] array = new byte[size];
+    for (int i = 0; i < size; i++)
+      array[i] = ((Number) list.get(i)).byteValue();
+    ByteArray result = new ByteArray();
+    result.mArray = array;
+    return result;
+  }
+
   public static final class Builder extends ByteArray {
 
     private Builder(ByteArray source) {

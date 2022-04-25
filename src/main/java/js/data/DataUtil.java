@@ -606,6 +606,17 @@ public final class DataUtil {
     return Base64.getDecoder().decode(string);
   }
 
+  /**
+   * Parse an array of bytes from a value that is either a JSList, or a base64
+   * string. This is so we are prepared to read it whether or not it has been
+   * stored in a space-saving base64 form.
+   */
+  public static byte[] parseBytesFromArrayOrBase64(Object value) {
+    if (value instanceof String)
+      return parseBase64((String) value);
+    return ByteArray.from((JSList) value).array();
+  }
+  
   public static final String DATA_TYPE_DELIMITER = "`";
   public static final String DATA_TYPE_SUFFIX_BYTE = DATA_TYPE_DELIMITER + "b";
   public static final String DATA_TYPE_SUFFIX_SHORT = DATA_TYPE_DELIMITER + "s";
