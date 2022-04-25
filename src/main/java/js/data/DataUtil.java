@@ -655,6 +655,17 @@ public final class DataUtil {
   }
 
   /**
+   * Parse an array of longs from a value that is either a JSList, or a base64
+   * string. This is so we are prepared to read it whether or not it has been
+   * stored in a space-saving base64 form.
+   */
+  public static long[] parseLongsFromArrayOrBase64(Object value) {
+    if (value instanceof String)
+      return parseBase64Longs((String) value);
+    return LongArray.from((JSList) value).array();
+  }
+
+  /**
    * Encode an array of longs to a Base64 string (using little-endian bytes as
    * an intermediate encoding); add our data type suffix
    */
