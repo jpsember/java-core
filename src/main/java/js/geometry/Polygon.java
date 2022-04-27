@@ -421,18 +421,31 @@ public final class Polygon implements AbstractData {
   }
 
   public float area() {
+    // https://en.wikipedia.org/wiki/Centroid#Of_a_polygon
     if (mSignedArea == null) {
       checkState(isWellDefined());
       checkState(isClosed());
       IPoint prev = lastVertex();
       float twiceArea = 0;
+      float xSum = 0;
+      float ySum = 0;
       for (IPoint curr : mVerts) {
-        twiceArea += prev.x * curr.y - curr.x * prev.y;
+        float factor = prev.x * curr.y - curr.x * prev.y;
+        xSum += (prev.x + curr.x) * factor;
+        ySum += (prev.y + curr.y) * factor;
+        twiceArea += factor;
         prev = curr;
       }
       mSignedArea = twiceArea * 0.5f;
+      float oneOver6A = (1 / (twiceArea * 3));
+      mCentroid = new IPoint(oneOver6A * xSum, oneOver6A * ySum);
     }
     return Math.abs(mSignedArea);
+  }
+
+  public IPoint centroid() {
+    area();
+    return mCentroid;
   }
 
   /**
@@ -713,6 +726,7 @@ public final class Polygon implements AbstractData {
   private Boolean mConvexFlag;
   private Float mPerimeter;
   private Float mSignedArea;
+  private IPoint mCentroid;
 
   /**
    * A side-effect free description
