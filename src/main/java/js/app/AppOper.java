@@ -65,9 +65,10 @@ public abstract class AppOper extends BaseObject {
   private final Object SEP = TAB(24);
 
   protected final void getHelp(BasePrinter b) {
-    if (app().hasMultipleOperations())
+    if (app().hasMultipleOperations()) {
       b.prNoCr(userCommand(), SEP);
-    b.prNoCr(getHelpDescription(), INDENT);
+      b.prNoCr(getHelpDescription(), INDENT);
+    }
     List<Object> add = getAdditionalArgs();
     if (add != null)
       b.pr(add.toArray());

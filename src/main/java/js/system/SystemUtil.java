@@ -168,8 +168,20 @@ public final class SystemUtil {
     sConsoleAppFlag = consoleAppFlag;
     if (consoleAppFlag)
       System.setProperty("java.awt.headless", "true");
+    else {
+      System.setProperty("apple.laf.useScreenMenuBar", "true");
+    }
   }
 
   public static Boolean sConsoleAppFlag;
+
+  /**
+   * For OSX, set the Dock icon
+   * 
+   * ...does nothing at present, as the functionality vanished after upgrading
+   * my version of OSX.
+   */
+  public static void setDockIcon() {
+  }
 
 }

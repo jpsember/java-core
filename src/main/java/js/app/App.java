@@ -52,7 +52,7 @@ public abstract class App extends BaseObject {
     mOrderedOperCommands = arrayList();
     registerOperations();
     mOrderedOperCommands.sort(null);
-    
+
     cmdLineArgs().parse(cmdLineArguments);
     if (cmdLineArgs().helpShown())
       return;
@@ -144,7 +144,7 @@ public abstract class App extends BaseObject {
   private static final String CLARG_ARGS_FILE = "args";
   private static final String CLARG_SHOW_EXCEPTIONS = "exceptions";
   public static final String CLARG_VALIDATE_KEYS = "check-keys";
-  
+
   public final CmdLineArgs cmdLineArgs() {
     if (mCmdLineArgs == null) {
       CmdLineArgs ca = mCmdLineArgs = new CmdLineArgs();
@@ -188,10 +188,13 @@ public abstract class App extends BaseObject {
       sb.append("\nUsage: [--<app arg>]* [<operation> <operation arg>*]*\n\n");
       sb.append("Operations:\n");
     }
+
     for (String key : mOrderedOperCommands) {
       AppOper oper = mOperMap.get(key);
       BasePrinter b = new BasePrinter();
       oper.getHelp(b);
+      if (!hasMultipleOperations())
+        sb.append("\nUsage: " + name() + " ");
       sb.append(b.toString());
       sb.append('\n');
     }
