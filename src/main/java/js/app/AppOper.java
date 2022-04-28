@@ -180,8 +180,6 @@ public abstract class AppOper extends BaseObject {
           a.nextArg();
         } catch (IllegalArgumentException e) {
           log("no accessor built for arg:", key, e.getMessage());
-          if (alert("for now, throwing exception"))
-            throw e;
           break;
         }
         Object value = accessor.get();
