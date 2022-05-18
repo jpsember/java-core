@@ -812,6 +812,7 @@ public final class Files extends BaseObject {
   /**
    * Write a number of floats to output stream, little-endian
    */
+  @Deprecated // Use DataUtil to convert floats to byte array
   public void writeFloatsLittleEndian(float[] floats, OutputStream outputStream) {
     ByteBuffer byteBuffer = ByteBuffer.allocate(floats.length * Float.BYTES).order(ByteOrder.LITTLE_ENDIAN);
     byteBuffer.asFloatBuffer().put(floats);
@@ -1384,6 +1385,7 @@ public final class Files extends BaseObject {
   // File extensions
   // ------------------------------------------------------------------
 
+  public static final String EXT_TEXT = "txt";
   public static final String EXT_BIN = "bin";
   public static final String EXT_JSON = "json";
   public static final String EXT_ZIP = "zip";

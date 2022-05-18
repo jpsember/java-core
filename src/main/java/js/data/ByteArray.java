@@ -192,6 +192,13 @@ public class ByteArray implements AbstractData {
       return this;
     }
 
+    public Builder add(byte[] bytes) {
+      ensureCapacity(size() + bytes.length);
+      System.arraycopy(bytes, 0, mArray, mUsed, bytes.length);
+      mUsed += bytes.length;
+      return this;
+    }
+
     public Builder add(int position, byte value) {
       if (position > size())
         throw badArg("attempt to insert at position:", position, "> size", size());

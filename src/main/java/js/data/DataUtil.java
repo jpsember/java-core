@@ -427,6 +427,12 @@ public final class DataUtil {
     return bytes;
   }
 
+  public static byte[] floatsToBytesLittleEndian(float[] floats) {
+    ByteBuffer byteBuffer = ByteBuffer.allocate(floats.length * Float.BYTES).order(ByteOrder.LITTLE_ENDIAN);
+    byteBuffer.asFloatBuffer().put(floats);
+    return byteBuffer.array();
+  }
+
   /**
    * Extract big-endian bytes from an array of ints
    */
@@ -616,7 +622,7 @@ public final class DataUtil {
       return parseBase64((String) value);
     return ByteArray.from((JSList) value).array();
   }
-  
+
   public static final String DATA_TYPE_DELIMITER = "`";
   public static final String DATA_TYPE_SUFFIX_BYTE = DATA_TYPE_DELIMITER + "b";
   public static final String DATA_TYPE_SUFFIX_SHORT = DATA_TYPE_DELIMITER + "s";
