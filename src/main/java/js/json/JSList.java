@@ -33,6 +33,8 @@ import java.util.*;
 import js.data.AbstractData;
 import js.data.ByteArray;
 import js.data.DataUtil;
+import js.data.DoubleArray;
+import js.data.FloatArray;
 import js.data.IntArray;
 import js.data.LongArray;
 import js.data.ShortArray;
@@ -63,6 +65,20 @@ public final class JSList extends JSObject implements Iterable<Object> {
   // ------------------------------------------------------------------
   // Factory methods
   // ------------------------------------------------------------------
+
+  /**
+   * Construct a JSList containing a sequence of doubles
+   */
+  public static JSList with(double... doubles) {
+    return DoubleArray.with(doubles).toJson();
+  }
+
+  /**
+   * Construct a JSList containing a sequence of floats
+   */
+  public static JSList with(float... floats) {
+    return FloatArray.with(floats).toJson();
+  }
 
   /**
    * Construct a JSList containing a sequence of integers
