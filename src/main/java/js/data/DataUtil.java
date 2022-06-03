@@ -663,6 +663,17 @@ public final class DataUtil {
   }
 
   /**
+   * Parse an array of ints from a value that is either a JSList, or a base64
+   * string. This is so we are prepared to read it whether or not it has been
+   * stored in a space-saving base64 form.
+   */
+  public static int[] parseIntsFromArrayOrBase64(Object value) {
+    if (value instanceof String)
+      return parseBase64Ints((String) value);
+    return IntArray.from((JSList) value).array();
+  }
+
+  /**
    * Parse a base64 string to an array of longs (using little-endian bytes as an
    * intermediate encoding)
    */
@@ -1185,6 +1196,8 @@ public final class DataUtil {
     String relativePath = elements.get(0);
     remove(elements, 0, 1);
     linkedFile = Files.fileWithinOptionalDirectory(new File(relativePath), baseDirectoryOrNull);
+    if (!linkedFile.exists())
+      return null;
     JSMap sourceMap = JSMap.from(linkedFile);
 
     JSMap nestedMap = sourceMap;

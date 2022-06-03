@@ -40,6 +40,7 @@ public final class FPoint implements AbstractData {
   // ------------------------------------------------------------------
 
   public static final FPoint DEFAULT_INSTANCE = new FPoint();
+  public static final FPoint[] EMPTY_ARRAY = new FPoint[0];
 
   @Override
   public JSList toJson() {

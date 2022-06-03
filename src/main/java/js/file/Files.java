@@ -1073,6 +1073,36 @@ public final class Files extends BaseObject {
   private File mProjectConfigDirectory;
 
   // ------------------------------------------------------------------
+  // Subprojects support
+  // ------------------------------------------------------------------
+
+  /**
+   * If a subproject.txt file exists, read its suffix. If a variant of the
+   * supplied file exists with this suffix, return that file instead
+   */
+  public static File subprojectVariant(File file) {
+    final boolean db = true && alert("debug logging is in effect");
+    File output = assertNonEmpty(file, "find subproject variant");
+    File subprojectFile = new File("subproject.txt");
+    if (db) {
+      pr("looking for subproject variant for file:", INDENT, Files.infoMap(file));
+      pr("subprojectFile:", INDENT, Files.infoMap(subprojectFile));
+    }
+
+    if (subprojectFile.exists()) {
+      String suffix = Files.readString(subprojectFile).trim();
+      if (db)
+        pr("Subproject suffix:", quote(suffix));
+      checkArgument(!suffix.isEmpty(), "No subproject found in:", subprojectFile);
+      output = Files.setExtension(new File(Files.removeExtension(file.toString()) + "-" + suffix),
+          Files.getExtension(file));
+      if (db)
+        pr("found variant:", INDENT, Files.infoMap(output));
+    }
+    return output;
+  }
+
+  // ------------------------------------------------------------------
   // Wrappers for File methods that throw checked exceptions
   // ------------------------------------------------------------------
 
