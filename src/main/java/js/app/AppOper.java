@@ -101,36 +101,8 @@ public abstract class AppOper extends BaseObject {
     return false;
   }
 
-  @Deprecated
-  public static File findSubprojectVariant(File file) {
-    todo("move this to Files");
-    File output = Files.assertNonEmpty(file);
-    File subprojectFile = new File("subproject.txt");
-    pr("looking for subproject variant for file:",INDENT,Files.infoMap(file));
-    pr("subprojectFile:",INDENT,Files.infoMap(subprojectFile));
-    if (subprojectFile.exists()) {
-      String suffix = Files.readString(subprojectFile).trim();
-      pr("suffix:",suffix);
-      checkArgument(nonEmpty(suffix), "No subproject found in:", subprojectFile);
-      output = Files.setExtension(new File(Files.removeExtension(file.toString()) + "-" + suffix),
-          Files.getExtension(file));
-      pr("output:",INDENT,Files.infoMap(output));
-    }
-    return output;
-  }
-
   private String defaultArgsFilename() {
-    String base = userCommand();
-    todo("delete this unused stuff... hook into 'subproject.txt' if it exists");
-    if (false) {
-      File subprojectFile = new File("subproject.txt");
-      if (subprojectFile.exists()) {
-        String suffix = Files.readString(subprojectFile).trim();
-        checkArgument(nonEmpty(suffix), "No subproject found in:", subprojectFile);
-        base = base + "-" + suffix;
-      }
-    }
-    return base + "-args.json";
+    return userCommand() + "-args.json";
   }
 
   final void processArgs() {
@@ -158,8 +130,7 @@ public abstract class AppOper extends BaseObject {
 
       // Start with the args file that the user supplied as the command line argument (if any)
       File argsFile = app().argsFile();
-      argsFile = Files.ifEmpty(argsFile, defaultArgsFilename());
-      argsFile = findSubprojectVariant(argsFile);
+      argsFile = Files.subprojectVariant(Files.ifEmpty(argsFile, defaultArgsFilename()));
       log("...looking for arguments in:", argsFile);
       if (!argsFile.exists()) {
         // If there is a version of the args file with underscores instead, raise hell

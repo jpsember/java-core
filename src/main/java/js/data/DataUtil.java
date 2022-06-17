@@ -157,18 +157,11 @@ public final class DataUtil {
    * be the requested size)
    */
   public static int[] intArray(int size, int[] optionalExistingArray) {
-    if (optionalExistingArray != null)
-      return assertLength(optionalExistingArray, size, null);
+    if (optionalExistingArray != null) {
+      assertLength(optionalExistingArray.length, size, null);
+      return optionalExistingArray;
+    }
     return new int[size];
-  }
-
-  /**
-   * Verify int array has a particular length
-   */
-  @Deprecated // Use assertLength(int arrayLength)
-  public static int[] assertLength(int[] array, int expectedLength, String contextOrNull) {
-    assertLength(array.length, expectedLength, contextOrNull);
-    return array;
   }
 
   /**
@@ -637,12 +630,36 @@ public final class DataUtil {
   }
 
   /**
+   * Encode a byte array as a Base64 string if it is fairly long
+   */
+  public static Object encodeBase64Maybe(byte[] byteArray) {
+    if (byteArray.length > 8)
+      return encodeBase64(byteArray);
+    return JSList.with(byteArray);
+  }
+
+  /**
    * Parse a base64 string to an array of shorts (using little-endian bytes as
    * an intermediate encoding)
    */
   public static short[] parseBase64Shorts(String string) {
     string = removeDataTypeSuffix(string, DATA_TYPE_SUFFIX_SHORT);
     return bytesToShortsLittleEndian(Base64.getDecoder().decode(string));
+  }
+
+  public static short[] parseShortsFromArrayOrBase64(Object value) {
+    if (value instanceof String)
+      return parseBase64Shorts((String) value);
+    return ShortArray.from((JSList) value).array();
+  }
+
+  /**
+   * Encode a short array as a Base64 string if it is fairly long
+   */
+  public static Object encodeBase64Maybe(short[] shortArray) {
+    if (shortArray.length > 8)
+      return encodeBase64(shortArray);
+    return JSList.with(shortArray);
   }
 
   /**
@@ -694,12 +711,30 @@ public final class DataUtil {
   }
 
   /**
+   * Encode an array of longs to a Base64 string if it is somewhat long
+   */
+  public static Object encodeBase64Maybe(long[] longArray) {
+    if (longArray.length > 8)
+      return encodeBase64(longArray);
+    return JSList.with(longArray);
+  }
+
+  /**
    * Encode an array of longs to a Base64 string (using little-endian bytes as
    * an intermediate encoding); add our data type suffix
    */
-  public static String encodeBase64(long[] intArray) {
-    byte[] bytes = longsToBytesLittleEndian(intArray);
+  public static String encodeBase64(long[] longArray) {
+    byte[] bytes = longsToBytesLittleEndian(longArray);
     return Base64.getEncoder().encodeToString(bytes) + DATA_TYPE_SUFFIX_LONG;
+  }
+
+  /**
+   * Encode an array of ints to a Base64 string if it is somewhat long
+   */
+  public static Object encodeBase64Maybe(int[] intArray) {
+    if (intArray.length > 8)
+      return encodeBase64(intArray);
+    return JSList.with(intArray);
   }
 
   /**

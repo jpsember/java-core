@@ -40,7 +40,7 @@ public class ShortArray implements AbstractData {
   // The abstract data classes will attempt to use a class variable to parse 
   // such items, so supply one that can act as a parser
   //
-  public static final ShortArray DEFAULT_INSTANCE = new ShortArray();
+  public static final ShortArray DEFAULT_INSTANCE = new ShortArray(DataUtil.EMPTY_SHORT_ARRAY);
 
   @Override
   public Builder toBuilder() {
@@ -68,9 +68,7 @@ public class ShortArray implements AbstractData {
     short[] w = new short[sourceList.size()];
     for (int i = 0; i < w.length; i++)
       w[i] = sourceList.get(i).shortValue();
-    ShortArray result = new ShortArray();
-    result.mArray = w;
-    return result;
+    return new ShortArray(w);
   }
 
   @Override
@@ -101,13 +99,22 @@ public class ShortArray implements AbstractData {
   }
 
   public static Builder newBuilder() {
-    return new Builder(DEFAULT_INSTANCE);
+    return new Builder(DataUtil.EMPTY_SHORT_ARRAY);
   }
 
   public static ShortArray with(short... shorts) {
-    ShortArray r = new ShortArray();
+    ShortArray r = new ShortArray(shorts);
     r.mArray = shorts;
     return r;
+  }
+
+  public static ShortArray from(JSList jsonList) {
+    List<? extends Object> list = jsonList.wrappedList();
+    int size = list.size();
+    short[] array = new short[size];
+    for (int i = 0; i < size; i++)
+      array[i] = ((Number) list.get(i)).shortValue();
+    return new ShortArray(array);
   }
 
   /**
@@ -143,9 +150,9 @@ public class ShortArray implements AbstractData {
 
   public static final class Builder extends ShortArray {
 
-    private Builder(ShortArray source) {
-      mUsed = source.mArray.length;
-      mArray = Arrays.copyOf(source.mArray, mUsed);
+    private Builder(short[] source) {
+      super(source);
+      mUsed = mArray.length;
     }
 
     @Override
@@ -166,9 +173,7 @@ public class ShortArray implements AbstractData {
 
     @Override
     public ShortArray build() {
-      ShortArray r = new ShortArray();
-      r.mArray = trimmedArray();
-      return r;
+      return new ShortArray(trimmedArray());
     }
 
     @Override
@@ -220,9 +225,13 @@ public class ShortArray implements AbstractData {
   }
 
   // ------------------------------------------------------------------
+  //
+  //  private ShortArray() {
+  //    mArray = DataUtil.EMPTY_SHORT_ARRAY;
+  //  }
 
-  private ShortArray() {
-    mArray = DataUtil.EMPTY_SHORT_ARRAY;
+  private ShortArray(short[] wrappedArray) {
+    mArray = wrappedArray;
   }
 
   protected short[] mArray;

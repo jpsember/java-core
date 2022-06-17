@@ -1081,7 +1081,7 @@ public final class Files extends BaseObject {
    * supplied file exists with this suffix, return that file instead
    */
   public static File subprojectVariant(File file) {
-    final boolean db = true && alert("debug logging is in effect");
+    final boolean db = false && alert("debug logging is in effect");
     File output = assertNonEmpty(file, "find subproject variant");
     File subprojectFile = new File("subproject.txt");
     if (db) {
