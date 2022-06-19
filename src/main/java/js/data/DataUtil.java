@@ -621,6 +621,7 @@ public final class DataUtil {
   public static final String DATA_TYPE_SUFFIX_SHORT = DATA_TYPE_DELIMITER + "s";
   public static final String DATA_TYPE_SUFFIX_INT = DATA_TYPE_DELIMITER + "i";
   public static final String DATA_TYPE_SUFFIX_LONG = DATA_TYPE_DELIMITER + "l";
+  public static final String DATA_TYPE_SUFFIX_FLOAT = DATA_TYPE_DELIMITER + "f";
 
   /**
    * Encode a byte array as a Base64 string, with our data type suffix added
@@ -668,6 +669,27 @@ public final class DataUtil {
    */
   public static String encodeBase64(short[] shortArray) {
     return Base64.getEncoder().encodeToString(shortsToBytesLittleEndian(shortArray)) + DATA_TYPE_SUFFIX_SHORT;
+  }
+
+  /**
+   * Encode a float array as a Base64 string if it is fairly long, otherwise as
+   * a JSList
+   */
+  public static Object encodeBase64Maybe(float[] floatArray) {
+    if (floatArray.length > 8) {
+      byte[] bytes = floatsToBytesLittleEndian(floatArray);
+      return Base64.getEncoder().encodeToString(bytes) + DATA_TYPE_SUFFIX_FLOAT;
+    }
+    return JSList.with(floatArray);
+  }
+
+  public static float[] parseFloatsFromArrayOrBase64(Object value) {
+    if (value instanceof String) {
+      String string = (String) value;
+      string = removeDataTypeSuffix(string, DATA_TYPE_SUFFIX_FLOAT);
+      return bytesToFloatsLittleEndian(Base64.getDecoder().decode(string));
+    }
+    return FloatArray.from((JSList) value).array();
   }
 
   /**

@@ -40,7 +40,7 @@ public class FloatArray implements AbstractData {
   // The abstract data classes will attempt to use a class variable to parse 
   // such items, so supply one that can act as a parser
   //
-  public static final FloatArray DEFAULT_INSTANCE = new FloatArray();
+  public static final FloatArray DEFAULT_INSTANCE = new FloatArray(DataUtil.EMPTY_FLOAT_ARRAY);
 
   @Override
   public Builder toBuilder() {
@@ -67,9 +67,16 @@ public class FloatArray implements AbstractData {
     float[] w = new float[sourceList.size()];
     for (int i = 0; i < w.length; i++)
       w[i] = sourceList.get(i).floatValue();
-    FloatArray result = new FloatArray();
-    result.mArray = w;
-    return result;
+    return new FloatArray(w);
+  }
+
+  public static FloatArray from(JSList jsonList) {
+    List<? extends Object> list = jsonList.wrappedList();
+    int size = list.size();
+    float[] array = new float[size];
+    for (int i = 0; i < size; i++)
+      array[i] = ((Number) list.get(i)).floatValue();
+    return new FloatArray(array);
   }
 
   @Override
@@ -104,11 +111,9 @@ public class FloatArray implements AbstractData {
   }
 
   public static FloatArray with(float... floats) {
-    FloatArray r = new FloatArray();
-    r.mArray = floats;
-    return r;
+    return new FloatArray(floats);
   }
-  
+
   /**
    * Get contents as a primitive array
    */
@@ -135,8 +140,8 @@ public class FloatArray implements AbstractData {
   public static final class Builder extends FloatArray {
 
     private Builder(FloatArray source) {
-      mUsed = source.mArray.length;
-      mArray = Arrays.copyOf(source.mArray, mUsed);
+      super(Arrays.copyOf(source.mArray, source.mArray.length));
+      mUsed = mArray.length;
     }
 
     @Override
@@ -157,9 +162,7 @@ public class FloatArray implements AbstractData {
 
     @Override
     public FloatArray build() {
-      FloatArray r = new FloatArray();
-      r.mArray = trimmedArray();
-      return r;
+      return new FloatArray(trimmedArray());
     }
 
     @Override
@@ -212,8 +215,8 @@ public class FloatArray implements AbstractData {
 
   // ------------------------------------------------------------------
 
-  private FloatArray() {
-    mArray = DataUtil.EMPTY_FLOAT_ARRAY;
+  private FloatArray(float[] wrappedArray) {
+    mArray = wrappedArray;
   }
 
   protected float[] mArray;
