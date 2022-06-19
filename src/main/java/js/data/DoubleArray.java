@@ -40,7 +40,7 @@ public class DoubleArray implements AbstractData {
   // The abstract data classes will attempt to use a class variable to parse 
   // such items, so supply one that can act as a parser
   //
-  public static final DoubleArray DEFAULT_INSTANCE = new DoubleArray();
+  public static final DoubleArray DEFAULT_INSTANCE = new DoubleArray(DataUtil.EMPTY_DOUBLE_ARRAY);
 
   @Override
   public Builder toBuilder() {
@@ -67,9 +67,7 @@ public class DoubleArray implements AbstractData {
     double[] w = new double[sourceList.size()];
     for (int i = 0; i < w.length; i++)
       w[i] = sourceList.get(i).doubleValue();
-    DoubleArray result = new DoubleArray();
-    result.mArray = w;
-    return result;
+    return new DoubleArray(w);
   }
 
   @Override
@@ -104,9 +102,7 @@ public class DoubleArray implements AbstractData {
   }
 
   public static DoubleArray with(double... floats) {
-    DoubleArray r = new DoubleArray();
-    r.mArray = floats;
-    return r;
+    return new DoubleArray(floats);
   }
 
   /**
@@ -135,8 +131,8 @@ public class DoubleArray implements AbstractData {
   public static final class Builder extends DoubleArray {
 
     private Builder(DoubleArray source) {
-      mUsed = source.mArray.length;
-      mArray = Arrays.copyOf(source.mArray, mUsed);
+      super(Arrays.copyOf(source.mArray, source.mArray.length));
+      mUsed = mArray.length;
     }
 
     @Override
@@ -157,9 +153,7 @@ public class DoubleArray implements AbstractData {
 
     @Override
     public DoubleArray build() {
-      DoubleArray r = new DoubleArray();
-      r.mArray = trimmedArray();
-      return r;
+      return new DoubleArray(trimmedArray());
     }
 
     @Override
@@ -210,10 +204,19 @@ public class DoubleArray implements AbstractData {
     private int mUsed;
   }
 
+  public static DoubleArray from(JSList jsonList) {
+    List<? extends Object> list = jsonList.wrappedList();
+    int size = list.size();
+    double[] array = new double[size];
+    for (int i = 0; i < size; i++)
+      array[i] = ((Number) list.get(i)).doubleValue();
+    return new DoubleArray(array);
+  }
+
   // ------------------------------------------------------------------
 
-  private DoubleArray() {
-    mArray = DataUtil.EMPTY_DOUBLE_ARRAY;
+  private DoubleArray(double[] array) {
+    mArray = array;
   }
 
   protected double[] mArray;

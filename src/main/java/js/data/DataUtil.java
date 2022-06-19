@@ -572,6 +572,16 @@ public final class DataUtil {
     return dest;
   }
 
+  /**
+   * Read little-endian doubles from byte array
+   */
+  public static double[] bytesToDoublesLittleEndian(byte[] bytes) {
+    ByteBuffer byteBuffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
+    double[] dest = new double[bytes.length / Double.BYTES];
+    byteBuffer.asDoubleBuffer().get(dest);
+    return dest;
+  }
+
   public static byte[] toByteArray(float[] floats) {
     return toByteArray(floats, ByteOrder.BIG_ENDIAN);
   }
@@ -622,6 +632,7 @@ public final class DataUtil {
   public static final String DATA_TYPE_SUFFIX_INT = DATA_TYPE_DELIMITER + "i";
   public static final String DATA_TYPE_SUFFIX_LONG = DATA_TYPE_DELIMITER + "l";
   public static final String DATA_TYPE_SUFFIX_FLOAT = DATA_TYPE_DELIMITER + "f";
+  public static final String DATA_TYPE_SUFFIX_DOUBLE = DATA_TYPE_DELIMITER + "d";
 
   /**
    * Encode a byte array as a Base64 string, with our data type suffix added
@@ -683,6 +694,9 @@ public final class DataUtil {
     return JSList.with(floatArray);
   }
 
+  /**
+   * Parse float array from a Base64 string or a JSList
+   */
   public static float[] parseFloatsFromArrayOrBase64(Object value) {
     if (value instanceof String) {
       String string = (String) value;
@@ -690,6 +704,18 @@ public final class DataUtil {
       return bytesToFloatsLittleEndian(Base64.getDecoder().decode(string));
     }
     return FloatArray.from((JSList) value).array();
+  }
+
+  /**
+   * Parse double array from a Base64 string or a JSList
+   */
+  public static double[] parseDoublesFromArrayOrBase64(Object value) {
+    if (value instanceof String) {
+      String string = (String) value;
+      string = removeDataTypeSuffix(string, DATA_TYPE_SUFFIX_DOUBLE);
+      return bytesToDoublesLittleEndian(Base64.getDecoder().decode(string));
+    }
+    return DoubleArray.from((JSList) value).array();
   }
 
   /**
