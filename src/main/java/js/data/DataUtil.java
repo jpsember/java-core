@@ -426,6 +426,12 @@ public final class DataUtil {
     return byteBuffer.array();
   }
 
+  public static byte[] doublesToBytesLittleEndian(double[] doubles) {
+    ByteBuffer byteBuffer = ByteBuffer.allocate(doubles.length * Double.BYTES).order(ByteOrder.LITTLE_ENDIAN);
+    byteBuffer.asDoubleBuffer().put(doubles);
+    return byteBuffer.array();
+  }
+
   /**
    * Extract big-endian bytes from an array of ints
    */
@@ -704,6 +710,18 @@ public final class DataUtil {
       return bytesToFloatsLittleEndian(Base64.getDecoder().decode(string));
     }
     return FloatArray.from((JSList) value).array();
+  }
+
+  /**
+   * Encode a double array as a Base64 string if it is fairly long, otherwise as
+   * a JSList
+   */
+  public static Object encodeBase64Maybe(double[] doubleArray) {
+    if (doubleArray.length > 8) {
+      byte[] bytes = doublesToBytesLittleEndian(doubleArray);
+      return Base64.getEncoder().encodeToString(bytes) + DATA_TYPE_SUFFIX_DOUBLE;
+    }
+    return JSList.with(doubleArray);
   }
 
   /**
