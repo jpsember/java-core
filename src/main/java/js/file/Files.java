@@ -812,11 +812,9 @@ public final class Files extends BaseObject {
   /**
    * Write a number of floats to output stream, little-endian
    */
-  @Deprecated // Use DataUtil to convert floats to byte array
   public void writeFloatsLittleEndian(float[] floats, OutputStream outputStream) {
-    ByteBuffer byteBuffer = ByteBuffer.allocate(floats.length * Float.BYTES).order(ByteOrder.LITTLE_ENDIAN);
-    byteBuffer.asFloatBuffer().put(floats);
-    write(byteBuffer.array(), outputStream);
+    byte[] bytes = DataUtil.floatsToBytesLittleEndian(floats);
+    write(bytes, outputStream);
   }
 
   /**
