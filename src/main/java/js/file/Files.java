@@ -708,7 +708,7 @@ public final class Files extends BaseObject {
         String str = dir.getPath();
         if (str.length() < 30)
           str = dir.getAbsolutePath();
-        if (str.length() < 30)
+        if (str.length() < 30 && !str.endsWith("/gen"))
           die("Can't delete directory whose length is too short;", dir);
       }
       log("Delete directory:", dir);
