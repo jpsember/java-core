@@ -112,6 +112,13 @@ public final class DateTimeTools {
   /**
    * A succinct human-readable description, without the date
    */
+  public static String humanTimeString() {
+    return humanTimeString(getRealMs());
+  }
+
+  /**
+   * A succinct human-readable description, without the date
+   */
   public static String humanTimeString(long epoch) {
     return humanTimeString(epoch, OUR_TIME_ZONE, FMT_SUCCINCT);
   }
