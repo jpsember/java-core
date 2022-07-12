@@ -345,6 +345,17 @@ public final class Files extends BaseObject {
     return file;
   }
 
+  public static File addTempSuffix(File file) {
+    return new File(file.toString() + "." + EXT_TMP);
+  }
+
+  public static File removeTempSuffix(File file) {
+    String x = file.toString();
+    String y = chomp(x, "." + EXT_TMP);
+    checkArgument(y.length() < x.length(), "missing temp suffix");
+    return new File(y);
+  }
+
   /**
    * Add extension to file if it doesn't have one
    */
@@ -1417,5 +1428,6 @@ public final class Files extends BaseObject {
   public static final String EXT_BIN = "bin";
   public static final String EXT_JSON = "json";
   public static final String EXT_ZIP = "zip";
+  public static final String EXT_TMP = "tmp";
 
 }
