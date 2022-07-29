@@ -845,11 +845,22 @@ public final class Files extends BaseObject {
   }
 
   /**
-   * Read a number of floats from file, little-endian
+   * Read floats from file, little-endian
    */
   public static float[] readFloatsLittleEndian(File file, String context) {
     byte[] bytes = toByteArray(file, context);
     ByteBuffer byteBuffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
+    float[] dest = new float[bytes.length / Float.BYTES];
+    byteBuffer.asFloatBuffer().get(dest);
+    return dest;
+  }
+
+  /**
+   * Read floats from file, big-endian
+   */
+  public static float[] readFloatsBigEndian(File file, String context) {
+    byte[] bytes = toByteArray(file, context);
+    ByteBuffer byteBuffer = ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN);
     float[] dest = new float[bytes.length / Float.BYTES];
     byteBuffer.asFloatBuffer().get(dest);
     return dest;

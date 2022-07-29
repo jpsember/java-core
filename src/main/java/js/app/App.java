@@ -48,6 +48,9 @@ public abstract class App extends BaseObject {
    * Subclass should call this method from its main(String[]) method
    */
   public final void startApplication(String[] cmdLineArguments) {
+    
+    todo("Add support for 'dev mode', kill earlier instances, etc");
+    
     mOperMap = hashMap();
     mOrderedOperCommands = arrayList();
     registerOperations();
@@ -119,8 +122,13 @@ public abstract class App extends BaseObject {
     }
   }
 
-  public final boolean catchingErrors() {
-    return !cmdLineArgs().get(CLARG_SHOW_EXCEPTIONS);
+  /**
+   * Determine if exceptions should not be caught, and resulting stack traces
+   * and whatnot dumped to stderr in usual way; i.e., if CLARG_SHOW_EXCEPTIONS
+   * is true
+   */
+  public final boolean showExceptions() {
+    return cmdLineArgs().get(CLARG_SHOW_EXCEPTIONS);
   }
 
   @Override

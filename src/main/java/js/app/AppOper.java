@@ -62,7 +62,7 @@ public abstract class AppOper extends BaseObject {
   // Help
   // ------------------------------------------------------------------
 
-  private final Object SEP = TAB(24);
+  private static final Object SEP = TAB(24);
 
   protected final void getHelp(BasePrinter b) {
     if (app().hasMultipleOperations()) {
