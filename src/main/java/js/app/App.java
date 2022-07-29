@@ -49,8 +49,6 @@ public abstract class App extends BaseObject {
    */
   public final void startApplication(String[] cmdLineArguments) {
     
-    todo("Add support for 'dev mode', kill earlier instances, etc");
-    
     mOperMap = hashMap();
     mOrderedOperCommands = arrayList();
     registerOperations();
