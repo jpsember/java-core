@@ -1189,12 +1189,16 @@ public final class Files extends BaseObject {
   }
 
   public FileOutputStream outputStream(File file) {
+    return outputStream(file, false);
+  }
+
+  public FileOutputStream outputStream(File file, boolean append) {
     if (verbose())
-      log("opening output stream for:", file);
+      log("opening output stream for:", file, "append:", append);
     if (dryRun())
       throw notSupported("Not supported in 'dryrun' mode");
     try {
-      return new FileOutputStream(file);
+      return new FileOutputStream(file, append);
     } catch (IOException e) {
       throw asFileException(e);
     }
