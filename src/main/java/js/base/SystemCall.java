@@ -62,9 +62,14 @@ public final class SystemCall extends BaseObject {
     for (Object arg : argumentObjects) {
       String argStr = arg.toString();
       mArgList.add(argStr);
-//      if (argStr.charAt(0) == '"' || argStr.charAt(0) == '\'')
-//        throw badArg("Unexpected quoting in SystemCall argument?", argStr);
     }
+    return this;
+  }
+
+  public SystemCall sudo() {
+    assertMutable();
+    checkState(mArgList.isEmpty(), "sudo must precede any arguments (including any previous sudo)");
+    arg("sudo");
     return this;
   }
 
