@@ -34,6 +34,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 
+import js.data.DataUtil;
+import js.json.JSList;
+
 import static js.base.Tools.*;
 
 /**
@@ -91,12 +94,12 @@ public final class BasePrinter {
   private static final int BRK_COLUMN = 1;
   private static final int BRK_LINE = 2;
   private static final int BRK_PARAGRAPH = 3;
- private void appendSpace() {
+
+  private void appendSpace() {
     if (mColumn != 0)
       mPendingBreak = Math.max(mPendingBreak, BRK_COLUMN);
   }
 
- 
   private void appendLineBreak() {
     mPendingBreak = Math.max(mPendingBreak, BRK_LINE);
   }
@@ -450,5 +453,9 @@ public final class BasePrinter {
     map.put(Collection.class, (x, p) -> p.append((Collection) x));
     map.put(BitSet.class, (x, p) -> p.append((BitSet) x));
     map.put(Instant.class, (x, p) -> p.append((Instant) x));
+    map.put(DataUtil.EMPTY_STRING_ARRAY.getClass(), (x, p) -> p.append(JSList.with((String[]) x)));
+    map.put(DataUtil.EMPTY_LONG_ARRAY.getClass(), (x, p) -> p.append(JSList.with((long[]) x)));
+    map.put(DataUtil.EMPTY_INT_ARRAY.getClass(), (x, p) -> p.append(JSList.with((int[]) x)));
+    map.put(DataUtil.EMPTY_FLOAT_ARRAY.getClass(), (x, p) -> p.append(JSList.with((float[]) x)));
   }
 }

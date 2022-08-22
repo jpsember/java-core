@@ -730,6 +730,19 @@ public final class Files extends BaseObject {
     }
   }
 
+  /**
+   * Delete a directory, but for safety, ensure its basename includes a
+   * particular substring
+   */
+  public void deleteDirectory(File dir, String requiredSubstring) {
+    assertNonEmpty(dir, "deleteDirectory");
+    checkArgument(requiredSubstring.length() > 5, "required substring is too short");
+    String baseName = basename(dir);
+    checkArgument(baseName.contains(requiredSubstring), "attempt to delete directory", dir,
+        "that doesn't contain the required substring", quote(requiredSubstring));
+    deleteDirectory(dir);
+  }
+
   public void setModifiedTime(File file, long timeMs) {
     Path p = file.toPath();
     try {
