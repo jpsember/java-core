@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import js.json.JSMap;
+import js.base.BaseObject;
 import js.parsing.RegExp;
 
 public final class BinaryCodec {
@@ -16,107 +16,17 @@ public final class BinaryCodec {
   private static Pattern BASE64_PATTERN = RegExp.pattern("\"[A-Za-z0-9+\\/]+={0,2}(?:`[bsilfd])?\"");
   private static int VERSION_1 = 0xfe;
 
-  public static byte[] encode(JSMap json) {
-    String asText = json.toString();
-
-    List<Chunk> chunks = arrayList();
-
-    StringBuilder trimmedJsonMap = new StringBuilder();
-
-    int cursor = 0;
-    Matcher m = BASE64_PATTERN.matcher(asText);
-    while (m.find()) {
-      int s = m.start();
-      int e = m.end();
-
-      int bstart = s + 1; // past   "
-      int bend;
-
-      // Determine if it included the optional `[bsildf]
-      int optStart = e - 2;
-      if (optStart >= bstart && asText.charAt(optStart) == '`')
-        bend = e - 3; // before `[bsildf]"
-      else
-        bend = e - 1; // before "
-
-      // don't bother encoding things that won't save much
-      int blen = bend - bstart;
-      if (blen < 8)
-        continue;
-
-      String base64Substring = asText.substring(bstart, bend);
-      byte[] decodedBase64Bytes;
-      try {
-        decodedBase64Bytes = Base64.getDecoder().decode(base64Substring);
-      } catch (IllegalArgumentException exc) {
-        // this wasn't a base64 encoded string, so ignore this match
-        continue;
-      }
-
-      // append fragment preceding this section to the json template
-      trimmedJsonMap.append(asText.substring(cursor, bstart));
-      cursor = bend;
-
-      Chunk base64Chunk = new Chunk();
-      //   base64Chunk.offset = trimmedJsonMap.length();
-      base64Chunk.length = decodedBase64Bytes.length;
-      base64Chunk.bytes = decodedBase64Bytes;
-      chunks.add(base64Chunk);
-    }
-
-    // append any remaining fragment
-    if (cursor < asText.length())
-      trimmedJsonMap.append(asText.substring(cursor, asText.length()));
-
-    // Now use chunks to produce result
-
-    ByteArray.Builder ib = ByteArray.newBuilder();
-    // ib.add(VERSION_1);
-
-    // Encode number of chunks in next three bytes (in big-endian order)
-
-    // Include one for the template chunk, which is first
-    int chunkCount = 1 + chunks.size();
-    checkArgument(chunkCount < (1 << 24), "too many chunks");
-
-    addInt(ib, chunkCount | (VERSION_1 << 24));
-    //    ib.add((byte) (chunkCount >> 16));
-    //    ib.add((byte) (chunkCount >> 8));
-    //    ib.add((byte) (chunkCount >> 0));
-
-    String jsonTemplate = trimmedJsonMap.toString();
-    byte[] jsonTemplateBytes = jsonTemplate.getBytes();
-
-    // Store chunk #0: the json template
-    addInt(ib, jsonTemplateBytes.length);
-    addInt(ib, 0); // offset for chunk zero is not used
-    ib.add(jsonTemplateBytes);
-
-    int offset = jsonTemplateBytes.length;
-
-    for (Chunk c : chunks) {
-      addInt(ib, c.length);
-      addInt(ib, offset);
-      ib.add(c.bytes);
-    }
-    return ib.array();
-  }
-
-  private static void addInt(ByteArray.Builder ib, int value) {
-    ib.add((byte) (value >> 24));
-    ib.add((byte) (value >> 16));
-    ib.add((byte) (value >> 8));
-    ib.add((byte) (value));
+  public static byte[] encode(CharSequence c) {
+    return new OurEncoder(c).result();
   }
 
   private static class Chunk {
     int length; // length of uncompressed bytes
-    //  int offset; // where to insert the base64 sequence within the json template
+    int offset; // where to insert the base64 sequence within the json template
     byte[] bytes; // optional, bytes decoded from base64
   }
 
-  public static JSMap decode(byte[] encodedBytes) {
-
+  public static String decode(byte[] encodedBytes) {
     ByteParser parser = new ByteParser(encodedBytes);
     int header = parser.readInt();
     int version = (int) ((header >> 24) & 0xff);
@@ -126,7 +36,7 @@ public final class BinaryCodec {
     if (chunkCount < 1)
       badArg("bad chunk count in header:", header);
 
-    StringBuilder sb = new StringBuilder();
+    StringBuilder sb = new StringBuilder((int) (encodedBytes.length * 4f / 3));
 
     // Read chunk #0, the json template
     int len = parser.readInt();
@@ -135,25 +45,25 @@ public final class BinaryCodec {
     int cursor = 0;
 
     for (int chunkNumber = 1; chunkNumber < chunkCount; chunkNumber++) {
-
       int chunkLen = parser.readInt();
       int offset = parser.readInt();
       if (cursor < offset) {
         sb.append(template.substring(cursor, offset));
         cursor = offset;
       }
-
-      String base64String = 
-      Base64.getEncoder().encodeToString(parser.readBytes(chunkLen));
+      String base64String = Base64.getEncoder().encodeToString(parser.readBytes(chunkLen));
       sb.append(base64String);
     }
-
-    return new JSMap(sb);
+    int offset = template.length();
+    if (cursor < offset) {
+      sb.append(template.substring(cursor, offset));
+    }
+    return sb.toString();
   }
 
   private static class ByteParser {
-    ByteParser(byte[] buffer) {
 
+    ByteParser(byte[] buffer) {
       mBuffer = buffer;
     }
 
@@ -187,4 +97,134 @@ public final class BinaryCodec {
     private int mCursor;
   }
 
+  private static class OurEncoder extends BaseObject {
+
+    OurEncoder(CharSequence input) {
+      asText = input.toString();
+    }
+
+    byte[] result() {
+      if (mResult != null)
+        return mResult;
+
+      List<Chunk> chunks = arrayList();
+
+      StringBuilder trimmedJsonMap = new StringBuilder();
+
+      int cursor = 0;
+      Matcher m = BASE64_PATTERN.matcher(asText);
+
+      while (m.find()) {
+        int matchStart = m.start();
+        int matchEnd = m.end();
+
+        int base64Start = matchStart + 1; // past   "
+        int base64End;
+
+        // Determine if it included the optional `[bsildf]
+        //
+        base64End = matchEnd - 3;
+        if (base64End < base64Start || asText.charAt(base64End) != '`')
+          base64End = matchEnd - 1; // before "
+
+        int base64Length = base64End - base64Start;
+
+        if (verbose())
+          log("found base64 section of from:", base64Start, "to:", base64End, "length:", base64Length,
+              quote(asText.substring(base64Start, base64End)));
+
+        // If the substring isn't a multiple of 4, assume it isn't base64 (we expect any base64
+        // encoded data to have appropriate padding characters '=')
+        //
+        if (base64Length % 4 != 0)
+          continue;
+
+        // Don't encode it if the overhead of doing so means we aren't saving memory
+        //
+        // n (base64) input bytes -> 3n/4 + 8 output bytes
+        //
+        //  breakeven is when (3n/4 + 8) = n,  or n = 32
+        //
+        if (base64Length <= 32) {
+          log("not bothering to encode it");
+          continue;
+        }
+
+        String base64Substring = asText.substring(base64Start, base64End);
+
+        if (verbose())
+          log("potential base64 string:", quote(base64Substring));
+        byte[] decodedBase64Bytes;
+        try {
+          decodedBase64Bytes = Base64.getDecoder().decode(base64Substring);
+          log("decoded base64 to byte array of length:", decodedBase64Bytes.length);
+        } catch (IllegalArgumentException e) {
+          // this wasn't a base64 encoded string, so ignore this match
+          continue;
+        }
+
+        // append fragment preceding this section to the json template
+        trimmedJsonMap.append(asText.substring(cursor, base64Start));
+        log("appended fragment preceding section, now:", INDENT, quote(trimmedJsonMap));
+        cursor = base64End;
+
+        Chunk c = new Chunk();
+        c.length = decodedBase64Bytes.length;
+        c.bytes = decodedBase64Bytes;
+        c.offset = trimmedJsonMap.length();
+        chunks.add(c);
+      }
+
+      // append any remaining fragment
+      if (cursor < asText.length())
+        trimmedJsonMap.append(asText.substring(cursor, asText.length()));
+
+      log("json template:", INDENT, trimmedJsonMap);
+
+      // Now use chunks to produce result
+
+      mBytesBuffer = ByteArray.newBuilder();
+      // ib.add(VERSION_1);
+
+      // Encode number of chunks in next three bytes (in big-endian order)
+
+      // Include one for the template chunk, which is first
+      int chunkCount = 1 + chunks.size();
+      checkArgument(chunkCount < (1 << 24), "too many chunks");
+
+      addInt(chunkCount | (VERSION_1 << 24));
+
+      String jsonTemplate = trimmedJsonMap.toString();
+      byte[] jsonTemplateBytes = jsonTemplate.getBytes();
+
+      // Store chunk #0: the json template
+      addInt(jsonTemplateBytes.length);
+      addInt(0); // offset for chunk zero is not used
+      mBytesBuffer.add(jsonTemplateBytes);
+
+      //int offset = jsonTemplateBytes.length;
+
+      for (Chunk c : chunks) {
+        addInt(c.length);
+        addInt(c.offset);
+        mBytesBuffer.add(c.bytes);
+      }
+      mResult = mBytesBuffer.array();
+      if (verbose())
+        log("result:", INDENT, DataUtil.hexDump(mResult));
+      return mResult;
+    }
+
+    private void addInt(int value) {
+      ByteArray.Builder ib = mBytesBuffer;
+      ib.add((byte) (value >> 24));
+      ib.add((byte) (value >> 16));
+      ib.add((byte) (value >> 8));
+      ib.add((byte) (value));
+    }
+
+    private final String asText;
+    private byte[] mResult;
+    private ByteArray.Builder mBytesBuffer;
+  }
 }
