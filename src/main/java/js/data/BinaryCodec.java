@@ -11,11 +11,50 @@ import java.util.regex.Pattern;
 import js.base.BaseObject;
 import js.parsing.RegExp;
 
+/**
+ * <pre>
+ * 
+ * This utility encodes strings to byte arrays, to recover wasted space that can result from
+ * byte arrays being stored as Base64 strings.
+ * 
+ * For example, AbstractData objects that contains byte (or integer,
+ * float, or other) arrays may be represented within JSMaps using Base64 strings.  
+ * If the arrays are large, this will incur a 25% additional size penalty.  When
+ * provided the string representation of such a JSMap, this class looks for substrings
+ * that appear to be such Base64 encoded data, removes the substrings, and replaces them
+ * with the byte arrays that the Base64 data was generated from.
+ * 
+ * The format of a string encoded to bytes using this scheme is as follows.
+ * Where a field [x] has length > 1, and represents an integer, it is stored
+ * in big-endian order.
+ * 
+ * [1] version number (0xfe)
+ * [3] c, the number of chunks 
+ * 
+ * Chunk #0
+ * 
+ * [4] n, the length of the json template
+ * [4] unused
+ * [n] json template
+ * 
+ * Chunks #1...c-1
+ * 
+ * (Let "s" represent the Base64 substring)
+ * [4] b, the number of bytes decoded from s
+ * [4] location within json template to insert s
+ * [b] bytes decoded from s
+ * 
+ * </pre>
+ */
 public final class BinaryCodec {
 
+  
   private static Pattern BASE64_PATTERN = RegExp.pattern("\"[A-Za-z0-9+\\/]+={0,2}(?:`[bsilfd])?\"");
   private static int VERSION_1 = 0xfe;
 
+  /**
+   * Encode a string
+   */
   public static byte[] encode(CharSequence c) {
     return new OurEncoder(c).result();
   }
@@ -26,6 +65,9 @@ public final class BinaryCodec {
     byte[] bytes; // optional, bytes decoded from base64
   }
 
+  /**
+   * Decode a byte array back to its string form
+   */
   public static String decode(byte[] encodedBytes) {
     ByteParser parser = new ByteParser(encodedBytes);
     int header = parser.readInt();
@@ -184,10 +226,8 @@ public final class BinaryCodec {
       // Now use chunks to produce result
 
       mBytesBuffer = ByteArray.newBuilder();
-      // ib.add(VERSION_1);
 
-      // Encode number of chunks in next three bytes (in big-endian order)
-
+      // Encode version number, and number of chunks in next three bytes (in big-endian order)
       // Include one for the template chunk, which is first
       int chunkCount = 1 + chunks.size();
       checkArgument(chunkCount < (1 << 24), "too many chunks");
@@ -201,8 +241,6 @@ public final class BinaryCodec {
       addInt(jsonTemplateBytes.length);
       addInt(0); // offset for chunk zero is not used
       mBytesBuffer.add(jsonTemplateBytes);
-
-      //int offset = jsonTemplateBytes.length;
 
       for (Chunk c : chunks) {
         addInt(c.length);
