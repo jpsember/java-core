@@ -1250,7 +1250,7 @@ public final class Files extends BaseObject {
       JSMap json = JSMap.fromFileIfExists(file);
       return parseAbstractDataOpt(prototype, json);
     } catch (Throwable t) {
-      throw FileException.withCause(t, "Problem with file:", file, CR, t);
+      throw FileException.withCause(t, "Problem parsing AbstractData from file:", file);
     }
   }
 
