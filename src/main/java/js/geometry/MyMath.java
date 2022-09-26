@@ -92,6 +92,14 @@ public final class MyMath {
     return value;
   }
 
+  public static double clamp(double value, double min, double max) {
+    if (value < min)
+      value = min;
+    else if (value > max)
+      value = max;
+    return value;
+  }
+
   public static float squaredDistanceBetween(FPoint s1, FPoint s2) {
     return squaredMagnitudeOfRay(s2.x - s1.x, s2.y - s1.y);
   }
