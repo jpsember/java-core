@@ -40,6 +40,23 @@ import js.geometry.MyMath;
 public abstract class App extends BaseObject {
 
   // ------------------------------------------------------------------
+  // Singleton support
+  // ------------------------------------------------------------------
+
+  public static <T extends App> T sharedInstance() {
+    if (sSingleton == null)
+      badState("no singleton app instance defined");
+    return (T) sSingleton;
+  }
+
+  protected void setSingleton() {
+    checkState(sSingleton == null, "singleton already defined");
+    sSingleton = this;
+  }
+
+  private static App sSingleton;
+
+  // ------------------------------------------------------------------
   // Launching app
   // ------------------------------------------------------------------
 
@@ -47,7 +64,6 @@ public abstract class App extends BaseObject {
    * Subclass should call this method from its main(String[]) method
    */
   public final void startApplication(String[] cmdLineArguments) {
-    
     mOperMap = hashMap();
     mOrderedOperCommands = arrayList();
     registerOperations();
@@ -113,7 +129,7 @@ public abstract class App extends BaseObject {
       oper.processArgs();
       oper.perform();
       if (cmdLineArgs().hasNextArg()) {
-        pr("*** Ignoring remaining arguments:",  cmdLineArgs().getExtras() );
+        pr("*** Ignoring remaining arguments:", cmdLineArgs().getExtras());
       }
     } catch (ExitOperImmediately e) {
     }
