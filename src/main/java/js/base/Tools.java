@@ -145,24 +145,25 @@ public final class Tools {
         sb.append(object);
       }
     }
+    
+    String reportKey = sb.toString();
+    Integer reportCount;
+    synchronized (sReportCountMap) {
+      reportCount = sReportCountMap.get(reportKey);
+      if (reportCount == null) {
+        reportCount = 0;
+        mem().monitorSize("base reports", sReportCountMap);
+      }
+      sReportCountMap.put(reportKey, reportCount + 1);
+    }
+    if (reportCount >= limit)
+      return null;
+    
     sb.append(" (");
     String st = getStackTraceElement(1 + stackFrameSkipCount, null);
     sb.append(st);
     sb.append(")");
     String reportText = sb.toString();
-
-    Integer reportCount;
-    synchronized (sReportCountMap) {
-      reportCount = sReportCountMap.get(reportText);
-      if (reportCount == null) {
-        reportCount = 0;
-        mem().monitorSize("base reports", sReportCountMap);
-      }
-      sReportCountMap.put(reportText, reportCount + 1);
-      // TODO: add ability to track size of objects such as this
-    }
-    if (reportCount >= limit)
-      return null;
 
     if (fileModeSentinalPosition < reportText.length()
         && reportText.charAt(fileModeSentinalPosition) == '!') {
@@ -173,7 +174,7 @@ public final class Tools {
         File flagsFile = sPersistedAlertFlagsFile;
         if (flagsMap == null) {
           flagsFile = sPersistedAlertFlagsFile = Files.getDesktopFile("_alerts_.json");
-          flagsMap = sPersistedAlertFlagsMap = JSMap.fromFileIfExists(sPersistedAlertFlagsFile);
+          flagsMap = sPersistedAlertFlagsMap = JSMap.fromFileIfExists(flagsFile);
         }
         if (flagsMap.containsKey(reportText))
           return null;
