@@ -145,7 +145,7 @@ public final class Tools {
         sb.append(object);
       }
     }
-    
+
     String reportKey = sb.toString();
     Integer reportCount;
     synchronized (sReportCountMap) {
@@ -158,7 +158,7 @@ public final class Tools {
     }
     if (reportCount >= limit)
       return null;
-    
+
     sb.append(" (");
     String st = getStackTraceElement(1 + stackFrameSkipCount, null);
     sb.append(st);
@@ -648,6 +648,20 @@ public final class Tools {
   // ------------------------------------------------------------------
   // Data structure utilities
   // ------------------------------------------------------------------
+
+  /**
+   * Determine if a collection is null or is empty
+   */
+  public static boolean nullOrEmpty(Collection collection) {
+    return collection == null || collection.isEmpty();
+  }
+
+  /**
+   * Determine if a collection is non-null and nonempty
+   */
+  public static boolean nonEmpty(Collection collectionOrNull) {
+    return !nullOrEmpty(collectionOrNull);
+  }
 
   /**
    * Check if an optional boolean value is true (versus false or null)
