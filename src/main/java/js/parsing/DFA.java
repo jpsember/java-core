@@ -53,7 +53,7 @@ public final class DFA {
 
     mStates = new State[stateInfo.size()];
     for (int i = 0; i < mStates.length; i++)
-      mStates[i] = new State(i);
+      mStates[i] = new State(i, false, null );
 
     List<Edge> compiledEdges = arrayList();
     int stateId;
@@ -81,7 +81,8 @@ public final class DFA {
         }
         compiledEdges.add(new Edge(codeRangeList, destStateIndex));
       }
-      s.setEdges(compiledEdges);
+      s = s.withEdges(compiledEdges);
+      mStates[stateId] = s;
     }
   }
 
