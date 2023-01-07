@@ -53,7 +53,7 @@ public final class DFA {
 
     mStates = new State[stateInfo.size()];
     for (int i = 0; i < mStates.length; i++)
-      mStates[i] = new State();
+      mStates[i] = new State(i);
 
     List<Edge> compiledEdges = arrayList();
     int stateId;

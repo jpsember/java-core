@@ -24,10 +24,10 @@
  **/
 package js.parsing;
 
-final class Edge {
+public final class Edge {
 
-  public Edge(int[] codeRange, int destStateId) {
-    mCodeRange = codeRange;
+  public Edge(int[] codeRanges, int destStateId) {
+    mCodeRanges = codeRanges;
     mDest = destStateId;
   }
 
@@ -35,10 +35,10 @@ final class Edge {
     return mDest;
   }
 
-  public int[] codeRange() {
-    return mCodeRange;
+  public int[] codeRanges() {
+    return mCodeRanges;
   }
 
   private int mDest;
-  private int[] mCodeRange;
+  private int[] mCodeRanges;
 }

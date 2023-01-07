@@ -119,13 +119,13 @@ public final class Scanner extends BaseObject {
       State nextState = null;
       for (Edge edge : state.edges()) {
         if (mDfa.getFinalStateIndex() == edge.destinationStateId()) {
-          int newTokenId = edgeLabelToTokenId(edge.codeRange()[0]);
+          int newTokenId = edgeLabelToTokenId(edge.codeRanges()[0]);
           if (newTokenId >= bestId || charOffset > bestLength) {
             bestLength = charOffset;
             bestId = newTokenId;
           }
         } else {
-          int[] range = edge.codeRange();
+          int[] range = edge.codeRanges();
           if (rangeContainsValue(range, ch)) {
             nextState = mDfa.getState(edge.destinationStateId());
             break;
