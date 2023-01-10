@@ -106,26 +106,43 @@ public final class Scanner extends BaseObject {
   }
 
   private Token peekAux() {
+    final boolean db = false && alert("db is on!");
     if (peekChar(0) < 0)
       return null;
     int bestLength = 1;
     int bestId = DFA.UNKNOWN_TOKEN;
+    String bestTokenName = null;
     int charOffset = 0;
     State state = mDfa.getStartState();
+
     while (true) {
+
       int ch = peekChar(charOffset);
+      if (db)
+        pr("--------------\nstate:", state.debugId(), "charOffset:", charOffset, "char:",
+            Character.toString((char) ch));
       State nextState = null;
       for (Edge edge : state.edges()) {
+        if (db)
+          pr("edge:", edge);
         if (edge.destinationState().finalState()) {
           int newTokenId = State.edgeLabelToTokenId(edge.codeRanges()[0]);
+          if (db)
+            pr("edge goes to final, newtokenid:", newTokenId, "best:", bestId, "charOffset:", charOffset,
+                "bestLength:", bestLength);
           if (newTokenId >= bestId || charOffset > bestLength) {
             bestLength = charOffset;
             bestId = newTokenId;
+            bestTokenName = mDfa.tokenName(newTokenId);
           }
         } else {
           int[] range = edge.codeRanges();
+          if (db)
+            pr("seeing if range includes char:", range);
           if (rangeContainsValue(range, ch)) {
             nextState = edge.destinationState();
+            if (db)
+              pr("yes, set next state to:", nextState.debugId());
             break;
           }
         }
@@ -136,7 +153,8 @@ public final class Scanner extends BaseObject {
       charOffset++;
     }
     String tokenText = skipChars(bestLength);
-    Token peekToken = new Token(mSourceDescription, bestId, tokenText, 1 + mLineNumber, 1 + mColumn);
+    Token peekToken = new Token(mSourceDescription, bestId, bestTokenName, tokenText, 1 + mLineNumber,
+        1 + mColumn);
     if (bestLength == 0)
       throw new ScanException(peekToken, "scanned zero-length token");
     return peekToken;

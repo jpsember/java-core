@@ -27,6 +27,8 @@ package js.json;
 import java.util.List;
 import java.util.Map;
 
+import js.data.DataUtil;
+
 public final class JSUtils {
 
   /**
@@ -42,50 +44,8 @@ public final class JSUtils {
     return (T) value;
   }
 
-  static void printAsQuotedJsonString(CharSequence sourceSequence, StringBuilder destStringBuilder) {
-    destStringBuilder.append('"');
-    for (int i = 0; i < sourceSequence.length(); i++) {
-      char c = sourceSequence.charAt(i);
-      final char ESCAPE = '\\';
-      switch (c) {
-      case '"':
-        destStringBuilder.append(ESCAPE);
-        break;
-      case ESCAPE:
-        destStringBuilder.append(ESCAPE);
-        break;
-      case 8:
-        destStringBuilder.append(ESCAPE);
-        c = 'b';
-        break;
-      case 12:
-        destStringBuilder.append(ESCAPE);
-        c = 'f';
-        break;
-      case 10:
-        destStringBuilder.append(ESCAPE);
-        c = 'n';
-        break;
-      case 13:
-        destStringBuilder.append(ESCAPE);
-        c = 'r';
-        break;
-      case 9:
-        destStringBuilder.append(ESCAPE);
-        c = 't';
-        break;
-      default:
-        // Remove the '|| c > 126' to leave text as unicode
-        if (c < ' ' || c > 126) {
-          destStringBuilder.append("\\u");
-          toHex(destStringBuilder, (int) c, 4);
-          continue;
-        }
-        break;
-      }
-      destStringBuilder.append(c);
-    }
-    destStringBuilder.append('"');
+  static void printAsQuotedJsonString(CharSequence sourceSequence, StringBuilder sb) {
+    DataUtil.escapeChars(sourceSequence, sb, true);
   }
 
   /**
@@ -163,20 +123,4 @@ public final class JSUtils {
       sb.append(value);
   }
 
-  /**
-   * Convert value to hex, store in StringBuilder
-   */
-  private static void toHex(StringBuilder stringBuilder, int value, int digits) {
-    while (digits-- > 0) {
-      int shift = digits << 2;
-      int v = (value >> shift) & 0xf;
-      char c;
-      if (v < 10) {
-        c = (char) ('0' + v);
-      } else {
-        c = (char) ('a' + (v - 10));
-      }
-      stringBuilder.append(c);
-    }
-  }
 }

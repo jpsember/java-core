@@ -109,6 +109,77 @@ public final class DataUtil {
     }
   }
 
+  public static String escapeChars(CharSequence sourceSequence, boolean withQuotes) {
+    StringBuilder sb = new StringBuilder();
+    escapeChars(sourceSequence, sb, withQuotes);
+    return sb.toString();
+  }
+
+  public static void escapeChars(CharSequence sourceSequence, StringBuilder sb, boolean withQuotes) {
+    if (withQuotes)
+      sb.append('"');
+    for (int i = 0; i < sourceSequence.length(); i++) {
+      char c = sourceSequence.charAt(i);
+      final char ESCAPE = '\\';
+      switch (c) {
+      case '"':
+        sb.append(ESCAPE);
+        break;
+      case ESCAPE:
+        sb.append(ESCAPE);
+        break;
+      case 8:
+        sb.append(ESCAPE);
+        c = 'b';
+        break;
+      case 12:
+        sb.append(ESCAPE);
+        c = 'f';
+        break;
+      case 10:
+        sb.append(ESCAPE);
+        c = 'n';
+        break;
+      case 13:
+        sb.append(ESCAPE);
+        c = 'r';
+        break;
+      case 9:
+        sb.append(ESCAPE);
+        c = 't';
+        break;
+      default:
+        // Remove the '|| c > 126' to leave text as unicode
+        if (c < ' ' || c > 126) {
+          sb.append("\\u");
+          toHex(sb, (int) c, 4);
+          continue;
+        }
+        break;
+      }
+      sb.append(c);
+    }
+    if (withQuotes)
+      sb.append('"');
+  }
+
+  /**
+   * Convert value to hex, store in StringBuilder
+   */
+  private static void toHex(StringBuilder stringBuilder, int value, int digits) {
+    while (digits-- > 0) {
+      int shift = digits << 2;
+      int v = (value >> shift) & 0xf;
+      char c;
+      if (v < 10) {
+        c = (char) ('0' + v);
+      } else {
+        c = (char) ('a' + (v - 10));
+      }
+      stringBuilder.append(c);
+    }
+  }
+
   public static String convertCamelCaseToUnderscores(String string) {
     List<String> words = new ArrayList<>();
     int wordStart = 0;

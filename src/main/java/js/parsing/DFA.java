@@ -154,7 +154,7 @@ public final class DFA {
     return DataUtil.intArray(codeRangeList);
   }
 
-  State getStartState() {
+  public State getStartState() {
     return mStates[0];
   }
 

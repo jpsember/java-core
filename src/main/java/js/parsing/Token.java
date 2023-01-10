@@ -27,15 +27,17 @@ package js.parsing;
 import static js.base.Tools.*;
 
 import js.base.BasePrinter;
+import js.data.DataUtil;
 
 public final class Token {
 
-  public Token(String source, int id, String text, int lineNumber, int column) {
+  public Token(String source, int id, String tokenName, String text, int lineNumber, int column) {
     mSource = source;
     mId = id;
     mText = text;
     mRow = lineNumber;
     mColumn = column;
+    mTokenName = tokenName;
   }
 
   public boolean isUnknown() {
@@ -44,19 +46,32 @@ public final class Token {
 
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("(");
     if (mSource != null) {
       sb.append(mSource);
       sb.append(' ');
     }
-    sb.append("row " + mRow + ", column " + mColumn);
-    sb.append(", id " + id());
-    sb.append(")");
-    tab(sb, 25);
-    sb.append(" : ");
-    sb.append('\"');
-    sb.append(mText);
-    sb.append('\"');
+    sb.append("row ");
+    int c = sb.length();
+    sb.append(mRow);
+    c += 4;
+    tab(sb, c);
+    sb.append("col ");
+    sb.append(mColumn);
+    c += 7;
+    tab(sb, c);
+    {
+      String q = Integer.toString(id());
+      tab(sb, sb.length() + 3 - q.length());
+      sb.append(q);
+    }
+    c += 3;
+    tab(sb, c);
+    sb.append(':');
+    sb.append(mTokenName);
+    c += 8;
+    tab(sb, c);
+    sb.append(' ');
+    DataUtil.escapeChars(mText, sb, true);
     return sb.toString();
   }
 
@@ -108,6 +123,7 @@ public final class Token {
   private final String mSource;
   private final int mId;
   private final String mText;
+  private final String mTokenName;
   private final int mRow;
   private final int mColumn;
 

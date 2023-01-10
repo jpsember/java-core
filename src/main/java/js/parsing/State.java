@@ -29,7 +29,7 @@ import java.util.List;
 
 import static js.base.Tools.*;
 
-public final class State {
+public final class State implements Comparable<State> {
 
   public State(boolean finalState, List<Edge> edges) {
     mDebugId = sNextDebugId++;
@@ -45,6 +45,11 @@ public final class State {
 
   public State(boolean finalState) {
     this(finalState, null);
+  }
+
+  @Override
+  public int compareTo(State other) {
+    return Integer.compare(debugId(), other.debugId());
   }
 
   public List<Edge> edges() {
@@ -94,8 +99,13 @@ public final class State {
   }
 
   public static void setDebugIds(int nextMinValue) {
-    if (sNextDebugId > nextMinValue)
-      nextMinValue = ((sNextDebugId / 100) + 1) * 100;
+    if (sNextDebugId > nextMinValue) {
+      int mod = sNextDebugId % 100;
+      if (mod > 0)
+        nextMinValue = sNextDebugId - mod + 100;
+      else
+        nextMinValue = sNextDebugId;
+    }
     sNextDebugId = nextMinValue;
   }
 
