@@ -34,14 +34,21 @@ import js.json.JSMap;
 
 public final class DFA {
 
+  private static final boolean db = true && alert("db is true");
+  
   public static final int UNKNOWN_TOKEN = -1;
 
   public DFA(String script) {
-    constructFromScript(script);
+    constructFromJson(new JSMap(script));
   }
 
-  private void constructFromScript(String script) {
-    JSMap map = new JSMap(script);
+  public DFA(JSMap json) {
+    constructFromJson(json);
+  }
+
+  private void constructFromJson(JSMap map) {
+  if (db) pr("...................constructing DFA from json:",INDENT,map);
+    State.bumpDebugIds();
     if (map.getDouble("version") < 3.0)
       throw new IllegalArgumentException("unsupported version\n" + map.prettyPrint());
 
@@ -53,13 +60,14 @@ public final class DFA {
 
     mStates = new State[stateInfo.size()];
     for (int i = 0; i < mStates.length; i++)
-      mStates[i] = new State(i, false, null );
+      mStates[i] = new State(i == mFinalStateIndex, null);
 
     List<Edge> compiledEdges = arrayList();
     int stateId;
     for (stateId = 0; stateId < mStates.length; stateId++) {
       State s = mStates[stateId];
       JSList edges = stateInfo.get(stateId);
+      pr(VERT_SP,"compiling state id:",stateId,"db:",s.debugId(),"from:",edges);
       compiledEdges.clear();
       int cursorMax = edges.size();
       int cursor = 0;
@@ -68,20 +76,26 @@ public final class DFA {
         Object element = edges.getUnsafe(cursor);
         if (element instanceof JSList) {
           edgeInfo = (JSList) element;
+        if (db)  pr("edgeInfo is a JSList:",edgeInfo);
         } else {
           edgeInfo = list().addUnsafe(element);
+          if (db)  pr("edgeInfo is a scalar:",edgeInfo);
         }
         int[] codeRangeList = buildCodeSet(edgeInfo);
+        if (db) pr("code range:",codeRangeList);
         cursor++;
-
+        
         int destStateIndex = mFinalStateIndex;
         if (cursor < cursorMax) {
           destStateIndex = edges.getInt(cursor);
           cursor++;
         }
-        compiledEdges.add(new Edge(codeRangeList, destStateIndex));
+        if (db) pr("dest state index:",destStateIndex,"of total",mStates.length);
+        compiledEdges.add(new Edge(codeRangeList, getState(destStateIndex)));
       }
-      s = s.withEdges(compiledEdges);
+      if (db) todo("final state flag isn't used by DFA");
+      s.setEdges(compiledEdges);
+if (db)      pr("built state:",s,"final:",s.finalState(), VERT_SP);
       mStates[stateId] = s;
     }
   }
@@ -170,8 +184,8 @@ public final class DFA {
     return mStates[id];
   }
 
-  int getFinalStateIndex() {
-    return mFinalStateIndex;
+  State getFinalState() {
+    return getState(mFinalStateIndex);
   }
 
   private JSList mTokenNames;

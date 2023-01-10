@@ -25,19 +25,13 @@
 package js.parsing;
 
 public final class Edge {
-
-  public static Edge constructEpsilonEdge(int targetStateId) {
-    return new Edge(EPSILON_RANGE, targetStateId);
-  }
-
-  private static int[] EPSILON_RANGE = { State.EPSILON, 1 + State.EPSILON };
-
-  public Edge(int[] codeRanges, int destStateId) {
+  
+  public Edge(int[] codeRanges, State destState) {
     mCodeRanges = codeRanges;
-    mDest = destStateId;
+    mDest = destState;
   }
 
-  public int destinationStateId() {
+  public State destinationState() {
     return mDest;
   }
 
@@ -45,6 +39,6 @@ public final class Edge {
     return mCodeRanges;
   }
 
-  private int mDest;
+  private State mDest;
   private int[] mCodeRanges;
 }

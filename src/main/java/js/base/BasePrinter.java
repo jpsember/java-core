@@ -25,10 +25,10 @@
 package js.base;
 
 import java.time.Instant;
+import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -313,10 +313,22 @@ public final class BasePrinter {
   }
 
   /**
-   * Append a collection of objects, by converting to a List
+   * Append a collection of objects
    */
-  public void append(Collection<?> collection) {
-    append(new ArrayList<>(collection));
+  public void append(AbstractCollection<?> value) {
+    if (value == null) {
+      appendString("<null>");
+      return;
+    }
+    appendString("[");
+    boolean first = true;
+    for (Object item : value) {
+      if (!first)
+        appendString(",");
+      append(item);
+      first = false;
+    }
+    appendString("]");
   }
 
   private void appendCharacters(String characters) {
@@ -424,7 +436,10 @@ public final class BasePrinter {
 
   private static Map<Class, BiConsumer<Object, BasePrinter>> sClassStringConverterMap = new ConcurrentHashMap<>();
 
-  // Populate the class->string converter map with some default values
+  // Populate the class->string converter map with some default values.
+  //
+  // We must not attempt to store interfaces as keys, since no concrete object
+  // will have a class that matches an interface.
   //
   static {
     Map<Class, BiConsumer<Object, BasePrinter>> map = sClassStringConverterMap;
@@ -444,13 +459,12 @@ public final class BasePrinter {
 
     handler = (x, p) -> p.append(x.toString());
     map.put(Object.class, handler);
-    map.put(CharSequence.class, handler);
     map.put(String.class, handler);
     map.put(Character.class, handler);
     map.put(Boolean.class, (x, p) -> p.append(((Boolean) x)));
     map.put(Throwable.class, (x, p) -> p.append((Throwable) x));
     map.put(Printer.class, (x, p) -> ((Printer) x).printTo(p));
-    map.put(Collection.class, (x, p) -> p.append((Collection) x));
+    map.put(AbstractCollection.class, (x, p) -> p.append((AbstractCollection) x));
     map.put(BitSet.class, (x, p) -> p.append((BitSet) x));
     map.put(Instant.class, (x, p) -> p.append((Instant) x));
     map.put(DataUtil.EMPTY_STRING_ARRAY.getClass(), (x, p) -> p.append(JSList.with((String[]) x)));

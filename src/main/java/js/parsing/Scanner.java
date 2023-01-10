@@ -24,7 +24,6 @@
  **/
 package js.parsing;
 
-//import static js.parsing.ParseTools.*;
 import static js.base.Tools.*;
 
 import java.io.IOException;
@@ -114,12 +113,11 @@ public final class Scanner extends BaseObject {
     int charOffset = 0;
     State state = mDfa.getStartState();
     while (true) {
-
       int ch = peekChar(charOffset);
       State nextState = null;
       for (Edge edge : state.edges()) {
-        if (mDfa.getFinalStateIndex() == edge.destinationStateId()) {
-          int newTokenId = edgeLabelToTokenId(edge.codeRanges()[0]);
+        if (mDfa.getFinalState() == edge.destinationState()) {
+          int newTokenId = State.edgeLabelToTokenId(edge.codeRanges()[0]);
           if (newTokenId >= bestId || charOffset > bestLength) {
             bestLength = charOffset;
             bestId = newTokenId;
@@ -127,7 +125,7 @@ public final class Scanner extends BaseObject {
         } else {
           int[] range = edge.codeRanges();
           if (rangeContainsValue(range, ch)) {
-            nextState = mDfa.getState(edge.destinationStateId());
+            nextState = edge.destinationState();
             break;
           }
         }
@@ -216,12 +214,6 @@ public final class Scanner extends BaseObject {
     } catch (Throwable t) {
       throw badArg("expected an integer, not:", quote(numberString));
     }
-  }
-
-  private static final int EPSILON = -1;
-
-  private static final int edgeLabelToTokenId(int edgeLabel) {
-    return EPSILON - 1 - edgeLabel;
   }
 
   private int peekChar(int index) {
