@@ -116,6 +116,17 @@ public final class State {
 
   public static final int EPSILON = -1;
 
+  /**
+   * One plus the maximum code represented
+   */
+  public static final int CODEMAX = 0x110000;
+
+  /**
+   * Minimum code possible (e.g., indicating a token id)
+   */
+  public static final int CODEMIN = -10000;
+
+
   public static final int edgeLabelToTokenId(int edgeLabel) {
     return EPSILON - 1 - edgeLabel;
   }

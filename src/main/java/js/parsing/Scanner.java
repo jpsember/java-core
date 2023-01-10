@@ -116,7 +116,7 @@ public final class Scanner extends BaseObject {
       int ch = peekChar(charOffset);
       State nextState = null;
       for (Edge edge : state.edges()) {
-        if (mDfa.getFinalState() == edge.destinationState()) {
+        if (edge.destinationState().finalState()) {
           int newTokenId = State.edgeLabelToTokenId(edge.codeRanges()[0]);
           if (newTokenId >= bestId || charOffset > bestLength) {
             bestLength = charOffset;

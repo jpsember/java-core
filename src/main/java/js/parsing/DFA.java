@@ -34,8 +34,6 @@ import js.json.JSMap;
 
 public final class DFA {
 
-  private static final boolean db = true && alert("db is true");
-  
   public static final int UNKNOWN_TOKEN = -1;
 
   public DFA(String script) {
@@ -47,27 +45,25 @@ public final class DFA {
   }
 
   private void constructFromJson(JSMap map) {
-  if (db) pr("...................constructing DFA from json:",INDENT,map);
     State.bumpDebugIds();
     if (map.getDouble("version") < 3.0)
       throw new IllegalArgumentException("unsupported version\n" + map.prettyPrint());
 
-    mFinalStateIndex = map.getInt("final");
-    mTokenNames = map.getList("tokens");
+    int finalStateIndex = map.getInt("final");
+    mTokenNames = map.getList("tokens").asStringList();
     for (int i = 0; i < mTokenNames.size(); i++)
-      mTokenNameIdMap.put(mTokenNames.getString(i), i);
+      mTokenNameIdMap.put(mTokenNames.get(i), i);
     JSList stateInfo = map.getList("states");
 
     mStates = new State[stateInfo.size()];
     for (int i = 0; i < mStates.length; i++)
-      mStates[i] = new State(i == mFinalStateIndex, null);
+      mStates[i] = new State(i == finalStateIndex, null);
 
     List<Edge> compiledEdges = arrayList();
     int stateId;
     for (stateId = 0; stateId < mStates.length; stateId++) {
       State s = mStates[stateId];
       JSList edges = stateInfo.get(stateId);
-      pr(VERT_SP,"compiling state id:",stateId,"db:",s.debugId(),"from:",edges);
       compiledEdges.clear();
       int cursorMax = edges.size();
       int cursor = 0;
@@ -76,26 +72,20 @@ public final class DFA {
         Object element = edges.getUnsafe(cursor);
         if (element instanceof JSList) {
           edgeInfo = (JSList) element;
-        if (db)  pr("edgeInfo is a JSList:",edgeInfo);
         } else {
           edgeInfo = list().addUnsafe(element);
-          if (db)  pr("edgeInfo is a scalar:",edgeInfo);
         }
         int[] codeRangeList = buildCodeSet(edgeInfo);
-        if (db) pr("code range:",codeRangeList);
         cursor++;
-        
-        int destStateIndex = mFinalStateIndex;
+
+        int destStateIndex = finalStateIndex;
         if (cursor < cursorMax) {
           destStateIndex = edges.getInt(cursor);
           cursor++;
         }
-        if (db) pr("dest state index:",destStateIndex,"of total",mStates.length);
         compiledEdges.add(new Edge(codeRangeList, getState(destStateIndex)));
       }
-      if (db) todo("final state flag isn't used by DFA");
       s.setEdges(compiledEdges);
-if (db)      pr("built state:",s,"final:",s.finalState(), VERT_SP);
       mStates[stateId] = s;
     }
   }
@@ -108,7 +98,7 @@ if (db)      pr("built state:",s,"final:",s.finalState(), VERT_SP);
   public String tokenName(int tokenId) {
     if (tokenId == UNKNOWN_TOKEN)
       return "<UNKNOWN>";
-    return mTokenNames.getString(tokenId);
+    return mTokenNames.get(tokenId);
   }
 
   public Integer optTokenId(String tokenName) {
@@ -137,18 +127,6 @@ if (db)      pr("built state:",s,"final:",s.finalState(), VERT_SP);
     return set;
   }
 
-  @Override
-  public String toString() {
-    StringBuilder sb = new StringBuilder();
-    sb.append("DFA\n");
-    for (int i = 0; i < mTokenNames.size(); i++) {
-      sb.append(" " + mTokenNames.getString(i) + "\n");
-    }
-    return sb.toString();
-  }
-
-  private static final int CODEMAX = 0x110000;
-
   /**
    * Build a code range (an array of 2n integers) from a list of integers
    */
@@ -165,7 +143,7 @@ if (db)      pr("built state:",s,"final:",s.finalState(), VERT_SP);
         b = list.getInt(cursor);
         cursor++;
         if (b == 0)
-          b = CODEMAX;
+          b = State.CODEMAX;
       } else {
         a = ((Number) value).intValue();
         b = a + 1;
@@ -184,12 +162,7 @@ if (db)      pr("built state:",s,"final:",s.finalState(), VERT_SP);
     return mStates[id];
   }
 
-  State getFinalState() {
-    return getState(mFinalStateIndex);
-  }
-
-  private JSList mTokenNames;
+  private List<String> mTokenNames;
   private Map<String, Integer> mTokenNameIdMap = hashMap();
-  private int mFinalStateIndex;
   private State[] mStates;
 }
