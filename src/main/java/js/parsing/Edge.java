@@ -24,11 +24,17 @@
  **/
 package js.parsing;
 
-public final class Edge {
-  
+import static js.base.Tools.*;
+
+public class Edge {
+
   public Edge(int[] codeRanges, State destState) {
     mCodeRanges = codeRanges;
     mDest = destState;
+  }
+
+  public State sourceState() {
+    throw notSupported("sourceState() not supported for:", this);
   }
 
   public State destinationState() {
