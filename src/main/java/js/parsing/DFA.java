@@ -75,7 +75,7 @@ public final class DFA {
         } else {
           edgeInfo = list().addUnsafe(element);
         }
-        int[] codeRangeList = buildCodeSet(edgeInfo);
+        int[] codeSetList = buildCodeSet(edgeInfo);
         cursor++;
 
         int destStateIndex = finalStateIndex;
@@ -83,7 +83,7 @@ public final class DFA {
           destStateIndex = edges.getInt(cursor);
           cursor++;
         }
-        compiledEdges.add(new Edge(codeRangeList, getState(destStateIndex)));
+        compiledEdges.add(new Edge(codeSetList, getState(destStateIndex)));
       }
       s.setEdges(compiledEdges);
       mStates[stateId] = s;
@@ -131,7 +131,7 @@ public final class DFA {
    * Build a code range (an array of 2n integers) from a list of integers
    */
   private static int[] buildCodeSet(JSList list) {
-    List<Integer> codeRangeList = arrayList();
+    List<Integer> codeSetList = arrayList();
     int elementsLength = list.size();
     int cursor = 0;
     while (cursor < elementsLength) {
@@ -148,10 +148,10 @@ public final class DFA {
         a = ((Number) value).intValue();
         b = a + 1;
       }
-      codeRangeList.add(a);
-      codeRangeList.add(b);
+      codeSetList.add(a);
+      codeSetList.add(b);
     }
-    return DataUtil.intArray(codeRangeList);
+    return DataUtil.intArray(codeSetList);
   }
 
   public State getStartState() {

@@ -28,8 +28,8 @@ import static js.base.Tools.*;
 
 public class Edge {
 
-  public Edge(int[] codeRanges, State destState) {
-    mCodeRanges = codeRanges;
+  public Edge(int[] codeSets, State destState) {
+    mCodeSets = codeSets;
     mDest = destState;
   }
 
@@ -41,10 +41,10 @@ public class Edge {
     return mDest;
   }
 
-  public int[] codeRanges() {
-    return mCodeRanges;
+  public int[] codeSets() {
+    return mCodeSets;
   }
 
   private State mDest;
-  private int[] mCodeRanges;
+  private int[] mCodeSets;
 }

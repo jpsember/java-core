@@ -95,7 +95,7 @@ public final class State implements Comparable<State> {
   }
 
   public static void resetDebugIds() {
-    sNextDebugId = 0;
+    sNextDebugId = 100;
   }
 
   public static void setDebugIds(int nextMinValue) {
@@ -126,7 +126,7 @@ public final class State implements Comparable<State> {
     setDebugIds(0);
   }
 
-  private static int sNextDebugId = 200;
+  private static int sNextDebugId = 100;
 
   public static final int EPSILON = -1;
 

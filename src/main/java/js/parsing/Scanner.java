@@ -126,7 +126,7 @@ public final class Scanner extends BaseObject {
         if (db)
           pr("edge:", edge);
         if (edge.destinationState().finalState()) {
-          int newTokenId = State.edgeLabelToTokenId(edge.codeRanges()[0]);
+          int newTokenId = State.edgeLabelToTokenId(edge.codeSets()[0]);
           if (db)
             pr("edge goes to final, newtokenid:", newTokenId, "best:", bestId, "charOffset:", charOffset,
                 "bestLength:", bestLength);
@@ -136,7 +136,7 @@ public final class Scanner extends BaseObject {
             bestTokenName = mDfa.tokenName(newTokenId);
           }
         } else {
-          int[] range = edge.codeRanges();
+          int[] range = edge.codeSets();
           if (db)
             pr("seeing if range includes char:", range);
           if (rangeContainsValue(range, ch)) {
