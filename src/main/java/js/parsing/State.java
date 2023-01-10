@@ -89,6 +89,10 @@ public final class State {
     return toString(false);
   }
 
+  public static void resetDebugIds() {
+    sNextDebugId = 0;
+  }
+
   public static void setDebugIds(int nextMinValue) {
     if (sNextDebugId > nextMinValue)
       nextMinValue = ((sNextDebugId / 100) + 1) * 100;
@@ -125,7 +129,6 @@ public final class State {
    * Minimum code possible (e.g., indicating a token id)
    */
   public static final int CODEMIN = -10000;
-
 
   public static final int edgeLabelToTokenId(int edgeLabel) {
     return EPSILON - 1 - edgeLabel;
