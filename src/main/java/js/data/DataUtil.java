@@ -313,6 +313,7 @@ public final class DataUtil {
   public static final String CHARS_ALPHANUMERIC = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   private static final List IMMUTABLE_EMPTY_LIST = new ArrayList(0);
   private static final Map IMMUTABLE_EMPTY_MAP = Collections.unmodifiableMap(hashMap());
+  private static final Set IMMUTABLE_EMPTY_SET = Collections.unmodifiableSet(hashSet());
 
   public static <T> List<T> emptyList() {
     return IMMUTABLE_EMPTY_LIST;
@@ -320,6 +321,9 @@ public final class DataUtil {
 
   public static <K, V> Map<K, V> emptyMap() {
     return IMMUTABLE_EMPTY_MAP;
+  }
+  public static <V> Set<V> emptySet() {
+    return IMMUTABLE_EMPTY_SET;
   }
 
   public static <T> List<T> mutableCopyOf(List<T> sourceListOrNull) {
@@ -344,6 +348,18 @@ public final class DataUtil {
     if (sourceMapOrNull == null)
       return null;
     return Collections.unmodifiableMap(sourceMapOrNull);
+  }
+
+  public static <V> Set<V> mutableCopyOf(Set<V> sourceSetOrNull) {
+    if (sourceSetOrNull == null)
+      return null;
+    return new HashSet<V>(sourceSetOrNull);
+  }
+
+  public static <V> Set<V> immutableCopyOf(Set<V> sourceSetOrNull) {
+    if (sourceSetOrNull == null)
+      return null;
+    return Collections.unmodifiableSet(sourceSetOrNull);
   }
 
   /**
