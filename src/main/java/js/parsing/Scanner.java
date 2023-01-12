@@ -106,7 +106,6 @@ public final class Scanner extends BaseObject {
   }
 
   private Token peekAux() {
-    final boolean db = false && alert("db is on!");
     if (peekChar(0) < 0)
       return null;
     int bestLength = 1;
@@ -116,33 +115,19 @@ public final class Scanner extends BaseObject {
     State state = mDfa.getStartState();
 
     while (true) {
-
       int ch = peekChar(charOffset);
-      if (db)
-        pr("--------------\nstate:", state.debugId(), "charOffset:", charOffset, "char:",
-            Character.toString((char) ch));
       State nextState = null;
       for (Edge edge : state.edges()) {
-        if (db)
-          pr("edge:", edge);
         if (edge.destinationState().finalState()) {
           int newTokenId = State.edgeLabelToTokenId(edge.codeSets()[0]);
-          if (db)
-            pr("edge goes to final, newtokenid:", newTokenId, "best:", bestId, "charOffset:", charOffset,
-                "bestLength:", bestLength);
           if (newTokenId >= bestId || charOffset > bestLength) {
             bestLength = charOffset;
             bestId = newTokenId;
             bestTokenName = mDfa.tokenName(newTokenId);
           }
         } else {
-          int[] range = edge.codeSets();
-          if (db)
-            pr("seeing if range includes char:", range);
-          if (rangeContainsValue(range, ch)) {
+          if (rangeContainsValue(edge.codeSets(), ch)) {
             nextState = edge.destinationState();
-            if (db)
-              pr("yes, set next state to:", nextState.debugId());
             break;
           }
         }
@@ -182,10 +167,12 @@ public final class Scanner extends BaseObject {
     return token;
   }
 
+  @Deprecated
   public Token read(String tokenName) {
     return read(mDfa.tokenId(tokenName));
   }
 
+  @Deprecated
   public Token readIf(String tokenName) {
     return readIf(mDfa.tokenId(tokenName));
   }
@@ -226,8 +213,7 @@ public final class Scanner extends BaseObject {
     try {
       long value = Long.parseLong(numberString);
       if (value < min || value > max)
-        throw new IllegalArgumentException(
-            "integral value out of range of " + min + "..." + max + ": " + numberString);
+        badArg("integral value out of range of", min, "...", max, ":", numberString);
       return value;
     } catch (Throwable t) {
       throw badArg("expected an integer, not:", quote(numberString));

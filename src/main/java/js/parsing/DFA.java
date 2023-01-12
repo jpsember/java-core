@@ -36,6 +36,7 @@ public final class DFA {
 
   public static final int UNKNOWN_TOKEN = -1;
 
+  @Deprecated
   public DFA(String script) {
     constructFromJson(new JSMap(script));
   }
@@ -47,7 +48,7 @@ public final class DFA {
   private void constructFromJson(JSMap map) {
     State.bumpDebugIds();
     if (map.getDouble("version") < 3.0)
-      throw new IllegalArgumentException("unsupported version\n" + map.prettyPrint());
+      throw badArg("unsupported version:" , map.prettyPrint());
 
     int finalStateIndex = map.getInt("final");
     mTokenNames = map.getList("tokens").asStringList();
@@ -108,7 +109,7 @@ public final class DFA {
   public Integer tokenId(String tokenName) {
     Integer i = optTokenId(tokenName);
     if (i == null)
-      throw new IllegalArgumentException("token name not found: " + tokenName);
+      badArg("token name not found:", tokenName);
     return i;
   }
 
@@ -116,6 +117,7 @@ public final class DFA {
    * Given a space-delimeted string of token names, construct a set of their
    * indexes
    */
+  @Deprecated
   public TreeSet<Integer> parseTokenNames(String spaceDelimitedTokenNames) {
     TreeSet<Integer> set = treeSet();
     for (String name : split(spaceDelimitedTokenNames, ' ')) {
@@ -158,7 +160,7 @@ public final class DFA {
     return mStates[0];
   }
 
-  State getState(int id) {
+  private State getState(int id) {
     return mStates[id];
   }
 
