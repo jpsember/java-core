@@ -167,16 +167,6 @@ public final class Scanner extends BaseObject {
     return token;
   }
 
-  @Deprecated
-  public Token read(String tokenName) {
-    return read(mDfa.tokenId(tokenName));
-  }
-
-  @Deprecated
-  public Token readIf(String tokenName) {
-    return readIf(mDfa.tokenId(tokenName));
-  }
-
   public Token readIf(int tokenId) {
     Token token = peek();
     boolean readIt = (token != null && tokenId == token.id());
@@ -213,7 +203,7 @@ public final class Scanner extends BaseObject {
     try {
       long value = Long.parseLong(numberString);
       if (value < min || value > max)
-        badArg("integral value out of range of", min, "...", max, ":", numberString);
+        badArg();
       return value;
     } catch (Throwable t) {
       throw badArg("expected an integer, not:", quote(numberString));
@@ -234,6 +224,9 @@ public final class Scanner extends BaseObject {
       throw asRuntimeException(e);
     }
   }
+
+  private char[] mReaderBuffer = new char[256];
+ 
 
   private String skipChars(int count) {
     String s = mCharacterBuffer.substring(0, count);
@@ -262,5 +255,5 @@ public final class Scanner extends BaseObject {
   private List<Token> mHistory = arrayList();
   private int mHistoryCursor;
   private StringBuilder mCharacterBuffer = new StringBuilder();
-  private char[] mReaderBuffer = new char[256];
+
 }

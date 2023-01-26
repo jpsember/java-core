@@ -36,11 +36,6 @@ public final class DFA {
 
   public static final int UNKNOWN_TOKEN = -1;
 
-  @Deprecated
-  public DFA(String script) {
-    constructFromJson(new JSMap(script));
-  }
-
   public DFA(JSMap json) {
     constructFromJson(json);
   }
@@ -48,12 +43,15 @@ public final class DFA {
   private void constructFromJson(JSMap map) {
     State.bumpDebugIds();
     if (map.getDouble("version") < 3.0)
-      throw badArg("unsupported version:" , map.prettyPrint());
+      throw badArg("unsupported version:", map.prettyPrint());
 
     int finalStateIndex = map.getInt("final");
-    mTokenNames = map.getList("tokens").asStringList();
-    for (int i = 0; i < mTokenNames.size(); i++)
-      mTokenNameIdMap.put(mTokenNames.get(i), i);
+    mTokenNames = map.getList("tokens").asStringArray();
+    int index = INIT_INDEX;
+    for (String name : mTokenNames) {
+      index++;
+      mTokenNameIdMap.put(name, index);
+    }
     JSList stateInfo = map.getList("states");
 
     mStates = new State[stateInfo.size()];
@@ -93,13 +91,12 @@ public final class DFA {
 
   /**
    * Get name of token, given its id. Returns "<UNKNOWN>" if its id is
-   * UNKNOWN_TOKEN, or "<EOF>" if the id is nil Otherwise, assumes tokenId is
-   * 0...n-1
+   * UNKNOWN_TOKEN
    */
   public String tokenName(int tokenId) {
     if (tokenId == UNKNOWN_TOKEN)
       return "<UNKNOWN>";
-    return mTokenNames.get(tokenId);
+    return mTokenNames[tokenId];
   }
 
   public Integer optTokenId(String tokenName) {
@@ -111,22 +108,6 @@ public final class DFA {
     if (i == null)
       badArg("token name not found:", tokenName);
     return i;
-  }
-
-  /**
-   * Given a space-delimeted string of token names, construct a set of their
-   * indexes
-   */
-  @Deprecated
-  public TreeSet<Integer> parseTokenNames(String spaceDelimitedTokenNames) {
-    TreeSet<Integer> set = treeSet();
-    for (String name : split(spaceDelimitedTokenNames, ' ')) {
-      Integer id = tokenId(name);
-      if (id == null)
-        throw new IllegalArgumentException("no token found:" + name);
-      set.add(id);
-    }
-    return set;
   }
 
   /**
@@ -164,7 +145,7 @@ public final class DFA {
     return mStates[id];
   }
 
-  private List<String> mTokenNames;
+  private String[] mTokenNames;
   private Map<String, Integer> mTokenNameIdMap = hashMap();
   private State[] mStates;
 }

@@ -61,10 +61,10 @@ public final class State implements Comparable<State> {
   }
 
   public void setEdges(List<Edge> edges) {
-    ArrayList<Edge> edg = arrayList();
-    edg.addAll(edges);
-    edg.trimToSize();
-    mEdges = edg;
+    ArrayList<Edge> work = arrayList();
+    work.addAll(edges);
+    work.trimToSize();
+    mEdges = work;
   }
 
   public void setFinal(boolean flag) {

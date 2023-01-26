@@ -26,14 +26,23 @@ package js.parsing;
 
 import static js.base.Tools.*;
 
+import js.base.BaseObject;
 import js.json.JSMap;
 
-public final class StringParser {
+/**
+ * Utility class to parse text from a string
+ */
+public final class StringParser extends BaseObject {
 
   public StringParser(String content) {
     mContent = content;
   }
 
+  public int cursor() {return mCursor;}
+  
+  /**
+   * Read next character; throws exception if no characters remain
+   */
   public char readChar() {
     char ch = peekChar();
     if (ch == 0)
@@ -42,6 +51,12 @@ public final class StringParser {
     return ch;
   }
 
+  /**
+   * Read a string; throws exception if insufficient characters remain
+   * 
+   * @param length
+   *          length of string to read
+   */
   public String readChars(int length) {
     int cursor2 = mCursor + length;
     checkState(cursor2 <= mContent.length(), "no more characters", INDENT, toJson());
@@ -50,6 +65,7 @@ public final class StringParser {
     return substring;
   }
 
+  @Override
   public JSMap toJson() {
     JSMap m = map();
     m.put("content", mContent);
@@ -62,6 +78,9 @@ public final class StringParser {
     return read(" ");
   }
 
+  /**
+   * Read an expected string; throws exception if not present
+   */
   public String read(String expected) {
     if (!peekIs(expected))
       throw badArg("Expected", quote(expected), INDENT, toJson());
@@ -77,9 +96,8 @@ public final class StringParser {
 
   public boolean peekIs(String expected) {
     if (mCursor + expected.length() <= mContent.length()) {
-      if (mContent.substring(mCursor, mCursor + expected.length()).equals(expected)) {
+      if (mContent.substring(mCursor, mCursor + expected.length()).equals(expected))
         return true;
-      }
     }
     return false;
   }
@@ -91,17 +109,24 @@ public final class StringParser {
     return result;
   }
 
+  /**
+   * Read an integer
+   */
   public int readInteger() {
-    int i = mCursor;
+    int startCursor = mCursor;
+    int i = startCursor;
+    if (peekChar() == '-')
+      i++;
     while (i < mContent.length()) {
       char c = mContent.charAt(i);
       if (c < '0' || c > '9')
         break;
       i++;
     }
-    String substring = mContent.substring(mCursor, i);
+    String substring = mContent.substring(startCursor, i);
+    Integer result =  Integer.parseInt(substring);
     mCursor = i;
-    return Integer.parseInt(substring);
+    return result;
   }
 
   public String peekRemaining() {
@@ -119,9 +144,10 @@ public final class StringParser {
     final String quote = "\"";
     boolean quoted = readIf(quote);
     if (quoted) {
-      // TODO: we may need special escaping if filenames have '"' in them (but that would be stupid)
-      while (!readIf(quote))
+      while (!readIf(quote)) {
+        readIf("\\");
         x.append(readChar());
+      }
     } else {
       while (true) {
         char ch = peekChar();
@@ -136,7 +162,7 @@ public final class StringParser {
 
   public void assertDone() {
     if (!done())
-      throw badState("Unexpected characters in content:", quote(mContent),
+      badState("Unexpected characters in content:", quote(mContent),
           quote("..." + mContent.substring(mCursor)));
   }
 

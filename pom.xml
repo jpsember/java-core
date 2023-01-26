@@ -7,20 +7,15 @@
   <groupId>com.jsbase</groupId>
   <artifactId>base</artifactId>
   <version>1.0</version>
+  <packaging>jar</packaging>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
-
-    <!--  Custom properties start {~properties:  -->
-    <!--  Custom properties end   ~}             -->
-
   </properties>
 
   <dependencies>
-
-    <!--  Custom dependencies start {~dependencies: -->
 
     <dependency>
       <groupId>commons-io</groupId>
@@ -28,11 +23,35 @@
       <version>2.6</version>
     </dependency>
 
-    <!--  Custom dependencies end   ~}              -->
-
   </dependencies>
 
-  <!--  Custom elements start {~elements:         -->
-  <!--  Custom elements end   ~}                  -->
+
+  <build>
+    <plugins>
+
+      <plugin>
+         <artifactId>maven-assembly-plugin</artifactId>
+         <executions>
+             <execution>
+                  <phase>package</phase>
+                  <goals>
+                      <goal>single</goal>
+                  </goals>
+              </execution>
+          </executions>
+          <configuration>
+               <archive>
+                   <manifest>
+                         <mainClass>js.app.ScreenCaptureOper</mainClass>
+                   </manifest>
+               </archive>
+               <descriptorRefs>
+                   <descriptorRef>jar-with-dependencies</descriptorRef>
+              </descriptorRefs>
+         </configuration>
+      </plugin>
+
+    </plugins>
+  </build>
 
 </project>
