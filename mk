@@ -40,5 +40,12 @@ fi
 
 mvn package -DskipTests
 
-mv target/base-1.0.jar screenshotter.jar
+cp screenshotter.plist ~/Library/LaunchAgents
+mv target/base-1.0.jar ~/screenshotter.jar
 
+
+# launchctl load ~/Library/LaunchAgents/screenshotter.plist
+
+# or:
+
+# launchctl start screenshotter

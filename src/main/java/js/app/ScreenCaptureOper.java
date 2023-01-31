@@ -18,39 +18,43 @@ public class ScreenCaptureOper {
 
   private void perform(String[] args) {
 
-    //  @Override
-    //  public void perform() {
-    //
-    //    mConfig = (CaptureConfig.Builder) config().toBuilder();
-
     // See https://markholloway.com/2018/11/14/macos-screencapture-terminal/
 
+    StringBuilder sb = new StringBuilder();
     while (true) {
 
       long timestamp = System.currentTimeMillis();
+      String msg = "....iteration: " + timestamp;
+      sb.append(msg + "\n");
+      pr(msg);
 
-      for (int devNum = 0; devNum < 2; devNum++) {
-        SystemCall s = new SystemCall();
-        s.arg("screencapture");
-        s.arg("-S"); // Capture the entire screen
-        s.arg("-T", 1); // delay in seconds
-        //     s.arg("-x");  // Do not play sounds
-        s.arg("-r"); // Do not add some metadata to image
-        s.arg("-tjpg"); // output image format
-        s.arg("-D" + (1 + devNum)); // device number
+      Files.S.writeString(Files.getDesktopFile("screencapture_log.txt"), sb.toString());
 
-        File output = getNextOutputFile(timestamp, devNum);
-        s.arg(output);
-        s.setVerbose();
-        s.call();
+      if (alert("skipping"))
+        mSecondsBetweenShots = 3;
+      else
+        for (int devNum = 0; devNum < 2; devNum++) {
+          SystemCall s = new SystemCall();
+          s.arg("screencapture");
+          s.arg("-S"); // Capture the entire screen
+          s.arg("-T", 1); // delay in seconds
+          //     s.arg("-x");  // Do not play sounds
+          s.arg("-r"); // Do not add some metadata to image
+          s.arg("-tjpg"); // output image format
+          s.arg("-D" + (1 + devNum)); // device number
 
-        // If error output is 'no such device', ignore
-        if (s.systemErr().contains("Invalid display specified"))
-          continue;
+          File output = getNextOutputFile(timestamp, devNum);
+          s.arg(output);
+          s.setVerbose();
+          s.call();
 
-        s.assertSuccess();
-        imageFiles().add(output);
-      }
+          // If error output is 'no such device', ignore
+          if (s.systemErr().contains("Invalid display specified"))
+            continue;
+
+          s.assertSuccess();
+          imageFiles().add(output);
+        }
 
       DateTimeTools.sleepForRealMs(mSecondsBetweenShots * 1000L);
 
