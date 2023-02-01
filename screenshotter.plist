@@ -22,9 +22,6 @@
     <key>StandardErrorPath</key>
     <string>/Users/home/Desktop/screenshotter_logfile_err.txt</string>
 
-    <key>Debug</key>
-      <true/>
-
   </dict>
 
 </plist>

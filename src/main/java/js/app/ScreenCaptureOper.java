@@ -128,6 +128,6 @@ public class ScreenCaptureOper {
   private int mSecondsBetweenShots = 60;
   private int mMaxScreenshots = 1500;
   private long mStartTime;
-  private final boolean mDisableActualScreenshots = alert("skipping shots");
+  private final boolean mDisableActualScreenshots = false && alert("skipping shots");
 
 }
