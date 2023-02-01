@@ -18,21 +18,29 @@ public class ScreenCaptureOper {
 
   private void perform(String[] args) {
 
+    final boolean disableShots = alert("skipping shots");
+    if (alert("short interval"))
+      mSecondsBetweenShots = 5;
+
     // See https://markholloway.com/2018/11/14/macos-screencapture-terminal/
 
-    StringBuilder sb = new StringBuilder();
+    final boolean withTextFile = false;
+
+    StringBuilder sb = null;
+    if (withTextFile)
+      sb = new StringBuilder();
     while (true) {
 
       long timestamp = System.currentTimeMillis();
-      String msg = "....iteration: " + timestamp;
-      sb.append(msg + "\n");
+      String msg = "....iteration: " + timestamp/1000;
       pr(msg);
+      if (withTextFile) {
+        sb.append(msg + "\n");
 
-      Files.S.writeString(Files.getDesktopFile("screencapture_log.txt"), sb.toString());
+        Files.S.writeString(Files.getDesktopFile("screencapture_log.txt"), sb.toString());
+      }
 
-      if (alert("skipping"))
-        mSecondsBetweenShots = 3;
-      else
+      if (!disableShots)
         for (int devNum = 0; devNum < 2; devNum++) {
           SystemCall s = new SystemCall();
           s.arg("screencapture");
@@ -58,7 +66,8 @@ public class ScreenCaptureOper {
 
       DateTimeTools.sleepForRealMs(mSecondsBetweenShots * 1000L);
 
-      cullShots();
+      if (!disableShots)
+        cullShots();
     }
   }
 
