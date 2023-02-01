@@ -5,7 +5,6 @@ import static js.base.Tools.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -93,13 +92,13 @@ public class ScreenCaptureOper extends BaseObject {
       return;
 
     File tmpFile = createZipFile(imageFiles());
-    File zipFile = new File(imageDir(), "_collection_" + System.currentTimeMillis() + "." + Files.EXT_ZIP);
+    File zipFile = new File(imageDir(), System.currentTimeMillis() + "." + Files.EXT_ZIP);
 
     Files.S.moveFile(tmpFile, zipFile);
     zipFiles().add(zipFile);
     Files.S.deleteFile(tmpFile);
 
-    for (File imgFile : imageFiles()) 
+    for (File imgFile : imageFiles())
       Files.S.deleteFile(imgFile);
     imageFiles().clear();
 
@@ -118,11 +117,8 @@ public class ScreenCaptureOper extends BaseObject {
 
     try {
       ZipOutputStream zipStream = new ZipOutputStream(Files.S.outputStream(tmpFile));
-      int index = INIT_INDEX;
       for (File absFile : fileList) {
-        index++;
         String name = absFile.getName();
-        Integer oldMapping = uq.put(name, index);
         ZipEntry zipEntry = new ZipEntry(name);
         zipStream.putNextEntry(zipEntry);
         zipStream.write(Files.toByteArray(absFile, "ScreenCaptureOper add to zip"));
@@ -138,17 +134,10 @@ public class ScreenCaptureOper extends BaseObject {
   }
 
   private void buildImageFiles() {
-    List<File> lst = arrayList();
     DirWalk w = new DirWalk(imageDir());
     w.withRecurse(false);
     w.withExtensions("jpg");
-    for (File f : w.files()) {
-      String name = f.getName();
-      if (!name.startsWith("_screenshot_"))
-        continue;
-      lst.add(f);
-    }
-    mImageFiles = lst;
+    mImageFiles = w.files();
   }
 
   private List<File> imageFiles() {
@@ -156,17 +145,10 @@ public class ScreenCaptureOper extends BaseObject {
   }
 
   private void buildZipFiles() {
-    List<File> lst = arrayList();
     DirWalk w = new DirWalk(imageDir());
     w.withRecurse(false);
     w.withExtensions("zip");
-    for (File f : w.files()) {
-      String name = f.getName();
-      if (!name.startsWith("_collection_"))
-        continue;
-      lst.add(f);
-    }
-    mZipFiles = lst;
+    mZipFiles = w.files();
   }
 
   private List<File> zipFiles() {
@@ -191,7 +173,7 @@ public class ScreenCaptureOper extends BaseObject {
   private File mImageDir;
 
   private File getNextOutputFile(long timestamp, int deviceNumber) {
-    File f = new File(imageDir(), "_screenshot_" + timestamp + "_d" + deviceNumber + ".jpg");
+    File f = new File(imageDir(), timestamp + "_d" + deviceNumber + ".jpg");
     return f;
   }
 
