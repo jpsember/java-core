@@ -18,6 +18,12 @@ public class ScreenCaptureOper {
 
   private void perform(String[] args) {
 
+    boolean simulateErr = true;
+    File errFile = null;
+    if (simulateErr) {
+      errFile = Files.getDesktopFile("_err_sentinel.txt_");
+    }
+    
     final boolean disableShots = alert("skipping shots");
     if (alert("short interval"))
       mSecondsBetweenShots = 5;
@@ -32,7 +38,24 @@ public class ScreenCaptureOper {
     while (true) {
 
       long timestamp = System.currentTimeMillis();
-      String msg = "....iteration: " + timestamp/1000;
+      if (mStartTime == 0)
+        mStartTime = timestamp;
+
+      if (simulateErr) {
+        if (timestamp - mStartTime > 20000) {
+          if (!errFile.exists()) {
+            Files.S.writeString(errFile, "simulating error");
+            pr("...simulating an error...");
+            die("goodbye");
+          } else {
+            simulateErr = false;
+            alert(
+                "there is already an error sentinel file, so we already restarted; not simulating an error");
+          }
+        }
+      }
+
+      String msg = "....iteration: " + timestamp / 1000;
       pr(msg);
       if (withTextFile) {
         sb.append(msg + "\n");
@@ -69,6 +92,7 @@ public class ScreenCaptureOper {
       if (!disableShots)
         cullShots();
     }
+
   }
 
   private void cullShots() {
@@ -115,4 +139,5 @@ public class ScreenCaptureOper {
   private List<File> mImageFiles;
   private int mSecondsBetweenShots = 60;
   private int mMaxScreenshots = 1500;
+  private long mStartTime;
 }

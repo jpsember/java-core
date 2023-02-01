@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -eu
 
+
+echo Removing sentinel file...
+rm -f ~/Desktop/_err_sentinel.txt_
+
 echo Unloading...
 launchctl unload -w ~/Library/LaunchAgents/screenshotter.plist
 echo Loading...
