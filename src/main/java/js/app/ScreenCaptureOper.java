@@ -18,52 +18,39 @@ public class ScreenCaptureOper {
 
   private void perform(String[] args) {
 
-    boolean simulateErr = true;
     File errFile = null;
-    if (simulateErr) {
+    if (mSimulateError) {
       errFile = Files.getDesktopFile("_err_sentinel.txt_");
     }
-    
-    final boolean disableShots = alert("skipping shots");
+
     if (alert("short interval"))
       mSecondsBetweenShots = 5;
 
     // See https://markholloway.com/2018/11/14/macos-screencapture-terminal/
 
-    final boolean withTextFile = false;
-
-    StringBuilder sb = null;
-    if (withTextFile)
-      sb = new StringBuilder();
     while (true) {
 
       long timestamp = System.currentTimeMillis();
       if (mStartTime == 0)
         mStartTime = timestamp;
 
-      if (simulateErr) {
+      if (mSimulateError) {
         if (timestamp - mStartTime > 20000) {
           if (!errFile.exists()) {
             Files.S.writeString(errFile, "simulating error");
             pr("...simulating an error...");
             die("goodbye");
           } else {
-            simulateErr = false;
+            mSimulateError = false;
             alert(
                 "there is already an error sentinel file, so we already restarted; not simulating an error");
           }
         }
       }
 
-      String msg = "....iteration: " + timestamp / 1000;
-      pr(msg);
-      if (withTextFile) {
-        sb.append(msg + "\n");
+      pr("....iteration: " + timestamp / 1000);
 
-        Files.S.writeString(Files.getDesktopFile("screencapture_log.txt"), sb.toString());
-      }
-
-      if (!disableShots)
+      if (!mDisableActualScreenshots)
         for (int devNum = 0; devNum < 2; devNum++) {
           SystemCall s = new SystemCall();
           s.arg("screencapture");
@@ -89,7 +76,7 @@ public class ScreenCaptureOper {
 
       DateTimeTools.sleepForRealMs(mSecondsBetweenShots * 1000L);
 
-      if (!disableShots)
+      if (!mDisableActualScreenshots)
         cullShots();
     }
 
@@ -136,8 +123,11 @@ public class ScreenCaptureOper {
     return f;
   }
 
+  private boolean mSimulateError = true;
   private List<File> mImageFiles;
   private int mSecondsBetweenShots = 60;
   private int mMaxScreenshots = 1500;
   private long mStartTime;
+  private final boolean mDisableActualScreenshots = alert("skipping shots");
+
 }
