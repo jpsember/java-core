@@ -9,7 +9,7 @@
 
     <key>ProgramArguments</key>
       <array>
-        <string>java</string>
+        <string>/usr/bin/java</string>
         <string>-jar</string>
         <string>/Users/home/screenshotter.jar</string>
       </array>
