@@ -1,3 +1,27 @@
+/**
+ * MIT License
+ * 
+ * Copyright (c) 2022 Jeff Sember
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ * 
+ **/
 package js.app;
 
 import static js.base.Tools.*;
@@ -21,12 +45,7 @@ public class ScreenCaptureOper extends BaseObject {
   }
 
   private void perform(String[] args) {
-    alertVerbose();
-
-    File errFile = null;
-    if (mSimulateError) {
-      errFile = Files.getDesktopFile("_err_sentinel.txt_");
-    }
+    //alertVerbose();
 
     buildImageFiles();
     buildZipFiles();
@@ -39,49 +58,28 @@ public class ScreenCaptureOper extends BaseObject {
       if (mStartTime == 0)
         mStartTime = timestamp;
 
-      if (mSimulateError) {
-        if (timestamp - mStartTime > 20000) {
-          if (!errFile.exists()) {
-            Files.S.writeString(errFile, "simulating error");
-            pr("...simulating an error...");
-            die("goodbye");
-          } else {
-            mSimulateError = false;
-            alert(
-                "there is already an error sentinel file, so we already restarted; not simulating an error");
-          }
-        }
+      for (int devNum = 0; devNum < 2; devNum++) {
+        SystemCall s = new SystemCall();
+        s.arg("screencapture");
+        s.arg("-S"); // Capture the entire screen
+        s.arg("-T", 1); // delay in seconds
+        s.arg("-r"); // Do not add some metadata to image
+        s.arg("-tjpg"); // output image format
+        s.arg("-D" + (1 + devNum)); // device number
+
+        File output = getNextOutputFile(timestamp, devNum);
+        s.arg(output);
+        s.call();
+
+        // If error output is 'no such device', ignore
+        if (s.systemErr().contains("Invalid display specified"))
+          continue;
+
+        s.assertSuccess();
+        imageFiles().add(output);
       }
-
-      pr("....iteration: " + timestamp / 1000);
-
-      if (!mDisableActualScreenshots)
-        for (int devNum = 0; devNum < 2; devNum++) {
-          SystemCall s = new SystemCall();
-          s.arg("screencapture");
-          s.arg("-S"); // Capture the entire screen
-          s.arg("-T", 1); // delay in seconds
-          //     s.arg("-x");  // Do not play sounds
-          s.arg("-r"); // Do not add some metadata to image
-          s.arg("-tjpg"); // output image format
-          s.arg("-D" + (1 + devNum)); // device number
-
-          File output = getNextOutputFile(timestamp, devNum);
-          s.arg(output);
-          s.call();
-
-          // If error output is 'no such device', ignore
-          if (s.systemErr().contains("Invalid display specified"))
-            continue;
-
-          s.assertSuccess();
-          imageFiles().add(output);
-        }
-
+      cullShots();
       DateTimeTools.sleepForRealMs(mSecondsBetweenShots * 1000L);
-
-      if (!mDisableActualScreenshots)
-        cullShots();
     }
 
   }
@@ -177,13 +175,11 @@ public class ScreenCaptureOper extends BaseObject {
     return f;
   }
 
-  private boolean mSimulateError = false; //true;
   private List<File> mImageFiles;
   private List<File> mZipFiles;
-  private int mSecondsBetweenShots = 10; // 60;
-  private int mMaxImagesPerZip = 10; // 100
-  private int mMaxScreenshotZipFiles = 3; // 100
+  private int mSecondsBetweenShots = 60;
+  private int mMaxImagesPerZip = 100;
+  private int mMaxScreenshotZipFiles = 100;
   private long mStartTime;
-  private final boolean mDisableActualScreenshots = false && alert("skipping shots");
 
 }

@@ -31,6 +31,7 @@ import java.io.File;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -66,6 +67,13 @@ public final class DataUtil {
 
   static {
     loadTools();
+  }
+
+  /**
+   * Convert a string to a byte array, using UTF-8 encoding
+   */
+  public static byte[] toByteArray(String string) {
+    return string.getBytes(StandardCharsets.UTF_8);
   }
 
   /**
@@ -322,6 +330,7 @@ public final class DataUtil {
   public static <K, V> Map<K, V> emptyMap() {
     return IMMUTABLE_EMPTY_MAP;
   }
+
   public static <V> Set<V> emptySet() {
     return IMMUTABLE_EMPTY_SET;
   }
@@ -1045,7 +1054,7 @@ public final class DataUtil {
   }
 
   public static String hashOfString(String string) {
-    return hashOf(string.getBytes());
+    return hashOf(DataUtil.toByteArray(string));
   }
 
   /**
@@ -1102,7 +1111,7 @@ public final class DataUtil {
    * parseJsonAndPayload)
    */
   public static byte[] encodeJsonAndPayload(JSMap json, byte[] payload) {
-    byte[] jsonBytes = json.toString().getBytes();
+    byte[] jsonBytes = DataUtil.toByteArray(json.toString());
     checkArgument(jsonBytes.length <= MAX_JSON_LENGTH, "JSMap is too big");
 
     byte[] bytes = new byte[Integer.BYTES + jsonBytes.length + payload.length];

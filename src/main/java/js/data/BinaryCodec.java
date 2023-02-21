@@ -235,7 +235,7 @@ public final class BinaryCodec {
       addInt(chunkCount | (VERSION_1 << 24));
 
       String jsonTemplate = trimmedJsonMap.toString();
-      byte[] jsonTemplateBytes = jsonTemplate.getBytes();
+      byte[] jsonTemplateBytes =  DataUtil.toByteArray(jsonTemplate);
 
       // Store chunk #0: the json template
       addInt(jsonTemplateBytes.length);
