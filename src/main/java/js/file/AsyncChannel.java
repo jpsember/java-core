@@ -28,6 +28,7 @@ import java.io.File;
 import java.util.List;
 
 import js.base.BaseObject;
+import js.data.DataUtil;
 
 import static js.base.Tools.*;
 
@@ -167,7 +168,7 @@ public class AsyncChannel extends BaseObject {
    * Send a message to the channel. Returns the message's number
    */
   public final int send(String message) {
-    return send(message.getBytes());
+    return send(DataUtil.toByteArray(message));
   }
 
   /**
