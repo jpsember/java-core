@@ -26,6 +26,9 @@ package js.base;
 
 import static js.base.Tools.*;
 
+import java.io.File;
+
+import js.file.Files;
 import js.json.JSMap;
 
 /**
@@ -33,6 +36,8 @@ import js.json.JSMap;
  * and pretty printing
  */
 public class BaseObject {
+
+  private static final Boolean ISSUE19 = true;
 
   // ------------------------------------------------------------------
   // Naming
@@ -86,6 +91,18 @@ public class BaseObject {
   }
 
   /**
+   * Read verbosity from configuration file
+   */
+  public final void updateVerbose() {
+    boolean flag = REGISTER.readVerbose(getClass(), 1);
+    if (mVerbose != flag) {
+      if (flag)
+        alertWithSkip(1, name() + ": verbose is set in config file");
+      setVerbose(flag);
+    }
+  }
+
+  /**
    * Log messages if verbosity is in effect
    */
   public final void log(Object... messageObjects) {
@@ -119,5 +136,109 @@ public class BaseObject {
       m.put("", name());
     return m;
   }
+
+  /**
+   * Reread the verbosity register from the filesystem if its modification time
+   * is more recent than the last time we read it
+   */
+  public static void readVerbosityRegister() {
+    REGISTER.refreshFromFileSystem();
+  }
+
+  private static class VerbosityRegister {
+
+    public boolean readVerbose(Object keyOwner, int skipFactor) {
+      String key = getKey(keyOwner);
+      Boolean flag = register().opt(key, (Boolean) null);
+      if (flag == null) {
+        flag = false;
+        register().put(key, flag);
+        mChangesMadeTime = System.currentTimeMillis();
+        if (ISSUE19)
+          pr("flag was missing, storing:",flag,"set changes made time:",mChangesMadeTime);
+        //  mLastReadTime = 0;
+      }
+      todo("add an explicit false key to the map if it is missing");
+      return flag;
+    }
+
+    public synchronized void refreshFromFileSystem() {
+      File file = registerFile();
+      long lastModified = file.lastModified();
+      if (false && ISSUE19)
+        pr("refreshFromFileSystem, lastModified:", lastModified, "lastRead",mLastReadTime,"changes made",mChangesMadeTime);
+  
+      if (lastModified > mLastReadTime) {
+        if (ISSUE19)
+          pr("register last modified", lastModified, "> last read", mLastReadTime);
+        rereadRegister();
+        if (ISSUE19)
+          pr("read new:", INDENT, mRegister);
+        todo("populate missing keys with FALSE");
+      } else {
+        // If we have made changes to the registry since it was last read, write new contents
+        if (mChangesMadeTime > mLastReadTime) {
+          if (ISSUE19)
+            pr("register changed time", mChangesMadeTime, "> last read", mLastReadTime,
+                "writing new content:", INDENT, register());
+          Files.S.writePretty(file, register());
+          mChangesMadeTime = file.lastModified();
+        }
+      }
+    }
+
+    private String getKey(Object keyOwner) {
+      if (keyOwner instanceof BaseObject) {
+        return ((BaseObject) keyOwner).name();
+      }
+      if (keyOwner instanceof Class)
+        return ((Class) keyOwner).getSimpleName();
+      return keyOwner.toString();
+    }
+
+    private void rereadRegister() {
+      // Don't update the register if the file has invalid content (e.g. in case it has
+      //  been written to within an editor while still editing)
+      //
+      JSMap m = null;
+      try {
+        m = JSMap.fromFileIfExists(registerFile());
+        mRegister = m;
+        mLastReadTime = registerFile().lastModified();
+      } catch (Throwable t) {
+        alert("problem reading register:", registerFile(), "cause:", t.getMessage());
+      }
+    }
+
+    private JSMap register() {
+      if (mRegister == null) {
+        synchronized (this) {
+          if (mRegister == null)
+            rereadRegister();
+        }
+      }
+      return mRegister;
+    }
+
+    private File registerFile() {
+      if (mRegisterFile == null)
+        mRegisterFile = Files.S.fileWithinProjectConfigDirectory("verbosity_register.json");
+      return mRegisterFile;
+    }
+
+    //
+    //    private synchronized void updateFile() {
+    //      Files.S.writePretty(registerFile(), register());
+    //      if (ISSUE19)
+    //        pr("just wrote:", registerFile(), INDENT, register());
+    //    }
+    //
+    private File mRegisterFile;
+    private JSMap mRegister;
+    private long mLastReadTime;
+    private long mChangesMadeTime;
+  }
+
+  private static final VerbosityRegister REGISTER = new VerbosityRegister();
 
 }
