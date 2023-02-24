@@ -27,6 +27,7 @@ package js.base;
 import static js.base.Tools.*;
 
 import java.io.File;
+import java.util.Set;
 
 import js.file.Files;
 import js.json.JSMap;
@@ -37,7 +38,7 @@ import js.json.JSMap;
  */
 public class BaseObject {
 
-  private static final Boolean ISSUE19 = true;
+  private static final Boolean ISSUE19 = false && alert("Extra verbosity issue 19 (verbosity register)");
 
   // ------------------------------------------------------------------
   // Naming
@@ -73,25 +74,37 @@ public class BaseObject {
   // Verbosity
   // ------------------------------------------------------------------
 
+  /**
+   * Determine if verbosity is set (ignoring register)
+   */
   public final boolean verbose() {
     return mVerbose;
   }
 
+  /**
+   * Set verbosity true (ignoring register)
+   */
   public final void setVerbose() {
     setVerbose(true);
   }
 
+  /**
+   * Set verbosity true with warning (ignoring register)
+   */
   public final void alertVerbose() {
     setVerbose(true);
     alertWithSkip(1, name() + ": verbose is set");
   }
 
+  /**
+   * Set verbosity state (ignoring register)
+   */
   public final void setVerbose(boolean state) {
     mVerbose = state;
   }
 
   /**
-   * Read verbosity from configuration file
+   * Update verbosity state from register (with a warning if new state is true)
    */
   public final void updateVerbose() {
     boolean flag = REGISTER.readVerbose(getClass(), 1);
@@ -139,10 +152,18 @@ public class BaseObject {
 
   /**
    * Reread the verbosity register from the filesystem if its modification time
-   * is more recent than the last time we read it
+   * is more recent than the last time we read it; and,
+   * 
+   * write new contents to filesystem if we have modified it since it was last
+   * written.
+   * 
+   * Ideally, this should be called periodically from a background thread if it
+   * is to 'watch' the filesystem copy for live updates. Otherwise, it should be
+   * called before the program exits so the registry is updated with new keys
+   * that its filesytem version doesn't yet know about.
    */
-  public static void readVerbosityRegister() {
-    REGISTER.refreshFromFileSystem();
+  public static void syncVerbosityRegister() {
+    REGISTER.synchronizeWithFileSystem();
   }
 
   private static class VerbosityRegister {
@@ -150,31 +171,27 @@ public class BaseObject {
     public boolean readVerbose(Object keyOwner, int skipFactor) {
       String key = getKey(keyOwner);
       Boolean flag = register().opt(key, (Boolean) null);
+      mKnownKeysSet.add(key);
       if (flag == null) {
         flag = false;
         register().put(key, flag);
         mChangesMadeTime = System.currentTimeMillis();
         if (ISSUE19)
-          pr("flag was missing, storing:",flag,"set changes made time:",mChangesMadeTime);
-        //  mLastReadTime = 0;
+          pr("flag was missing, storing:", flag, "set changes made time:", mChangesMadeTime);
       }
-      todo("add an explicit false key to the map if it is missing");
       return flag;
     }
 
-    public synchronized void refreshFromFileSystem() {
+    public synchronized void synchronizeWithFileSystem() {
       File file = registerFile();
       long lastModified = file.lastModified();
-      if (false && ISSUE19)
-        pr("refreshFromFileSystem, lastModified:", lastModified, "lastRead",mLastReadTime,"changes made",mChangesMadeTime);
-  
+
       if (lastModified > mLastReadTime) {
         if (ISSUE19)
           pr("register last modified", lastModified, "> last read", mLastReadTime);
         rereadRegister();
         if (ISSUE19)
           pr("read new:", INDENT, mRegister);
-        todo("populate missing keys with FALSE");
       } else {
         // If we have made changes to the registry since it was last read, write new contents
         if (mChangesMadeTime > mLastReadTime) {
@@ -199,14 +216,26 @@ public class BaseObject {
     private void rereadRegister() {
       // Don't update the register if the file has invalid content (e.g. in case it has
       //  been written to within an editor while still editing)
-      //
       JSMap m = null;
       try {
+        // Update the last read time before reading it, in case it has a parse problem
+        mLastReadTime = registerFile().lastModified();
         m = JSMap.fromFileIfExists(registerFile());
         mRegister = m;
-        mLastReadTime = registerFile().lastModified();
+        boolean modified = false;
+        for (String key : mKnownKeysSet) {
+          if (!m.containsKey(key)) {
+            m.put(key, false);
+            modified = true;
+          }
+        }
+        if (modified)
+          mChangesMadeTime = System.currentTimeMillis();
+        mKnownKeysSet.addAll(m.keySet());
+        mLastLegalRegister = mRegister;
       } catch (Throwable t) {
-        alert("problem reading register:", registerFile(), "cause:", t.getMessage());
+        pr("*** problem parsing:", registerFile());
+        mRegister = mLastLegalRegister;
       }
     }
 
@@ -226,17 +255,12 @@ public class BaseObject {
       return mRegisterFile;
     }
 
-    //
-    //    private synchronized void updateFile() {
-    //      Files.S.writePretty(registerFile(), register());
-    //      if (ISSUE19)
-    //        pr("just wrote:", registerFile(), INDENT, register());
-    //    }
-    //
     private File mRegisterFile;
     private JSMap mRegister;
+    private JSMap mLastLegalRegister = map();
     private long mLastReadTime;
     private long mChangesMadeTime;
+    private Set<String> mKnownKeysSet = hashSet();
   }
 
   private static final VerbosityRegister REGISTER = new VerbosityRegister();
