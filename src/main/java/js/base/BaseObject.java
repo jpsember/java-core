@@ -91,6 +91,7 @@ public class BaseObject {
   /**
    * Set verbosity true with warning (ignoring register)
    */
+  @Deprecated // Use the updateVerbose() method instead
   public final void alertVerbose() {
     setVerbose(true);
     alertWithSkip(1, name() + ": verbose is set");
@@ -110,7 +111,7 @@ public class BaseObject {
     boolean flag = REGISTER.readVerbose(getClass(), 1);
     if (mVerbose != flag) {
       if (flag)
-        alertWithSkip(1, name() + ": verbose is set in config file");
+        alertWithSkip(1, name() + ": verbose is set in", REGISTER.registerFile().getName());
       setVerbose(flag);
     }
   }
