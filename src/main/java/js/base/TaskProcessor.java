@@ -72,6 +72,39 @@ public class TaskProcessor<T> extends BaseObject implements AutoCloseable {
   }
 
   /**
+   * Submit a task that will repeatedly call a particular method at a particular
+   * rate
+   */
+  public void startBackgroundTask(long intervalMs, Runnable userMethod) {
+    checkState(!mBackgroundTaskStarted, "background task already started");
+    mBackgroundTaskStarted = true;
+
+    submit(new Callable<T>() {
+      @Override
+      public T call() throws Exception {
+        while (mBackgroundTaskStarted) {
+          try {
+            if (verbose())
+              log("running background task at:", DateTimeTools.humanTimeString());
+            userMethod.run();
+          } catch (Throwable t) {
+            pr("*** background task caught:", t);
+          }
+          DateTimeTools.sleepForRealMs(intervalMs);
+        }
+        return null;
+      }
+    });
+
+  }
+
+  public void stopBackgroundTask() {
+    mBackgroundTaskStarted = false;
+  }
+
+  private volatile boolean mBackgroundTaskStarted;
+
+  /**
    * For test purposes only
    */
   public int maxQueueUsed() {
