@@ -1006,15 +1006,17 @@ public final class Files extends BaseObject {
   // Project directory structure
   // ------------------------------------------------------------------
 
+  public static final String PROJECT_CONFIG_DIR_NAME = "project_config";
+
   /**
    * Get project directory. If not yet defined, looks at the current directory
    * or one of its parents for one containing a subdirectory named
-   * "project_config"
+   * PROJECT_CONFIG_DIR_NAME
    */
   public File projectDirectory() {
     if (mProjectDirectory == null)
-      setProjectDirectory(
-          parent(getFileWithinParents(null, "project_config", "directory containing 'project_config'")));
+      setProjectDirectory(parent(getFileWithinParents(null, PROJECT_CONFIG_DIR_NAME,
+          "directory containing '" + PROJECT_CONFIG_DIR_NAME + "'")));
     return mProjectDirectory;
   }
 
@@ -1032,7 +1034,7 @@ public final class Files extends BaseObject {
    */
   public File projectConfigDirectory() {
     if (mProjectConfigDirectory == null) {
-      setProjectConfigDirectory(fileWithinProject("project_config"));
+      setProjectConfigDirectory(fileWithinProject(PROJECT_CONFIG_DIR_NAME));
     }
     return mProjectConfigDirectory;
   }
