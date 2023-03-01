@@ -116,6 +116,10 @@ public class BaseObject {
     }
   }
 
+  public static boolean updateVerbose(String key) {
+    return REGISTER.readVerbose(key, 1);
+  }
+
   /**
    * Log messages if verbosity is in effect
    */
@@ -178,7 +182,7 @@ public class BaseObject {
         register().put(key, flag);
         mChangesMadeTime = System.currentTimeMillis();
         if (ISSUE19)
-          pr("flag was missing, storing:", flag, "set changes made time:", mChangesMadeTime);
+          pr("flag was missing:", key, "storing:", flag, "set changes made time:", mChangesMadeTime);
       }
       return flag;
     }
