@@ -139,11 +139,9 @@ public final class Tools {
     int fileModeSentinalPosition = sb.length() + 2;
 
     if (messageObjects.length > 0) {
-      sb.append(":");
-      for (Object object : messageObjects) {
-        sb.append(' ');
-        sb.append(object);
-      }
+      sb.append(": ");
+      sb.append(
+      BasePrinter.toString(messageObjects));
     }
 
     String reportKey = sb.toString();

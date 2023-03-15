@@ -137,13 +137,15 @@ public class AsyncChannel extends BaseObject {
     return this;
   }
 
+  private int mVerboseCounter;
+
   /**
    * Process messages within directory
    */
   public final void update() {
     lock();
     checkNotNull(mHandler, "please provide a Handler", name());
-    if (verbose())
+    if (verbose() && mVerboseCounter++ < 10)
       log("update, examining files in:", directory(), "with extension:", mExtension);
 
     DirWalk dirWalk = new DirWalk(directory()).withExtensions(mExtension);
