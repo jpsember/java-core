@@ -94,11 +94,20 @@ public final class Tools {
   }
 
   /**
-   * Print message that code is unimplemented at current line; prints a specific
-   * string only once. Thread safe. Always returns true
+   * Print alert message only once. Thread safe. Always returns true
    */
   public static boolean alert(Object... messageObjects) {
     return alertWithSkip(1, messageObjects);
+  }
+
+  /**
+   * Print alert message only n times. Thread safe. Always returns true
+   */
+  public static boolean alertMaxTimes(int maxTimes, Object... messageObjects) {
+    String message = reportMaxTimes(null, maxTimes, 1, messageObjects);
+    if (message != null)
+      pr(message);
+    return true;
   }
 
   /**
