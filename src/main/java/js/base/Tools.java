@@ -140,8 +140,7 @@ public final class Tools {
 
     if (messageObjects.length > 0) {
       sb.append(": ");
-      sb.append(
-      BasePrinter.toString(messageObjects));
+      sb.append(BasePrinter.toString(messageObjects));
     }
 
     String reportKey = sb.toString();

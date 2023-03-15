@@ -85,6 +85,14 @@ public final class DataUtil {
   }
 
   /**
+   * Get a byte representation of an AbstractData object, by converting its
+   * compact string representation to bytes
+   */
+  public static byte[] toByteArray(AbstractData data) {
+    return toByteArray(toString(data));
+  }
+
+  /**
    * Construct a 'fresh' builder from an AbstractData, by building it (in case
    * it's already a builder) and re-converting to a builder
    */

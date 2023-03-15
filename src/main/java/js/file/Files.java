@@ -264,8 +264,16 @@ public final class Files extends BaseObject {
     writeString(file, json.prettyPrint());
   }
 
-  // ------------------------------------------------------------------
+  //------------------------------------------------------------------
   // Pretty-print an AbstractData object 
+  // ------------------------------------------------------------------
+
+  public void writePretty(File file, AbstractData abstractData) {
+    writePretty(file, abstractData.toJson());
+  }
+
+  //------------------------------------------------------------------
+  // Write AbstractData object to file, without pretty printing
   // ------------------------------------------------------------------
 
   public void write(File file, AbstractData abstractData) {
@@ -275,10 +283,6 @@ public final class Files extends BaseObject {
   public boolean writeIfChanged(File target, AbstractData abstractData) {
     String content = abstractData.toJson().toString();
     return writeIfChanged(target, content);
-  }
-
-  public void writePretty(File file, AbstractData abstractData) {
-    writePretty(file, abstractData.toJson());
   }
 
   // ------------------------------------------------------------------

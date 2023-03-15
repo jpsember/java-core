@@ -93,6 +93,8 @@ public final class StringParser {
 
   public int readInteger() {
     int i = mCursor;
+    if (i + 1 < mContent.length() && mContent.charAt(i) == '-')
+      i++;
     while (i < mContent.length()) {
       char c = mContent.charAt(i);
       if (c < '0' || c > '9')
@@ -100,8 +102,10 @@ public final class StringParser {
       i++;
     }
     String substring = mContent.substring(mCursor, i);
+    // Don't modify the cursor position if we fail to parse an Int
+    int result = Integer.parseInt(substring);
     mCursor = i;
-    return Integer.parseInt(substring);
+    return result;
   }
 
   public String peekRemaining() {
