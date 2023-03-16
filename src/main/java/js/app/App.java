@@ -83,6 +83,8 @@ public abstract class App extends BaseObject {
     if (supportArgsFile()) {
       mGenArgs = cmdLineArgs().get(CLARG_GEN_ARGS);
       mArgsFile = new File(cmdLineArgs().getString(CLARG_ARGS_FILE));
+      if (Files.nonEmpty(mArgsFile))
+        Files.assertExists(mArgsFile, "args file");
     } else
       mArgsFile = Files.DEFAULT;
 
