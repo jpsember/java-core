@@ -357,8 +357,7 @@ public final class Files extends BaseObject {
   }
 
   public static File addExpectedExtension(File file, String ext) {
-    todo("move this to the File class");
-    checkArgument(checkNonEmpty(ext).startsWith("."));
+    checkArgument(!checkNonEmpty(ext).startsWith("."));
     String currentExt = Files.getExtension(file);
     if (currentExt.isEmpty())
       currentExt = ext;
