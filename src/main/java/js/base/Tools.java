@@ -552,10 +552,10 @@ public final class Tools {
     return value;
   }
 
-  public static String checkNonEmpty(String charSeq, Object... messages) {
-    if (nullOrEmpty(charSeq))
+  public static String checkNonEmpty(String string, Object... messages) {
+    if (nullOrEmpty(string))
       throw badArg("Null or empty string!", BasePrinter.toString(messages));
-    return charSeq;
+    return string;
   }
 
   // ------------------------------------------------------------------

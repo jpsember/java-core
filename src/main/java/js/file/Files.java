@@ -280,6 +280,13 @@ public final class Files extends BaseObject {
     writeString(file, abstractData.toJson().toString());
   }
 
+  public void writeWithPrettyIf(File file, AbstractData abstractData, boolean prettyFlag) {
+    if (prettyFlag)
+      writePretty(file, abstractData);
+    else
+      write(file, abstractData);
+  }
+
   public boolean writeIfChanged(File target, AbstractData abstractData) {
     String content = abstractData.toJson().toString();
     return writeIfChanged(target, content);
@@ -347,6 +354,16 @@ public final class Files extends BaseObject {
     if (getExtension(file).isEmpty())
       file = setExtension(file, extension);
     return file;
+  }
+
+  public static File addExpectedExtension(File file, String ext) {
+    todo("move this to the File class");
+    checkArgument(checkNonEmpty(ext).startsWith("."));
+    String currentExt = Files.getExtension(file);
+    if (currentExt.isEmpty())
+      currentExt = ext;
+    checkArgumentsEqual(ext, currentExt, "Expected extension", ext, "for file:", file);
+    return Files.addExtension(file, ext);
   }
 
   public static File addTempSuffix(File file) {
