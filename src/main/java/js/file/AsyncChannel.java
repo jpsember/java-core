@@ -67,6 +67,10 @@ public class AsyncChannel extends BaseObject {
     return this;
   }
 
+  public final String fileExtension() {
+    return mExtension;
+  }
+
   @Override
   protected String supplyName() {
     if (mName != null)
@@ -128,7 +132,7 @@ public class AsyncChannel extends BaseObject {
    */
   public final AsyncChannel clean() {
     assertConfigurable();
-    List<File> files = new DirWalk(directory()).withExtensions(mExtension, RENAME_EXTENSION).files();
+    List<File> files = new DirWalk(directory()).withExtensions(fileExtension(), RENAME_EXTENSION).files();
     for (File file : files) {
       if (verbose())
         log("...(cleaning:", file, ")");
@@ -146,9 +150,9 @@ public class AsyncChannel extends BaseObject {
     lock();
     checkNotNull(mHandler, "please provide a Handler", name());
     if (verbose() && mVerboseCounter++ < 10)
-      log("update, examining files in:", directory(), "with extension:", mExtension);
+      log("update, examining files in:", directory(), "with extension:", fileExtension());
 
-    DirWalk dirWalk = new DirWalk(directory()).withExtensions(mExtension);
+    DirWalk dirWalk = new DirWalk(directory()).withExtensions(fileExtension());
     mem().monitorSize(getClass(), dirWalk.files());
 
     for (File file : dirWalk.files()) {
@@ -182,7 +186,7 @@ public class AsyncChannel extends BaseObject {
     mMessageNumber++;
     String messageName = nullToEmpty(mFilenamePrefix) + messageNumber + "." + RENAME_EXTENSION;
     File tempFile = new File(directory(), messageName);
-    File targetFile = Files.setExtension(tempFile, mExtension);
+    File targetFile = Files.setExtension(tempFile, fileExtension());
     if (tempFile.exists()) {
       alert("file already existed:", tempFile);
       Files.S.deletePeacefully(tempFile);
