@@ -124,7 +124,7 @@ public final class Files extends BaseObject {
   }
 
   public static File assertExists(File file, String contextOrNull) {
-    assertNonEmpty(file);
+    assertNonEmpty(file, contextOrNull);
     if (!file.exists())
       badArg("No such file:", file, contextExpression(contextOrNull));
     return file;
@@ -135,6 +135,18 @@ public final class Files extends BaseObject {
     if (file.exists())
       badArg("File or directory already exists:", file, contextExpression(contextOrNull));
     return file;
+  }
+
+  public static File assertDirectoryIfExists(File directory, String contextOrNull) {
+    Files.assertNonEmpty(directory, contextOrNull);
+    String ext = Files.getExtension(directory);
+    if (!ext.isEmpty())
+      badArg("unexpected extension for directory:", directory, Files.contextExpression(contextOrNull));
+    if (directory.exists()) {
+      if (!directory.isDirectory())
+        badArg("Not a directory:", directory, Files.contextExpression(contextOrNull));
+    }
+    return directory;
   }
 
   public static File assertDirectoryExists(File directory, String contextOrNull) {
@@ -157,7 +169,7 @@ public final class Files extends BaseObject {
         actualLength);
   }
 
-  private static String contextExpression(String context) {
+  public static String contextExpression(String context) {
     return "context: " + ifNullOrEmpty(context, "(none)");
   }
 
