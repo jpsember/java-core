@@ -352,7 +352,16 @@ public final class DataUtil {
   public static <T> List<T> immutableCopyOf(List<T> sourceListOrNull) {
     if (sourceListOrNull == null)
       return null;
-    return Collections.unmodifiableList(sourceListOrNull);
+
+    // If the input list is ALREADY unmodifiable, just return it.
+    // the unmodifiable collections are not public, so we can't 
+    // use instanceof for this; so we will construct the wrapper,
+    // and not use it if its class is the same as the list being wrapped.
+    List<T> sourceList = sourceListOrNull;
+    List<T> wrapper = Collections.unmodifiableList(sourceList);
+    if (wrapper.getClass() == sourceList.getClass()) 
+      return sourceList;
+    return wrapper;
   }
 
   public static <K, V> Map<K, V> mutableCopyOf(Map<K, V> sourceMapOrNull) {
