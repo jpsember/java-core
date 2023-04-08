@@ -352,15 +352,14 @@ public final class DataUtil {
   public static <T> List<T> immutableCopyOf(List<T> sourceListOrNull) {
     if (sourceListOrNull == null)
       return null;
-
     // If the input list is ALREADY unmodifiable, just return it.
     // the unmodifiable collections are not public, so we can't 
     // use instanceof for this; so we will construct the wrapper,
     // and not use it if its class is the same as the list being wrapped.
-    List<T> sourceList = sourceListOrNull;
-    List<T> wrapper = Collections.unmodifiableList(sourceList);
-    if (wrapper.getClass() == sourceList.getClass()) 
-      return sourceList;
+    List<T> source = sourceListOrNull;
+    List<T> wrapper = Collections.unmodifiableList(source);
+    if (wrapper.getClass() == source.getClass())
+      return source;
     return wrapper;
   }
 
@@ -373,7 +372,12 @@ public final class DataUtil {
   public static <K, V> Map<K, V> immutableCopyOf(Map<K, V> sourceMapOrNull) {
     if (sourceMapOrNull == null)
       return null;
-    return Collections.unmodifiableMap(sourceMapOrNull);
+    // Avoid unnecessary wrapping, as we did for lists
+    Map<K, V> source = sourceMapOrNull;
+    Map<K, V> wrapper = Collections.unmodifiableMap(source);
+    if (wrapper.getClass() == source.getClass())
+      return source;
+    return wrapper;
   }
 
   public static <V> Set<V> mutableCopyOf(Set<V> sourceSetOrNull) {
@@ -385,7 +389,12 @@ public final class DataUtil {
   public static <V> Set<V> immutableCopyOf(Set<V> sourceSetOrNull) {
     if (sourceSetOrNull == null)
       return null;
-    return Collections.unmodifiableSet(sourceSetOrNull);
+    // Avoid unnecessary wrapping, as we did for lists
+    Set<V> source = sourceSetOrNull;
+    Set<V> wrapper = Collections.unmodifiableSet(source);
+    if (wrapper.getClass() == source.getClass())
+      return source;
+    return wrapper;
   }
 
   /**
