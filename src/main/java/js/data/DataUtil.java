@@ -327,7 +327,7 @@ public final class DataUtil {
   public static final double[] EMPTY_DOUBLE_ARRAY = new double[0];
   public static final String CHARS_ALPHA = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
   public static final String CHARS_ALPHANUMERIC = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  private static final List IMMUTABLE_EMPTY_LIST = new ArrayList(0);
+  private static final List IMMUTABLE_EMPTY_LIST = Collections.unmodifiableList(new ArrayList(0));
   private static final Map IMMUTABLE_EMPTY_MAP = Collections.unmodifiableMap(hashMap());
   private static final Set IMMUTABLE_EMPTY_SET = Collections.unmodifiableSet(hashSet());
 
@@ -965,7 +965,7 @@ public final class DataUtil {
   public static <T> List<T> parseListOfObjects(JSList sourceListOrNull, boolean nullIfSourceNull) {
     if (sourceListOrNull == null)
       return nullIfSourceNull ? null : emptyList();
-    return (List<T>) immutableCopyOf(sourceListOrNull.wrappedList());
+    return (List<T>) sourceListOrNull.wrappedList();
   }
 
   public static <T extends AbstractData> List<T> parseListOfObjects(T defaultInstance,
@@ -988,7 +988,7 @@ public final class DataUtil {
         items.add(result);
       }
     }
-    return Collections.unmodifiableList(items);
+    return items;
   }
 
   /**

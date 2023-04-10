@@ -27,6 +27,7 @@ package js.base;
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 import js.file.Files;
@@ -953,4 +954,25 @@ public final class Tools {
     return MemoryMonitor.sharedInstance();
   }
 
+  // ------------------------------------------------------------------
+  // Calls a client method with a logging message, in a thread safe way
+  // ------------------------------------------------------------------
+
+  public static void setWtfHandler(BiConsumer<Integer, Object[]> handler) {
+    synchronized (Tools.class) {
+      checkState(sWtfCallback == null, "already a handler");
+      sWtfCallback = handler;
+    }
+  }
+
+  public static void wtf(Object... msgs) {
+    synchronized (Tools.class) {
+      pr(insertStringToFront("" + sWtfCounter, msgs));
+      sWtfCallback.accept(sWtfCounter, msgs);
+      sWtfCounter++;
+    }
+  }
+
+  private static BiConsumer<Integer, Object[]> sWtfCallback;
+  private static int sWtfCounter;
 }
