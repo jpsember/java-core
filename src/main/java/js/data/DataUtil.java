@@ -63,6 +63,7 @@ public final class DataUtil {
    */
   public static final long ONE_MB = ONE_KB * ONE_KB;
 
+  @Deprecated
   public static final boolean NULL_LIST_ELEMENTS_ALLOWED = false;
 
   static {
@@ -962,6 +963,15 @@ public final class DataUtil {
     }
   }
 
+  public static List<File> parseFileListFrom(JSList jsonList) {
+    List list = jsonList.wrappedList();
+    int size = jsonList.size();
+    File[] fileArray = new File[size];
+    for (int i = 0; i < size; i++)
+      fileArray[i] = new File((String) list.get(i));
+    return Arrays.asList(fileArray);
+  }
+
   public static <T> List<T> parseListOfObjects(JSList sourceListOrNull, boolean nullIfSourceNull) {
     if (sourceListOrNull == null)
       return nullIfSourceNull ? null : emptyList();
@@ -974,19 +984,11 @@ public final class DataUtil {
       return nullIfSourceNull ? null : emptyList();
     List<T> items = new ArrayList<>(sourceListOrNull.size());
     for (Object obj : sourceListOrNull.wrappedList()) {
-      if (NULL_LIST_ELEMENTS_ALLOWED) {
-        T result = null;
-        if (obj != null)
-          result = (T) defaultInstance.parse(obj);
-        items.add(result);
-      } else {
-        T result = (T) defaultInstance.parse(obj);
-        // I think it is a bad idea to return a null object if parsing failed.
-        if (result == null)
-          badArg("null item parsed from:", obj, CR, "source:", INDENT, sourceListOrNull, OUTDENT,
-              "defaultInstance:", INDENT, defaultInstance);
-        items.add(result);
-      }
+      T result = (T) defaultInstance.parse(obj);
+      if (result == null)
+        badArg("null item parsed from:", obj, CR, "source:", INDENT, sourceListOrNull, OUTDENT,
+            "defaultInstance:", INDENT, defaultInstance);
+      items.add(result);
     }
     return items;
   }
