@@ -423,11 +423,22 @@ public final class Tools {
    * from messing with linefeeds)
    */
   public static String insertLeftMargin(Object object) {
+    return auxInsertMargins(object, "|", "\n");
+  }
+
+  /**
+   * Insert left and right margins at the start and end of each line
+   */
+  public static String insertLeftRightMargins(Object object) {
+    return auxInsertMargins(object, "\u21e8 ", "\u21e6\n");
+  }
+
+  private static String auxInsertMargins(Object object, String leftMargin, String rightMargin) {
     StringBuilder sb = new StringBuilder();
-    for (String line : split(object.toString(), '\n')) {
-      sb.append('|');
-      sb.append(line);
-      sb.append('\n');
+    for (String s : split(object.toString(), '\n')) {
+      sb.append(leftMargin);
+      sb.append(s);
+      sb.append(rightMargin);
     }
     return sb.toString();
   }
@@ -565,16 +576,16 @@ public final class Tools {
 
   public static void checkpoint(Object... messages) {
     long currentCheckpoint = System.currentTimeMillis();
-    long last = mPreviousCheckpoint;
+    long last = sPreviousCheckpoint;
     if (last == 0)
       last = currentCheckpoint;
     long elapsed = currentCheckpoint - last;
-    mPreviousCheckpoint = currentCheckpoint;
+    sPreviousCheckpoint = currentCheckpoint;
     String timestamp = String.format("%5.3f |", elapsed / 1000f);
     pr(insertStringToFront(timestamp, messages));
   }
 
-  private static long mPreviousCheckpoint;
+  private static long sPreviousCheckpoint;
 
   // ------------------------------------------------------------------
   // BasePrinter sentinel objects

@@ -240,6 +240,29 @@ public final class DataUtil {
     return s.substring(0, 1).toLowerCase() + s.substring(1);
   }
 
+  public static void convertTabsToSpaces(int tabLen, String source, StringBuilder target) {
+    int cursor = 0;
+    for (int i = 0; i < source.length(); i++) {
+      char c = source.charAt(i);
+      switch (c) {
+      case '\n':
+        target.append(c);
+        cursor = 0;
+        break;
+      case '\t': {
+        int spacesToAdd = ((cursor + tabLen - 1) % tabLen) + 1;
+        target.append(spaces(spacesToAdd));
+        cursor += spacesToAdd;
+      }
+        break;
+      default:
+        target.append(c);
+        cursor++;
+        break;
+      }
+    }
+  }
+
   /**
    * Construct int array of a particular size, or use supplied one (which must
    * be the requested size)

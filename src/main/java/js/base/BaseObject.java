@@ -255,8 +255,9 @@ public class BaseObject {
     }
 
     private File registerFile() {
-      if (mRegisterFile == null)
+      if (mRegisterFile == null) {
         mRegisterFile = Files.S.fileWithinProjectConfigDirectory("verbosity_register.json");
+      }
       return mRegisterFile;
     }
 
