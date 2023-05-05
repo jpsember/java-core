@@ -167,7 +167,7 @@ public final class Tools {
       return null;
 
     sb.append(" (");
-    String st = getStackTraceElement(1 + stackFrameSkipCount, null);
+    String st = getStackTraceElement(1 + stackFrameSkipCount);
     sb.append(st);
     sb.append(")");
     String reportText = sb.toString();
@@ -197,20 +197,17 @@ public final class Tools {
   private static File sPersistedAlertFlagsFile;
 
   /**
-   * Get element at a particular depth within a Throwable's stack trace,
+   * Get stack trace element at a particular depth within the current thread,
    * converted to a string that allows clicking on within (an
-   * intelligent-enough) IDE. If Throwable is null, it constructs one
+   * intelligent-enough) IDE.
    */
-  private static String getStackTraceElement(int stackDepth, Throwable exceptionOrNull) {
-    if (exceptionOrNull == null) {
-      exceptionOrNull = new Throwable();
-      stackDepth++;
-    }
-    List<StackTraceElement> elist = Arrays.asList(exceptionOrNull.getStackTrace());
-    if (elist.size() <= stackDepth)
+  private static String getStackTraceElement(int stackDepth) {
+    stackDepth += 2;
+    StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+    if (stackTrace.length <= stackDepth)
       return "(no StackTraceElement available)";
-    StackTraceElement element = elist.get(stackDepth);
-    return element.getFileName() + ":" + element.getLineNumber();
+    StackTraceElement element = stackTrace[stackDepth];
+    return element.getFileName() + ":" + element.getLineNumber() + ": " + element.getMethodName();
   }
 
   private static final Map<String, Integer> sReportCountMap = new ConcurrentHashMap<>();

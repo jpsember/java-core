@@ -123,4 +123,9 @@ public final class JSUtils {
       sb.append(value);
   }
 
+  public static String valueToString(Object value) {
+    StringBuilder sb = new StringBuilder();
+    printValueTo(value, sb, 0);
+    return sb.toString();
+  }
 }
