@@ -100,12 +100,20 @@ public final class Token {
     return mText;
   }
 
+  public String source() {
+    return mSource;
+  }
+
   public int row() {
     return mRow;
   }
 
   public int column() {
     return mColumn;
+  }
+
+  public String name() {
+    return mTokenName;
   }
 
   public ScanException fail(Object... messages) {

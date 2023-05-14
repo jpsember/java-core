@@ -370,6 +370,21 @@ public final class Tools {
     return camelCaseString.replaceAll(regex, replacement).toLowerCase();
   }
 
+  /**
+   * Convert an from underscores to 'camel case' string 
+   */
+  public static String convertUnderscoreToCamel(String underscoreString) {
+    String mod = underscoreString.toLowerCase();
+    StringBuilder sb = new StringBuilder();
+    for (String s : split(mod, '_')) {
+      if (nonEmpty(s)) {
+        sb.append(Character.toUpperCase(s.charAt(0)));
+        sb.append(s.substring(1));
+      }
+    }
+  return sb.toString();
+  }
+
   public static boolean nullOrEmpty(CharSequence charSeq) {
     return charSeq == null || charSeq.length() == 0;
   }
@@ -979,6 +994,21 @@ public final class Tools {
       sWtfCallback.accept(sWtfCounter, msgs);
       sWtfCounter++;
     }
+  }
+
+  public static void pw(Object... msgs) {
+    int skipCount = 0;
+    synchronized (Tools.class) {
+      String msg = BasePrinter.toString(msgs);
+      msg = "[" + getStackTraceElement(1 + skipCount) + "] " + msg;
+      pr(msg);
+    }
+  }
+
+  @Deprecated
+  public static boolean mark(Object... msgs) {
+    alertWithSkip(1, msgs);
+    return true;
   }
 
   private static BiConsumer<Integer, Object[]> sWtfCallback;
