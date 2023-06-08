@@ -371,7 +371,7 @@ public final class Tools {
   }
 
   /**
-   * Convert an from underscores to 'camel case' string 
+   * Convert an from underscores to 'camel case' string
    */
   public static String convertUnderscoreToCamel(String underscoreString) {
     String mod = underscoreString.toLowerCase();
@@ -382,7 +382,7 @@ public final class Tools {
         sb.append(s.substring(1));
       }
     }
-  return sb.toString();
+    return sb.toString();
   }
 
   public static boolean nullOrEmpty(CharSequence charSeq) {

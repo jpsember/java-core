@@ -39,7 +39,6 @@ public final class TimeManager extends BaseObject {
   }
 
   public TimeManager(ExecutionContext context) {
-    //warnVerbose();
     mContext = context;
   }
 
