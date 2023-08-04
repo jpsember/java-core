@@ -198,6 +198,7 @@ public final class DataUtil {
   }
 
   public static String convertCamelCaseToUnderscores(String string) {
+    //todo("doesn't work on filenames, e.g. alpha/bravo/charlie.dat");
     List<String> words = new ArrayList<>();
     int wordStart = 0;
     for (int cursor = 0; cursor < string.length(); cursor++) {
