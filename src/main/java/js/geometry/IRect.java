@@ -353,4 +353,51 @@ public final class IRect implements AbstractData {
   public IRect withLocation(IPoint loc) {
     return new IRect(loc.x, loc.y, width, height);
   }
+
+  /**
+   * Perform scaling, cropping, and/or padding to align a source rectangle to a
+   * target rectangle. The padVsCrop ranges from 0: maximum padding to 1:
+   * maximum cropping. The horzBias and vertBias take effect if the dimension is
+   * being cropped, and ranges from -1 ... 1, where 0 causes the image to be
+   * centered along that dimension. A vertBias of e.g. .25 favors cropping lower
+   * parts of the image, the intuition being that a portrait input will have a
+   * person's face in the upper part. Returns the scaling factor applied, and
+   * the bounds of the scaled source image within the target rectangle's
+   * coordinate system. Both source and target rectangles are assumed to have
+   * origins at 0,0.
+   */
+  public static IRect FitRectToRect(IPoint srcSize, IPoint targSize, float padVsCropBias, float horzBias,
+      float vertBias) {
+    checkArgument(srcSize.positive() && targSize.positive());
+
+    float srcWidth = srcSize.x;
+    float srcHeight = srcSize.y;
+    float targWidth = targSize.x;
+    float targHeight = targSize.y;
+
+    float srcAspect = srcHeight / srcWidth;
+    float targAspect = targHeight / targWidth;
+    float scaleMin = targWidth / srcWidth;
+    float scaleMax = targHeight / srcHeight;
+    if (targAspect < srcAspect) {
+      padVsCropBias = 1 - padVsCropBias;
+    }
+
+    float scale = (1 - padVsCropBias) * scaleMin + padVsCropBias * scaleMax;
+
+    float scaledWidth = scale * srcWidth;
+    float scaledHeight = scale * srcHeight;
+
+    float cropWidth = scaledWidth - targWidth;
+    float cropHeight = scaledHeight - targHeight;
+
+    if (cropWidth <= 0)
+      horzBias = 0;
+    if (cropHeight <= 0)
+      vertBias = 0;
+
+    return new FRect(-cropWidth * ((horzBias * .5f) + .5f), -cropHeight * ((vertBias * .5f) + .5f),
+        scaledWidth, scaledHeight).toIRect();
+  }
+
 }

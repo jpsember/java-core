@@ -166,10 +166,11 @@ public final class Tools {
     if (reportCount >= limit)
       return null;
 
-    sb.append(" (");
+    // Insert the (file:linenumber) at the start, so it is clickable
+
     String st = getStackTraceElement(1 + stackFrameSkipCount);
-    sb.append(st);
-    sb.append(")");
+    
+    sb.insert(0,"is it still clickable? " + st );
     String reportText = sb.toString();
 
     if (fileModeSentinalPosition < reportText.length()
@@ -207,7 +208,17 @@ public final class Tools {
     if (stackTrace.length <= stackDepth)
       return "(no StackTraceElement available)";
     StackTraceElement element = stackTrace[stackDepth];
-    return element.getFileName() + ":" + element.getLineNumber() + ": " + element.getMethodName();
+    
+    // The returned string should start with (filename:linenumber) so the links are clickable within Eclipse;
+    // see https://stackoverflow.com/questions/6469445/
+    //
+    // The method name maybe just adds unnecessary clutter.
+    String result = "("+ element.getFileName()+":"+element.getLineNumber()+")";
+    if (false) {
+      result += " "+element.getMethodName();
+    }
+    result += " ";
+    return result;
   }
 
   private static final Map<String, Integer> sReportCountMap = new ConcurrentHashMap<>();
@@ -1000,7 +1011,8 @@ public final class Tools {
     int skipCount = 0;
     synchronized (Tools.class) {
       String msg = BasePrinter.toString(msgs);
-      msg = "[" + getStackTraceElement(1 + skipCount) + "] " + msg;
+      msg = // "[" + 
+      getStackTraceElement(1 + skipCount)+" "+msg;
       pr(msg);
     }
   }
