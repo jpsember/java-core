@@ -148,6 +148,8 @@ public final class Tools {
     sb.append(ifNullOrEmpty(type, "WARNING"));
     int fileModeSentinalPosition = sb.length() + 2;
 
+    int locationPosition = sb.length();
+
     if (messageObjects.length > 0) {
       sb.append(": ");
       sb.append(BasePrinter.toString(messageObjects));
@@ -166,11 +168,8 @@ public final class Tools {
     if (reportCount >= limit)
       return null;
 
-    // Insert the (file:linenumber) at the start, so it is clickable
-
-    String st = getStackTraceElement(1 + stackFrameSkipCount);
-    
-    sb.insert(0,"is it still clickable? " + st );
+    StringBuilder s2 = getStackTraceElement(null, 1 + stackFrameSkipCount);
+    sb.insert(locationPosition, spaces(12 - locationPosition) + s2);
     String reportText = sb.toString();
 
     if (fileModeSentinalPosition < reportText.length()
@@ -197,28 +196,40 @@ public final class Tools {
   private static JSMap sPersistedAlertFlagsMap;
   private static File sPersistedAlertFlagsFile;
 
+  public static StringBuilder constructStringBuilderIfNec(StringBuilder sbOrNull) {
+    if (sbOrNull == null)
+      sbOrNull = new StringBuilder();
+    return sbOrNull;
+  }
+
   /**
    * Get stack trace element at a particular depth within the current thread,
    * converted to a string that allows clicking on within (an
    * intelligent-enough) IDE.
    */
-  private static String getStackTraceElement(int stackDepth) {
+  private static StringBuilder getStackTraceElement(StringBuilder sbOrNull, int stackDepth) {
+    StringBuilder sb = constructStringBuilderIfNec(sbOrNull);
     stackDepth += 2;
     StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
-    if (stackTrace.length <= stackDepth)
-      return "(no StackTraceElement available)";
-    StackTraceElement element = stackTrace[stackDepth];
-    
-    // The returned string should start with (filename:linenumber) so the links are clickable within Eclipse;
-    // see https://stackoverflow.com/questions/6469445/
-    //
-    // The method name maybe just adds unnecessary clutter.
-    String result = "("+ element.getFileName()+":"+element.getLineNumber()+")";
-    if (false) {
-      result += " "+element.getMethodName();
+    if (stackTrace.length <= stackDepth) {
+      sb.append("(no StackTraceElement available)");
+    } else {
+      StackTraceElement element = stackTrace[stackDepth];
+
+      // The returned string should contain (filename:linenumber) so the links are clickable within Eclipse;
+      // see https://stackoverflow.com/questions/6469445/
+      //
+      sb.append('(');
+      sb.append(element.getFileName());
+      sb.append(':');
+      sb.append(element.getLineNumber());
+      sb.append(") ");
+      if (false) {
+        // The method name maybe just adds unnecessary clutter.
+        sb.append(element.getMethodName());
+      }
     }
-    result += " ";
-    return result;
+    return sb;
   }
 
   private static final Map<String, Integer> sReportCountMap = new ConcurrentHashMap<>();
@@ -1011,9 +1022,10 @@ public final class Tools {
     int skipCount = 0;
     synchronized (Tools.class) {
       String msg = BasePrinter.toString(msgs);
-      msg = // "[" + 
-      getStackTraceElement(1 + skipCount)+" "+msg;
-      pr(msg);
+      StringBuilder sb = getStackTraceElement(null, 1 + skipCount);
+      sb.append(' ');
+      sb.append(msg);
+      pr(sb);
     }
   }
 

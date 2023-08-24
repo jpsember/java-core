@@ -1201,11 +1201,10 @@ public final class DataUtil {
    *          number of hex digits to output
    * @return result
    */
-  public static StringBuilder toHex(StringBuilder sb, int value, int digits, boolean stripLeadingZeros,
+  public static StringBuilder toHex(StringBuilder sbOrNull, int value, int digits, boolean stripLeadingZeros,
       boolean groupsOfFour) {
-    if (sb == null)
-      sb = new StringBuilder();
-
+    StringBuilder sb = constructStringBuilderIfNec(sbOrNull);
+    
     boolean nonZeroSeen = !stripLeadingZeros;
 
     while (digits-- > 0) {
