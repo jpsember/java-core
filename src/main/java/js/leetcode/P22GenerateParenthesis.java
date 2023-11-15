@@ -9,9 +9,7 @@ package js.leetcode;
 import static js.base.Tools.*;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 public class P22GenerateParenthesis {
 
@@ -24,37 +22,35 @@ public class P22GenerateParenthesis {
   }
 
   public List<String> generateParenthesis(int n) {
-    List<Set<String>> depthLists = new ArrayList<>();
-    for (int j = 0; j < n; j++) {
-      auxGen(depthLists, j);
-    }
-    var last = depthLists.get(n - 1);
-    return new ArrayList<>(last);
-  }
 
-  private void auxGen(List<Set<String>> depthLists, int depth) {
-    Set<String> result = new HashSet<>();
-    if (depth == 0) {
-      result.add("()");
-    } else {
-      Set<String> b = depthLists.get(depth - 1);
-      for (var x : b) {
-        var z = "(" + x + ")";
-        result.add(z);
-      }
+    List<String> results = new ArrayList<>();
 
-      for (int a = 0; a < depth; a++) {
-        b = depthLists.get(a);
-        var c = depthLists.get(depth - 1 - a);
-        for (String x : b) {
-          for (String y : c) {
-            var z = x+y;
-            result.add(z);
+    var sb = new StringBuilder(n * 2);
+    int expected = 1 << (n-1);
+    for (int i = 0; i < expected; i++) {
+      int tailCount = 0;
+      sb.setLength(0);
+      var choices = i;
+      int j = 0;
+      while (j < n) {
+        if (tailCount != 0) {
+          boolean flag = (choices & 1) != 0;
+          choices >>= 1;
+          if (flag) {
+            tailCount--;
+            sb.append(')');
+            continue;
           }
         }
+        sb.append('(');
+        tailCount++;
+        j++;
       }
+      while (tailCount-- != 0)
+        sb.append(')');
+      results.add(sb.toString());
     }
-    depthLists.add(result);
+    return results;
   }
 
 
