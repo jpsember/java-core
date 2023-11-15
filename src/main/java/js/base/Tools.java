@@ -101,6 +101,212 @@ public final class Tools {
     return alertWithSkip(1, messageObjects);
   }
 
+  public static boolean todo(String key, Object... message) {
+    auxAlert(1, key, "TODO", message);
+    return true;
+  }
+  //
+  //func Todo(key string, message ...any) bool {
+  //  auxAlert(1, key, "TODO", message...)
+  //  return true
+  //}
+
+  private static Map<String, Integer> sAlertCounterMap = concurrentHashMap();
+
+  private static class AlertInfo {
+    String key;
+    long delayMs;
+    int maxPerSession;
+    int skipCount;
+  }
+
+  private static int[] extractInt(String s, int cursor) {
+    var newCursor = cursor;
+    var value = 0;
+    while (newCursor < s.length()) {
+      var ch = s.charAt(newCursor);
+      if (ch < '0' || ch > '9')
+        break;
+      value = value * 10 + (int) (ch - '0');
+      newCursor++;
+    }
+    var result = new int[2];
+    result[0] = newCursor;
+    result[1] = value;
+    return result;
+  }
+
+  //Parse an alert key into an alertInfo structure.
+  //Can contain zero or more prefixes of the form:
+  //
+  //-              Never print
+  //!          Print about once per day
+  //?              Print about once per month
+  //#[0-9]+              Print n times, every time program is run
+  //<[0-9]+              Skip first n entries in stack trace
+  private static AlertInfo extractAlertInfo(String key) {
+
+    final int minute = 60 * 1000;
+    final int hour = minute * 60;
+
+    var info = new AlertInfo();
+    info.maxPerSession = 1;
+    var cursor = 0;
+    while (cursor < key.length()) {
+      var ch = key.charAt(cursor);
+      cursor++;
+      if (ch == '-') {
+        info.maxPerSession = 0;
+        break;
+      }
+      if (ch == '!') {
+        info.delayMs = hour * 24;
+      } else if (ch == '?') {
+        info.delayMs = hour * 24 * 31;
+      } else if (ch == '#') {
+        var x = extractInt(key, cursor);
+        cursor = x[0];
+        info.maxPerSession = x[1];
+      } else if (ch == '<') {
+        var x = extractInt(key, cursor);
+        cursor = x[0];
+        info.skipCount += x[1];
+      } else if (ch == ' ') {
+        // ignore leading spaces
+      } else {
+        cursor--;
+        break;
+      }
+    }
+
+    info.key = key.substring(cursor);
+    
+    pr("key:",key,quote(info.key),info.skipCount, info.maxPerSession);
+    return info;
+  }
+
+  private static void processClearAlertHistoryFlag() {
+  }
+
+  
+//  private static boolean processAlertForMultipleSessions(AlertInfo info) {
+//    if (sPriorityAlertMap == null) {
+//
+//      File d =       Files.S.projectDirectory();
+//      if (Files.empty(d)) {
+//       d =  Files.S.getFileWithinParents(null, ".git");
+//       if ( !Files.empty(d)) {
+//         d = Files.parent(d);
+//       } else {
+//         d = Files.currentDirectory();
+//       }
+//      }
+//      
+//      priorityAlertPersistPath = d.JoinM(".go_flags.json")
+//      priorityAlertMap = NewJSMap()
+//      if clearPriorityAlertMapFlag {
+//      } else {
+//        restored, err := JSMapFromFileIfExists(priorityAlertPersistPath)
+//        if err != nil {
+//          Pr("Problem parsing:", priorityAlertPersistPath, ", error:", err)
+//          priorityAlertMap = NewJSMap()
+//          // Discard old file
+//          priorityAlertPersistPath.DeleteFile()
+//        } else {
+//          priorityAlertMap = restored
+//        }
+//      }
+//      const expectedVersion = 2
+//      if priorityAlertMap.OptInt("version", 0) != expectedVersion {
+//        priorityAlertMap.Clear().Put("version", expectedVersion)
+//      }
+//    }
+//
+//    m := priorityAlertMap.OptMapOrEmpty(info.key)
+//    currTime := CurrentTimeMs()
+//    elapsed := TestAlertDuration
+//    if elapsed == 0 {
+//      lastReport := m.OptLong("r", 0)
+//      elapsed = currTime - lastReport
+//    }
+//    CheckArg(elapsed >= 0)
+//    if elapsed < info.delayMs {
+//      return false
+//    }
+//    m.Put("r", currTime)
+//    priorityAlertMap.Put(info.key, m)
+//    if !testAlertState {
+//      priorityAlertPersistPath.WriteStringM(priorityAlertMap.CompactString())
+//    }
+//    return true
+//  }
+  
+  private static void auxAlert(int skipCount, String key, String prompt, Object... args) {
+
+    processClearAlertHistoryFlag();
+    var info = extractAlertInfo(key);
+    var cachedInfo = sAlertCounterMap.getOrDefault(info.key, 0) + 1;
+    sAlertCounterMap.put(info.key, cachedInfo);
+
+    // If we are never to print this alert, exit now
+    if (info.maxPerSession == 0) {
+      return;
+    }
+
+    // If there's a multi-session priority value, process it
+    //
+    if (info.delayMs > 0) {
+      
+      
+//      synchronized (sReportCountMap) {
+//        JSMap flagsMap = sPersistedAlertFlagsMap;
+//        File flagsFile = sPersistedAlertFlagsFile;
+//        if (flagsMap == null) {
+//          flagsFile = sPersistedAlertFlagsFile = Files.getDesktopFile("_alerts_.json");
+//          flagsMap = sPersistedAlertFlagsMap = JSMap.fromFileIfExists(flagsFile);
+//        }
+//        if (flagsMap.containsKey(reportText))
+//          return null;
+//        flagsMap.put(reportText, true);
+//        Files.S.writePretty(flagsFile, flagsMap);
+//      }
+//      
+      
+      
+      
+      
+      
+      
+      
+      //       // Do this before locking, as it might attempt to use locks
+      //       Files.proj
+      //       FindProjectDirM()
+      //       debugLock.Lock()
+      //       flag := processAlertForMultipleSessions(info)
+      //       debugLock.Unlock()
+      //       if !flag {
+      //         return
+      //       }
+    } else {
+      // If we've exceeded the max per session count, exit now
+      if (cachedInfo > info.maxPerSession)
+        return;
+    }
+
+    var sb = new StringBuilder("*** ");
+    sb.append(prompt);
+    sb.append(' ');
+
+    getStackTraceElement(sb,  1+skipCount + info.skipCount);
+
+    if (args.length > 0) {
+      sb.append(info.key + " " + BasePrinter.toString(args));
+    } else {
+      sb.append(info.key);
+    }
+    System.out.println(sb.toString());
+  }
+
   /**
    * Print alert message only n times. Thread safe. Always returns true
    */
@@ -1037,4 +1243,5 @@ public final class Tools {
 
   private static BiConsumer<Integer, Object[]> sWtfCallback;
   private static int sWtfCounter;
+  
 }
