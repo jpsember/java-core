@@ -4,7 +4,7 @@
 
 //
 
-package js.base;
+package js.leetcode;
 
 import static js.base.Tools.*;
 
@@ -13,10 +13,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class Solution {
+public class P22GenerateParenthesis {
 
   public static void main(String[] args) {
-    new Solution().run();
+    new P22GenerateParenthesis().run();
   }
 
   private void run() {
