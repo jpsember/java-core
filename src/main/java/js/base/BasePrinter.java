@@ -469,9 +469,9 @@ public final class BasePrinter {
     map.put(Instant.class, (x, p) -> p.append((Instant) x));
     
     // This is generating an ExceptionInInitializerError, so removing for now
-//    map.put(DataUtil.EMPTY_STRING_ARRAY.getClass(), (x, p) -> p.append(JSList.with((String[]) x)));
-//    map.put(DataUtil.EMPTY_LONG_ARRAY.getClass(), (x, p) -> p.append(JSList.with((long[]) x)));
-//    map.put(DataUtil.EMPTY_INT_ARRAY.getClass(), (x, p) -> p.append(JSList.with((int[]) x)));
-//    map.put(DataUtil.EMPTY_FLOAT_ARRAY.getClass(), (x, p) -> p.append(JSList.with((float[]) x)));
+    map.put(DataUtil.EMPTY_STRING_ARRAY.getClass(), (x, p) -> p.append(JSList.with((String[]) x)));
+    map.put(DataUtil.EMPTY_LONG_ARRAY.getClass(), (x, p) -> p.append(JSList.with((long[]) x)));
+    map.put(DataUtil.EMPTY_INT_ARRAY.getClass(), (x, p) -> p.append(JSList.with((int[]) x)));
+    map.put(DataUtil.EMPTY_FLOAT_ARRAY.getClass(), (x, p) -> p.append(JSList.with((float[]) x)));
   }
 }
