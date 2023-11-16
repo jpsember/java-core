@@ -1,6 +1,13 @@
-// 29. Divide Two Integers
 
 package js.leetcode;
+
+// 29. Divide Two Integers
+//
+// Created a sort-of data type 'pair' representing 32 bit unsigned integers as the low 16 bits of a pair of ints.
+//
+// A lot of trouble to avoid dealing with 32 bit overflow.
+//
+// It runs fast though!
 
 import static js.base.Tools.*;
 import static js.data.DataUtil.*;
@@ -12,27 +19,33 @@ public class P27DivideTwoIntegers {
   }
 
   private void run() {
-    x(10, 3);
-    x(7, -3);
-x(Integer.MIN_VALUE,Integer.MIN_VALUE);
-x(Integer.MIN_VALUE,1);
-x(Integer.MIN_VALUE,-1);
-
+        x(10, 3);
+         x(7, -3);
+        x(Integer.MIN_VALUE, Integer.MIN_VALUE);
+        x(Integer.MIN_VALUE, 1);
+       x(Integer.MIN_VALUE, -1);
+    x(2147483647, 1);
   }
 
   private void x(int dividend, int divisor) {
-    pr(dividend, "/", divisor, "=", divide(dividend, divisor), "expected:", ((long)dividend) / (long)divisor);
+    pr(dividend, "/", divisor, "=", divide(dividend, divisor), "expected:",
+        ((long) dividend) / (long) divisor);
+  }
+
+  private static String str(int[] a) {
+    return hex16(a[0]) + "_" + hex16(a[1]);
   }
 
   public int divide(int dividend, int divisor) {
+    // We will work with absolute values, and negate the result if necessary afterward.
     boolean resultIsNeg = (dividend < 0 != divisor < 0);
+    
     var a = split(dividend);
     var b = split(divisor);
-    pr("a:", dividend, str(a));
-    pr("b:", dividend, str(b));
 
     int[] sum = buildPair(0, 0);
 
+    // Multiply the divisor by 2 so it is maximal without exceeding the dividend.
     int power = 0;
     while (power < 31) {
       var t2 = shiftLeft(b);
@@ -42,16 +55,19 @@ x(Integer.MIN_VALUE,-1);
       b = t2;
       power++;
     }
-    pr("power:", power, "shifted t:", str(b));
 
+    // Subtract this scaled divisor from the dividend if it is not greater, and 
+    // set the appropriate bit in the result
+    
     while (true) {
-      pr("a:", str(a), CR, "b:", str(b));
       if (greaterOrEqual(a, b)) {
         sum[1] |= 1;
         a = subtract(a, b);
-        pr("...was >=; sum now:", str(sum), "a subtracted now:", str(a));
       }
 
+      // Shift the quotient bits left, and divide the divisor by two;
+      // stop doing this if we've reached the unscaled divisor
+    
       if (power == 0)
         break;
 
@@ -86,7 +102,7 @@ x(Integer.MIN_VALUE,-1);
     int high = pair[0] >> 1;
     int low = pair[1] >> 1;
     if ((pair[0] & 1) != 0)
-      low |= 0xf000;
+      low |= 0x8000;
     return buildPair(high, low);
   }
 
@@ -118,10 +134,6 @@ x(Integer.MIN_VALUE,-1);
     if (negate)
       val = -val;
     return val;
-  }
-
-  private static String str(int[] a) {
-    return hex16(a[0]) + "_" + hex16(a[1]);
   }
 
 }
