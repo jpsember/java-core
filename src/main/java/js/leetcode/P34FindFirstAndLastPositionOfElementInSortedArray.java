@@ -5,6 +5,8 @@ package js.leetcode;
 
 // This can be done with two binary searches.
 
+// ...I think I've beaten binary searches to death
+//
 import static js.base.Tools.*;
 
 public class P34FindFirstAndLastPositionOfElementInSortedArray {
