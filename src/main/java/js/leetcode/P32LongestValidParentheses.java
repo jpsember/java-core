@@ -15,64 +15,15 @@ public class P32LongestValidParentheses {
 
   private void run() {
 //    x(")()())");
-    x(")()())(()())())(");
+    
+    // It takes a while, but it finds length 168 for this:
+    x("((())())(()))(()()(()(()))(()((((()))))))((()())()))()()(()(((((()()()())))()())(()()))((((((())))((()))()()))))(()))())))()))()())((()()))))(()(((((())))))()((()(()(())((((())(())((()()(()())))())(()(())()()))())(()()()))()(((()())(((()()())))(((()()()))(()()))()))()))))))())()()((()(())(()))()((()()()((())))()(((()())(()))())())))(((()))))())))()(())))()())))())()((()))((()))()))(((())((()()()(()((()((())))((()()))())(()()(()))))())((())))(()))()))))))()(()))())(()())))))(()))((())(()((())(((((()()()(()()())))(()())()((()(()()))(()(())((()((()))))))))(()(())()())()(()(()(()))()()()(()()())))(())(()((((()()))())))(())((()(())())))))())()()))(((())))())((()(()))(()()))((())(())))))(()(()((()((()()))))))(()()()(()()()(()(())()))()))(((()(())()())(()))())))(((()))())(()((()))(()((()()()(())()(()())()(())(()(()((((())()))(((()()(((()())(()()()(())()())())(()(()()((()))))()(()))))(((())))()()))(()))((()))))()()))))((((()(())()()()((()))((()))())())(()((()()())))))))()))(((()))))))(()())))(((()))((()))())))(((()(((())))())(()))))(((()(((((((((((((())(((()))((((())())()))())((((())(((())))())(((()))))()())()(())())(()))))()))()()()))(((((())()()((()))())(()))()()(()()))(())(()()))()))))(((())))))((()()(()()()()((())((((())())))))((((((()((()((())())(()((()))(()())())())(()(())(())(()((())((())))(())())))(()()())((((()))))((()(())(()(()())))))))))((()())()()))((()(((()((()))(((((()()()()()(()(()((()(()))(()(()((()()))))()(()()((((((()((()())()))((())()()(((((()(()))))()()((()())((()())()(())((()))()()(()))");
   }
 
   private void x(String s) {
     pr(VERT_SP, "string:", s);
     int len = longestValidParentheses(s);
     pr("len:", len);
-  }
-
-  public int longestValidParentheses(String s) {
-    stringLength = s.length();
-    string = s;
-    validFlags = new BitSet(stringLength * stringLength);
-
-    int longest = 0;
-
-    for (int y = 1; y <= stringLength; y++) {
-
-      pr(INDENT, "y:", y);
-      for (int x = 0; x < stringLength; x++) {
-        pr("x:", x);
-        if (y >= 2) {
-          // Apply the wrap rule
-          if (valid(x + 1, y - 2) && charIs(x, '(') && charIs(x + y - 1, ')')) {
-            setValid(x, y);
-            longest = y;
-            pr("...wrap rule applied");
-            continue;
-          }
-        }
-
-        // Apply the concatenate rule
-       // pr("concat rule, y:",y);
-        for (int k = 2; k <= y - 2; k++) {
-//          boolean dump = false && (y == 4);
-          // If there are adjacent valid substrings
-          // of length [k] [y-k] (positioned at x-k, k and x, y-k respectively)
-          //
-          // then the substring [y] at x-k is valid.
-
-//          if (dump) {
-//            pr("k:", k, "valid ", x - k, k, ":", valid(x - k, k));
-//            pr("valid ", x, y - k, ":", valid(x, y - k));
-//          }
-          if (// 
-          valid(x - k, k) //
-              && valid(x, y - k)) {
-            setValid(x-k, y);
-            longest = y;
-            pr("...concatenate rule applied");
-          }
-        }
-      }
-
-      for (int i = 1; i <= y; i++)
-        dumpRow(i, i == 1);
-    }
-    return longest;
   }
 
   private void dumpRow(int row, boolean withString) {
@@ -102,6 +53,52 @@ public class P32LongestValidParentheses {
     sb.append("|");
     pr(sb.toString());
   }
+
+  public int longestValidParentheses(String s) {
+    stringLength = s.length();
+    string = s;
+    validFlags = new BitSet(stringLength * stringLength);
+
+    int longest = 0;
+
+    for (int y = 1; y <= stringLength; y++) {
+
+     // pr(INDENT, "y:", y);
+      for (int x = 0; x < stringLength; x++) {
+       // pr("x:", x);
+        if (y >= 2) {
+          // Apply the wrap rule
+          if (valid(x + 1, y - 2) && charIs(x, '(') && charIs(x + y - 1, ')')) {
+            setValid(x, y);
+            longest = y;
+           // pr("...wrap rule applied");
+            continue;
+          }
+        }
+
+        // Apply the concatenate rule
+        for (int k = 2; k <= y - 2; k++) {
+          // If there are adjacent valid substrings
+          // of length [k] [y-k] (positioned at x-k, k and x, y-k respectively)
+          //
+          // then the substring [y] at x-k is valid.
+
+          if (// 
+          valid(x - k, k) //
+              && valid(x, y - k)) {
+            setValid(x-k, y);
+            longest = y;
+           // pr("...concatenate rule applied");
+          }
+        }
+      }
+
+//      for (int i = 1; i <= y; i++)
+//        dumpRow(i, i == 1);
+    }
+    return longest;
+  }
+
 
   private int bitIndex(int x, int y) {
     return (y - 1) * stringLength + x;
