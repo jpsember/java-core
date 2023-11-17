@@ -9,6 +9,8 @@ package js.leetcode;
 //
 import static js.base.Tools.*;
 
+import js.base.Tools;
+
 public class P41FirstMissingPositive {
 
   public static void main(String[] args) {
@@ -16,7 +18,7 @@ public class P41FirstMissingPositive {
   }
 
   private void run() {
-    x(3, 4, -1, 1);
+    x(2, 1);
   }
 
   private void x(int... vals) {
@@ -24,10 +26,13 @@ public class P41FirstMissingPositive {
 
     pr(nums);
     var res = firstMissingPositive(nums);
-    pr("first missing:", res);
+    Tools.pr("first missing:", res);
   }
 
   int z;
+
+  private void pr(Object... args) {
+  }
 
   public int firstMissingPositive(int[] nums) {
     this.nums = nums;
@@ -39,29 +44,30 @@ public class P41FirstMissingPositive {
 
       int slot = i;
       int x = readSlot(slot);
+      if (slot != x) {
+        writeSlot(slot, -99);
+      }
 
-      pr(VERT_SP, "i:", i, "array:", nums);
-      pr("slot:", slot, "x:", x);
-
+      pr(VERT_SP, "slot:", slot, "array:", nums, "array[slot]:", x);
       while (true) {
-        pr("x:", x);
         if (x <= 0 || x > n) {
           pr("...this is not a positive integer within the range");
+          //          // For clarity, set it to something undefined
+          //          writeSlot(slot,-99);
           break;
         }
-        int xSlot = x;
-        if (x == slot)
-          break;
 
         // Move x to its own slot, then repeat with the value that was in x's slot
-        int y = readSlot(xSlot);
+        int y = readSlot(x);
+        if (y == x) {
+          pr(" the slot for x already contains x");
+          break;
+        }
         pr(" x is not in its slot; instead, it is occupied by y", y);
-        writeSlot(xSlot, x);
-        writeSlot(slot, 0);
-
+        writeSlot(x, x);
         x = y;
 
-        checkState(z++ < 20);
+        //        checkState(z++ < 20);
       }
 
     }
@@ -70,7 +76,7 @@ public class P41FirstMissingPositive {
       if (readSlot(x) != x)
         return x;
     }
-    return -1;
+    return n + 1;
   }
 
   private int readSlot(int slot) {
