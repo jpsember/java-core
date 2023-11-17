@@ -3,6 +3,8 @@ package js.leetcode;
 
 // 31. Next Permutation
 //
+// This solution works... there is some more 'elegant' way to do it by examining some properties of the suffix,
+// and by using list reversals instead of sorting...
 
 import static js.base.Tools.*;
 import static js.data.DataUtil.*;
@@ -18,8 +20,8 @@ public class P31NextPermutation {
   }
 
   private void run() {
-         x(1, 5, 1);
-        
+    x(1, 5, 1);
+
   }
 
   private void x(int... nums) {
@@ -40,23 +42,18 @@ public class P31NextPermutation {
 
       int jBest = 0;
 
-       
       for (int j = i + 1; j < nums.length; j++) {
-        //pr("i:"+i,"j:"+j,"ni:"+nums[i],"nj:"+nums[j],"jbest:"+jBest);
 
         // right digit must be greater than left to be a candidate
         if (nums[i] >= nums[j])
           continue;
 
-        
-        if (jBest != 0 && nums[jBest] <  nums[j])
+        if (jBest != 0 && nums[jBest] < nums[j])
           continue;
 
         jBest = j;
-        //pr("...setting jbest to",jBest);
       }
       if (jBest != 0) {
-        //pr("swapping",i,jBest);
         swap(nums, i, jBest);
 
         // Sort elements following the swap target into lowest possible order
@@ -67,6 +64,7 @@ public class P31NextPermutation {
 
     // No candidates were found, so put array into lowest possible order (by sorting)
     Arrays.sort(nums);
+    
   }
 
   private static void swap(int[] a, int i, int j) {
