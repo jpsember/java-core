@@ -12,7 +12,7 @@ public class P42TrappingRainWater {
   }
 
   private void run() {
-    x(0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1);
+//    x(0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1);
     x(4, 2, 0, 3, 2, 5);
   }
 
@@ -109,6 +109,10 @@ public class P42TrappingRainWater {
       int poolHeight = Math.min(c.prev.height, c.next.height) - c.height;
       checkState(poolHeight > 0);
 
+      pr("heights:",c.prev.height,c.height,c.next.height);
+      pr("curr width:",c.width);
+      pr("volume:",poolHeight * c.width);
+      
       poolVolume += poolHeight * c.width;
 
       // Merge the current column with the lower neighbor
@@ -124,7 +128,7 @@ public class P42TrappingRainWater {
           join(c, c.next.next);
         }
       } else {
-        c.next.width += c.prev.width;
+        c.next.width += c.width;
         join(c.prev, c.next);
         c = c.next;
       }
