@@ -10,7 +10,6 @@ package js.leetcode;
 // It runs fast though!
 
 import static js.base.Tools.*;
-import static js.data.DataUtil.*;
 
 public class P27DivideTwoIntegers {
 
@@ -32,9 +31,9 @@ public class P27DivideTwoIntegers {
         ((long) dividend) / (long) divisor);
   }
 
-  private static String str(int[] a) {
-    return hex16(a[0]) + "_" + hex16(a[1]);
-  }
+//  private static String str(int[] a) {
+//    return hex16(a[0]) + "_" + hex16(a[1]);
+//  }
 
   public int divide(int dividend, int divisor) {
     // We will work with absolute values, and negate the result if necessary afterward.

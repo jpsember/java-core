@@ -7,7 +7,6 @@ package js.leetcode;
 // and by using list reversals instead of sorting...
 
 import static js.base.Tools.*;
-import static js.data.DataUtil.*;
 
 import java.util.Arrays;
 

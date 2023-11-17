@@ -18,7 +18,7 @@ public class P23MergeKSortedLists {
     var a = buildNodes(1, 4, 5);
     var b = buildNodes(1, 3, 4);
     var c = buildNodes(2, 6);
-    ListNode[] lists = {}; //{ a, b, c };
+    ListNode[] lists = { a, b, c };
     pr(mergeKLists(lists));
   }
 

@@ -30,8 +30,8 @@ public class P24SwapNodesInPairs {
       this(val, null);
     }
 
-    ListNode() {
-    }
+    //    ListNode() {
+    //    }
 
     ListNode(int val, ListNode next) {
       this.val = val;

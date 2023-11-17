@@ -34,9 +34,6 @@ public class P25ReverseKGroup {
       this(val, null);
     }
 
-    ListNode() {
-    }
-
     ListNode(int val, ListNode next) {
       this.val = val;
       this.next = next;
