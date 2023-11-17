@@ -11,8 +11,6 @@ package js.leetcode;
 //
 import static js.base.Tools.*;
 
-import js.base.Tools;
-
 public class P41FirstMissingPositive {
 
   public static void main(String[] args) {
