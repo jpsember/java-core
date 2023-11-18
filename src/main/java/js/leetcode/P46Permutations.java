@@ -9,9 +9,9 @@ import static js.base.Tools.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 import js.json.JSList;
 
@@ -27,24 +27,18 @@ public class P46Permutations {
     x(5);
   }
 
-  private static void swap(byte[] a, int i, int j) {
-    byte tmp = a[i];
-    a[i] = a[j];
-    a[j] = tmp;
-  }
-
   private void x(int n) {
     int[] nums = new int[n];
     for (int i = 1; i <= n; i++)
       nums[i - 1] = i;
     var result = permute(nums);
+    Set<String> us = new HashSet<>();
     for (var x : result) {
-      pr(str(x));
+      var s = str(x);
+      checkState(us.add(s));
+      pr(s);
     }
   }
-
-  //  private byte[] workBuffer;
-  private List<List<Integer>> output;
 
   private static String str(byte[] arr) {
     return str(arr, 0, arr.length);
@@ -67,44 +61,45 @@ public class P46Permutations {
     for (int i = 0; i < n; i++)
       bnums[i] = (byte) nums[i];
 
-    pr("permute [n]:", n, str(bnums));
+    // pr("permute [n]:", n, str(bnums));
+
+    {
+      factorials = new int[n + 1];
+      int f = 1;
+      for (int i = 0; i <= n; i++) {
+        if (i != 0)
+          f = factorials[i - 1] * i;
+        factorials[i] = f;
+      }
+    }
 
     // Construct a work buffer large enough to hold |permute(n-1)|
-    var workBuffer = allocBufferForPermute(n);
-    var auxBuffer = allocBufferForPermute(n);
+    var destBuffer = allocBufferForPermute(n);
 
     buffers = new ArrayList<>();
     for (int i = 1; i < n; i++) {
       buffers.add(allocBufferForPermute(i));
     }
 
-    int numResults = auxPermute(bnums, 0, n, workBuffer, auxBuffer);
+    int numResults = auxPermute(bnums, 0, n, destBuffer, allocBufferForPermute(n));
 
     // Construct output array large enough to hold |permute(n)|
-    output = new ArrayList<>(numResults);
+
+    List<List<Integer>> output = new ArrayList<>(numResults);
     int srcCursor = 0;
     for (int i = 0; i < numResults; i++) {
       var x = new ArrayList<Integer>(n);
       for (int j = 0; j < n; j++) {
-        x.add((int) (workBuffer[srcCursor]));
-        srcCursor++;
+        x.add((int) destBuffer[srcCursor++]);
       }
       output.add(x);
     }
-
     return output;
   }
 
-  private static int factorial(int val) {
-    if (val == 0)
-      return 1;
-    return val * factorial(val - 1);
-  }
-
   private int auxPermute(byte[] sourceBuffer, int sourceBufferOffset, int n, byte[] destBuffer,
-      byte[] destBuffer2) {
-    //    pr(VERT_SP);
-    //    pr("auxPermute, n=" + n, "source:", str(sourceBuffer, sourceBufferOffset, n));
+      byte[] auxBuffer) {
+
     if (n == 1) {
       destBuffer[0] = sourceBuffer[sourceBufferOffset];
       return 1;
@@ -112,24 +107,21 @@ public class P46Permutations {
 
     int suffixLength = n - 1;
     int suffixCount = -1; // This gets set to something positive below
-
     int destCursor = 0;
 
     // swap the first element with each element (including itself), then recursively permute the 2nd...n elements
-    byte[] auxBuffer2 = auxBuffer(suffixLength);
-    //    int auxid = lastid;
+
+    byte[] auxBuffer2 = buffers.get(suffixLength - 1);
+
     for (int slot = 0; slot < n; slot++) {
-      //      pr(VERT_SP, "slot:" + slot, " for auxPermute n=" + n);
-      swap(sourceBuffer, sourceBufferOffset, sourceBufferOffset + slot);
+      int s0 = sourceBufferOffset;
+      int s1 = sourceBufferOffset + slot;
+      byte s0Val = sourceBuffer[s0];
+      byte s1Val = sourceBuffer[s1];
+      sourceBuffer[s0] = s1Val;
+      sourceBuffer[s1] = s0Val;
 
-      //      pr("pivot", slot, "after swap pivot, source:", str(sourceBuffer, sourceBufferOffset, n));
-
-      //new byte[destBuffer.length];
-
-      suffixCount = auxPermute(sourceBuffer, sourceBufferOffset + 1, suffixLength, destBuffer2, auxBuffer2);
-      //      pr("auxPermute for n=" + suffixLength, "produced result count", suffixCount);
-      //
-      //      pr("destBuffer2:", str(destBuffer2));
+      suffixCount = auxPermute(sourceBuffer, sourceBufferOffset + 1, suffixLength, auxBuffer, auxBuffer2);
 
       // For each suffix in the destination buffer, stitch results into destination buffer
       byte prefixValue = sourceBuffer[sourceBufferOffset];
@@ -138,7 +130,7 @@ public class P46Permutations {
       for (int i = 0; i < suffixCount; i++) {
         destBuffer[destCursor] = prefixValue;
         for (int j = 0; j < suffixLength; j++) {
-          destBuffer[destCursor + j + 1] = destBuffer2[sourceCursor + j];
+          destBuffer[destCursor + j + 1] = auxBuffer[sourceCursor + j];
         }
         sourceCursor += suffixLength;
         destCursor += n;
@@ -146,43 +138,18 @@ public class P46Permutations {
         //            str(destBuffer, destCursor - n, n));
       }
 
-      // reverse the suffix to undo the above permutation
-      //reverse(sourceBuffer, sourceBufferOffset + 1, n - 1);
-      // unswap the first element
-      swap(sourceBuffer, sourceBufferOffset, sourceBufferOffset + slot);
-      //      pr("after unswap pivot, source:", str(sourceBuffer, sourceBufferOffset, n));
+      // undo the swap we did earlier
+      sourceBuffer[s0] = s0Val;
+      sourceBuffer[s1] = s1Val;
     }
-    // freeBuffer(auxid);
     return suffixCount * n;
   }
 
-  private byte[] getWorkBuffer(int forResultsOfPermuteN) {
-    int id = uniqueBufferId++;
-    lastid = id;
-    int n = forResultsOfPermuteN;
-    int cap = factorial(n) * n;
-    pr("alloc buffer", id, " with capacity:", cap, "count", workBufferMap.size());
-    var result = new byte[cap];
-    workBufferMap.put(id, result);
-    return result;
-  }
+  private static int[] factorials;
 
-  private void freeBuffer(int id) {
-    pr("free buffer", id);
-    var value = workBufferMap.remove(id);
-    checkState(value != null);
-  }
-
-  int uniqueBufferId = 50;
-  int lastid;
-  private Map<Integer, byte[]> workBufferMap = new HashMap<>();
-
-  private byte[] auxBuffer(int n) {
-    return buffers.get(n - 1);
-  }
-
-  private byte[] allocBufferForPermute(int n) {
-    return new byte[factorial(n + 1)];
+  private static byte[] allocBufferForPermute(int n) {
+    // We need n! arrays, each of length n
+    return new byte[factorials[n] * n];
   }
 
   private ArrayList<byte[]> buffers;
