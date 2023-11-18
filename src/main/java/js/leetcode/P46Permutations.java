@@ -1,14 +1,8 @@
 package js.leetcode;
 
-//
-// This seems to be the most common solution, but it can be time-consuming on some inputs.
-// Maybe a dynamic programming approach is best?  But if there are like 5000 steps possible,
-// that's a huge number of actions, even for a dynamic programming approach.
-
 import static js.base.Tools.*;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -16,6 +10,12 @@ import java.util.Set;
 import js.json.JSList;
 
 // 46. Permutations
+//
+// Runtime beats 94.61%; memory 66.19%;
+// 
+// But there is a much better solution that doesn't use auxillary buffers.  
+// I implemented it in P47.
+//
 
 public class P46Permutations {
 
@@ -40,16 +40,8 @@ public class P46Permutations {
     }
   }
 
-  private static String str(byte[] arr) {
-    return str(arr, 0, arr.length);
-  }
-
   private static String str(List<Integer> lst) {
     return JSList.withUnsafeList(lst).toString();
-  }
-
-  private static String str(byte[] arr, int start, int count) {
-    return JSList.with(Arrays.copyOfRange(arr, start, start + count)).toString();
   }
 
   public List<List<Integer>> permute(int[] nums) {
@@ -60,18 +52,6 @@ public class P46Permutations {
     byte[] bnums = new byte[n];
     for (int i = 0; i < n; i++)
       bnums[i] = (byte) nums[i];
-
-    // pr("permute [n]:", n, str(bnums));
-
-    {
-      factorials = new int[n + 1];
-      int f = 1;
-      for (int i = 0; i <= n; i++) {
-        if (i != 0)
-          f = factorials[i - 1] * i;
-        factorials[i] = f;
-      }
-    }
 
     // Construct a work buffer large enough to hold |permute(n-1)|
     var destBuffer = allocBufferForPermute(n);
@@ -134,8 +114,6 @@ public class P46Permutations {
         }
         sourceCursor += suffixLength;
         destCursor += n;
-        //        pr("=========== stitched prefix value:", prefixValue, "to produce:",
-        //            str(destBuffer, destCursor - n, n));
       }
 
       // undo the swap we did earlier
@@ -145,11 +123,12 @@ public class P46Permutations {
     return suffixCount * n;
   }
 
-  private static int[] factorials;
-
-  private static byte[] allocBufferForPermute(int n) {
-    // We need n! arrays, each of length n
-    return new byte[factorials[n] * n];
+  private byte[] allocBufferForPermute(int n) {
+    // Construct room for n! arrays, each of length n
+    int f = 1;
+    for (int i = 1; i <= n; i++)
+      f *= i;
+    return new byte[f * n];
   }
 
   private ArrayList<byte[]> buffers;
