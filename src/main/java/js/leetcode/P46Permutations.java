@@ -70,13 +70,15 @@ public class P46Permutations {
     pr("permute [n]:", n, str(bnums));
 
     // Construct a work buffer large enough to hold |permute(n-1)|
-    var workBuffer = getWorkBuffer(n);
-    var workId = lastid;
-    var auxBuffer = getWorkBuffer(n);
-    var auxId = lastid;
+    var workBuffer = allocBufferForPermute(n);
+    var auxBuffer = allocBufferForPermute(n);
+
+    buffers = new ArrayList<>();
+    for (int i = 1; i < n; i++) {
+      buffers.add(allocBufferForPermute(i));
+    }
 
     int numResults = auxPermute(bnums, 0, n, workBuffer, auxBuffer);
-    freeBuffer(auxId);
 
     // Construct output array large enough to hold |permute(n)|
     output = new ArrayList<>(numResults);
@@ -89,7 +91,6 @@ public class P46Permutations {
       }
       output.add(x);
     }
-    freeBuffer(workId);
 
     return output;
   }
@@ -115,8 +116,8 @@ public class P46Permutations {
     int destCursor = 0;
 
     // swap the first element with each element (including itself), then recursively permute the 2nd...n elements
-    byte[] auxBuffer2 = getWorkBuffer(suffixLength);
-    int auxid = lastid;
+    byte[] auxBuffer2 = auxBuffer(suffixLength);
+    //    int auxid = lastid;
     for (int slot = 0; slot < n; slot++) {
       //      pr(VERT_SP, "slot:" + slot, " for auxPermute n=" + n);
       swap(sourceBuffer, sourceBufferOffset, sourceBufferOffset + slot);
@@ -151,7 +152,7 @@ public class P46Permutations {
       swap(sourceBuffer, sourceBufferOffset, sourceBufferOffset + slot);
       //      pr("after unswap pivot, source:", str(sourceBuffer, sourceBufferOffset, n));
     }
-    freeBuffer(auxid);
+    // freeBuffer(auxid);
     return suffixCount * n;
   }
 
@@ -175,4 +176,15 @@ public class P46Permutations {
   int uniqueBufferId = 50;
   int lastid;
   private Map<Integer, byte[]> workBufferMap = new HashMap<>();
+
+  private byte[] auxBuffer(int n) {
+    return buffers.get(n - 1);
+  }
+
+  private byte[] allocBufferForPermute(int n) {
+    return new byte[factorial(n + 1)];
+  }
+
+  private ArrayList<byte[]> buffers;
+
 }
