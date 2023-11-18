@@ -11,7 +11,10 @@ import js.json.JSList;
 
 // 47. Permutations II
 //
-// At present, this is just a better version of 46.
+// I check if the 'swap' operation is useless (won't produce new unique results), and skip that
+// iteration.  I have to keep track of the unique swap values processed already, and I use
+// some preallocated buffers for this purpose.
+//
 
 public class P47PermutationsII {
 
@@ -20,18 +23,16 @@ public class P47PermutationsII {
   }
 
   private void run() {
-    x(5);
+    x(1, 2, 3);
   }
 
-  private void x(int n) {
-    int[] nums = new int[n];
-    for (int i = 1; i <= n; i++)
-      nums[i - 1] = i;
-    var result = permute(nums);
+  private void x(int... nums) {
+
+    var result = permuteUnique(nums);
     Set<String> us = new HashSet<>();
     for (var x : result) {
       var s = str(x);
-      checkState(us.add(s));
+      checkState(us.add(s), "duplicate value:", s);
       pr(s);
     }
   }
@@ -42,7 +43,11 @@ public class P47PermutationsII {
 
   private List<List<Integer>> results;
 
-  public List<List<Integer>> permute(int[] nums) {
+  public List<List<Integer>> permuteUnique(int[] nums) {
+
+    mWorkArrays = new int[nums.length][];
+    for (int i = 0; i < nums.length; i++)
+      mWorkArrays[i] = new int[nums.length - i];
 
     results = new ArrayList<>();
     auxPermute(nums, 0);
@@ -66,12 +71,28 @@ public class P47PermutationsII {
       return;
     }
 
-    for (int i = index; i < nums.length; i++) {
+    int firstElementsCount = 0;
+    int[] firstElements = mWorkArrays[index];
+
+    outer: for (int i = index; i < nums.length; i++) {
+
+      // If we've already processed this value as the first element, 
+      // skip
+
+      int firstElementValue = nums[i];
+
+      for (int k = 0; k < firstElementsCount; k++)
+        if (firstElements[k] == firstElementValue) {
+          continue outer;
+        }
+      firstElements[firstElementsCount++] = firstElementValue;
+
       swap(nums, index, i);
       auxPermute(nums, index + 1);
-      swap(nums,index,i);
+      swap(nums, index, i);
     }
 
   }
 
+  private int[][] mWorkArrays;
 }
