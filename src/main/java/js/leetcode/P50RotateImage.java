@@ -2,13 +2,6 @@ package js.leetcode;
 
 import static js.base.Tools.*;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import js.json.JSList;
-
 // 50. Rotate Image
 //
 // This was fairly straightforward, not very interesting.
