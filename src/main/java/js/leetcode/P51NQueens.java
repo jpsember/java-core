@@ -7,6 +7,12 @@ import java.util.List;
 
 // 51. N-Queens
 //
+// Runtime: Beats 23.72% of users with Java
+// Memory:  Beats 5.3%
+//
+// Added reflection heuristic:
+// Runtime: Beats 18.42% of users with Java
+// Memory:  Beats 9.28%of users with Java
 
 public class P51NQueens {
 
@@ -15,8 +21,8 @@ public class P51NQueens {
   }
 
   private void run() {
-    int[] expected = { 1, 0, 4, 2, 68, 92, -1, 92, -1 };
-    int n = 8;
+    int[] expected = { 1, 0, 4, 2, 68, 92, -1, 92, 352 };
+    int n = 9;
     var x = solveNQueens(n);
     pr("n:", n, "solutions:", x.size());
     pr("--------------------------------");
@@ -28,7 +34,7 @@ public class P51NQueens {
     }
     pr("n:", n, "solutions:", x.size());
     int exp = -1;
-    if (expected.length > n)
+    if (expected.length >= n)
       exp = expected[n - 1];
     if (exp != x.size()) {
       pr("****** Unexpected number of solutions:", x.size(), "expected:", exp);
@@ -37,104 +43,69 @@ public class P51NQueens {
 
   public List<List<String>> solveNQueens(int n) {
 
-    boolean log = true;
+    List<List<String>> result = new ArrayList<>(352);
 
-    int boardSize;
-    List<List<String>> result;
-
-    StringBuilder sb = new StringBuilder();
-
-    boardSize = n;
-    result = new ArrayList<>();
-
-    // Active coordinates
+    // Coordinates of queen we are attempting to place
     int bx = 0;
     int by = 0;
 
-    // Queens placed in rows above by
-    int[] queenSlots = new int[boardSize];
+    int nMid = (n + 1) / 2;
+
+    // Columns of queens already placed
+    int[] queenSlots = new int[n];
+
+    StringBuilder sb = new StringBuilder();
 
     while (true) {
-      if (log) {
-        pr(VERT_SP);
-        sb.setLength(0);
-        sb.append("---------------------------------\n");
-        for (int y = 0; y <= by; y++) {
-          sb.append(y);
-          sb.append(": ");
-          for (int x = 0; x <= n; x++) {
-            if (y == by && x == bx)
-              sb.append('>');
-            else
-              sb.append(' ');
-            char c = ' ';
-            if (x < n) {
-              if (y < by && x == queenSlots[y])
-                c = 'Q';
-              else
-                c = '.';
-            }
-            sb.append(c);
-          }
-          sb.append('\n');
-        }
-        sb.append("---------------------------------\n");
-        pr(sb);
-      }
 
-      // Is the current row exhausted?
-      if (bx == n) {
-        if (log)
-          pr("...current row exhausted");
+      // Are we past the last row, or is the current row exhausted?
+      if (by == n || bx == n) {
         // Is this the first row?  If so, done.
-        if (by == 0) {
-          if (log)
-            pr("...row zero, done");
+        if (by == 0)
           break;
-        }
         by--;
-        if (log)
-          pr("...backtracking to row:", by);
         // Advance to the next column
         bx = queenSlots[by] + 1;
-        if (log)
-          pr("...advanced to column", bx);
+
         continue;
       }
 
       // Is this an invalid move?
-      boolean valid = true;
-      for (int qy = 0; qy < by; qy++) {
-        int qx = queenSlots[qy];
-        int dx = Math.abs(qx - bx);
-        int dy = Math.abs(qy - by);
-        if (dx == 0 || dy == 0 || dx == dy) {
-          valid = false;
-          break;
+      {
+        boolean valid = true;
+        for (int qy = 0; qy < by; qy++) {
+          int qx = queenSlots[qy];
+          int dx = Math.abs(qx - bx);
+          int dy = Math.abs(qy - by);
+          if (dx == 0 || dy == 0 || dx == dy) {
+            valid = false;
+            break;
+          }
+        }
+        if (!valid) {
+          bx++;
+          continue;
         }
       }
-      if (!valid) {
-        if (log)
-          pr("...invalid move; incrementing column");
-        bx++;
-        continue;
-      }
-      if (log)
-        pr("valid move, placing queen, moving to next row");
 
+      // Place queen, move to next row
       queenSlots[by] = (byte) bx;
       by++;
       bx = 0;
 
+      // If all n queens have been placed, it is a solution
       if (by == n) {
-        if (log)
-          pr("...generating result");
 
-        // If we finished all rows, it's a result
-        List<String> soln = new ArrayList<>();
-        for (int y = 0; y < boardSize; y++) {
+        // Special case: if we've generated a solution where the queen is past the midpoint of the first row,
+        // stop and use symmetry to generate other solutions.
+        if (queenSlots[0] >= nMid) {
+          break;
+        }
+
+        List<String> soln = new ArrayList<>(n);
+        for (int y = 0; y < n; y++) {
           sb.setLength(0);
-          for (int x = 0; x < boardSize; x++) {
+          for (int x = 0; x < n; x++) {
             if (x == queenSlots[y])
               sb.append('Q');
             else
@@ -142,15 +113,40 @@ public class P51NQueens {
           }
           soln.add(sb.toString());
         }
+
         result.add(soln);
 
-        // backtrack and increment column 
-        if (log)
-          pr("backtracking, incrementing column");
-        by--;
-        bx = queenSlots[by] + 1;
       }
     }
+
+    // Use symmetry to generate other solutions
+    if (!result.isEmpty()) {
+
+      int j = result.size();
+
+      var match = "";
+      if ((n & 1) != 0) {
+        var lastGenerated = result.get(j - 1);
+        match = lastGenerated.get(0);
+      }
+
+      for (int i = 0; i < j; i++) {
+        var orig = result.get(i);
+        // Don't generate reflected copies of a solution whose
+        // first row queen is in the central column, as we have already generated them
+        if (orig.get(0).equals(match))
+          break;
+        List<String> soln = new ArrayList<>(n);
+        for (var s : orig) {
+          sb.setLength(0);
+          for (int k = n - 1; k >= 0; k--)
+            sb.append(s.charAt(k));
+          soln.add(sb.toString());
+        }
+        result.add(soln);
+      }
+    }
+
     return result;
   }
 }
