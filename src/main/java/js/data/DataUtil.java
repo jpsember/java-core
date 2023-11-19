@@ -432,6 +432,8 @@ public final class DataUtil {
    * @return string with set bits represented by '1', cleared bits by '.'
    */
   public static String bitString(int wordSize, int bits) {
+    if (wordSize > 32)
+      badArg("illegal wordSize:", wordSize);
     StringBuilder sb = new StringBuilder();
     for (int s = wordSize - 1; s >= 0; s--) {
       int val = bits & (1 << s);
@@ -1204,7 +1206,7 @@ public final class DataUtil {
   public static StringBuilder toHex(StringBuilder sbOrNull, int value, int digits, boolean stripLeadingZeros,
       boolean groupsOfFour) {
     StringBuilder sb = constructStringBuilderIfNec(sbOrNull);
-    
+
     boolean nonZeroSeen = !stripLeadingZeros;
 
     while (digits-- > 0) {

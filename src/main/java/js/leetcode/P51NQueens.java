@@ -16,14 +16,23 @@ public class P51NQueens {
   }
 
   private void run() {
-    int n = 8;
+    int[] expected = { 0, 1, 0, 4, 12, 68, 92, -1, 21072, -1, -1 };
+    int n = 4;
     var x = solveNQueens(n);
+    pr("n:", n, "solutions:", x.size());
     pr("--------------------------------");
     for (var y : x) {
       for (var z : y) {
         pr(z);
       }
       pr("--------------------------------");
+    }
+    pr("n:", n, "solutions:", x.size());
+    int exp = -1;
+    if (expected.length > n)
+      exp = expected[n];
+    if (exp != x.size()) {
+      pr("****** Unexpected number of solutions:", x.size(), "expected:", exp);
     }
   }
 
@@ -35,26 +44,37 @@ public class P51NQueens {
   private static final int ROW = 1 << (2 + MAX_BOARD_SIZE);
   private static final int BITS_TOTAL = 2 + MAX_BOARD_SIZE * 2;
 
-  private static class State {
-    short[] startRowStates;
-    byte[] queenSlots;
-    int activeColumn;
-    int activeRow;
+  //  private void init(int n) {
+  //    boardSize = n;
+  //    result = new ArrayList<>();
+  //
+  //    int bs = n * n;
+  //    squareFlags = new short[bs];
+  //    {
+  //      int i = 0;
+  //      for (int y = 0; y < n; y++) {
+  //        for (int x = 0; x < n; x++) {
+  //          int flag = (ROW << y) | (COL << x);
+  //          if (x == y)
+  //            flag |= DIAG_1;
+  //          if (x == n - 1 - y)
+  //            flag |= DIAG_2;
+  //          squareFlags[i++] = (short) flag;
+  //        }
+  //      }
+  //    }
+  //  }
+  //   
+  public List<List<String>> solveNQueens(int n) {
 
-    State(int boardSize) {
-      queenSlots = new byte[boardSize];
-      startRowStates = new short[boardSize];
-    }
-  }
+    boolean log = true;
 
-  private int boardSize;
-  private List<List<String>> result;
-  private short[] squareFlags;
+    int boardSize;
+    List<List<String>> result;
+    short[] squareFlags;
 
-  // private State[] stack;
-  StringBuilder sb = new StringBuilder();
+    StringBuilder sb = new StringBuilder();
 
-  private void init(int n) {
     boardSize = n;
     result = new ArrayList<>();
 
@@ -73,45 +93,28 @@ public class P51NQueens {
         }
       }
     }
-  }
 
-  private void generateResult(State state) {
-    List<String> soln = new ArrayList<>();
-    for (int y = 0; y < boardSize; y++) {
-      sb.setLength(0);
-      for (int x = 0; x < boardSize; x++) {
-        if (x == state.queenSlots[y])
-          sb.append('Q');
-        else
-          sb.append('.');
-      }
-      soln.add(sb.toString());
-    }
-    result.add(soln);
-  }
-
-  public List<List<String>> solveNQueens(int n) {
-
-    init(n);
-
-    State s = new State(n);
+    byte[] queenSlots = new byte[boardSize];
+    int activeColumn = 0;
+    int activeRow = 0;
+    short[] startRowStates = new short[boardSize];
 
     while (true) {
-      {
+      if (log) {
         pr(VERT_SP);
-        StringBuilder sb = new StringBuilder();
+        sb.setLength(0);
         sb.append("---------------------------------\n");
-        for (int y = 0; y <= s.activeRow; y++) {
+        for (int y = 0; y <= activeRow; y++) {
           sb.append(y);
           sb.append(": ");
           for (int x = 0; x <= n; x++) {
-            if (y == s.activeRow && x == s.activeColumn)
+            if (y == activeRow && x == activeColumn)
               sb.append('>');
             else
               sb.append(' ');
             char c = ' ';
             if (x < n) {
-              if (y < s.activeRow && x == s.queenSlots[y])
+              if (y < activeRow && x == queenSlots[y])
                 c = 'Q';
               else
                 c = '.';
@@ -125,49 +128,74 @@ public class P51NQueens {
       }
 
       // Is the current row exhausted?
-      if (s.activeColumn == n) {
-        pr("...current row exhausted");
+      if (activeColumn == n) {
+        if (log)
+          pr("...current row exhausted");
         // Is this the first row?  If so, done.
-        if (s.activeRow == 0) {
-          pr("...row zero, done");
+        if (activeRow == 0) {
+          if (log)
+            pr("...row zero, done");
           break;
         }
-        s.activeRow--;
-        pr("...backtracking to row:", s.activeRow);
+        activeRow--;
+        if (log)
+          pr("...backtracking to row:", activeRow);
         // Advance to the next column
-        s.activeColumn = s.queenSlots[s.activeRow] + 1;
-        pr("...advanced to column", s.activeColumn);
+        activeColumn = queenSlots[activeRow] + 1;
+        if (log)
+          pr("...advanced to column", activeColumn);
         continue;
       }
 
-      int rowState = s.startRowStates[s.activeRow];
-      int squareIndex = s.activeRow * n + s.activeColumn;
+      int rowState = startRowStates[activeRow];
+      int squareIndex = activeRow * n + activeColumn;
       int squareFlg = squareFlags[squareIndex];
 
-      pr("rowstate:", bitString(rowState, BITS_TOTAL), "squareFlg:", bitString(rowState, BITS_TOTAL));
+      if (log) {
+        pr("rowstate :", bitString(BITS_TOTAL, rowState));
+        pr("squareFlg:", bitString(BITS_TOTAL, squareFlg));
+        pr("common   :", bitString(BITS_TOTAL, rowState & squareFlg));
+      }
+
       // Is this an invalid move?
       if ((rowState & squareFlg) != 0) {
-        pr("...invalid move; incrementing column");
-        s.activeColumn++;
+        if (log)
+          pr("...invalid move; incrementing column");
+        activeColumn++;
         continue;
       }
-      pr("valid move, placing queen, moving to next row");
+      if (log)
+        pr("valid move, placing queen, moving to next row");
 
-      s.queenSlots[s.activeRow] = (byte) s.activeColumn;
-      s.activeRow++;
-      s.activeColumn = 0;
+      queenSlots[activeRow] = (byte) activeColumn;
+      activeRow++;
+      activeColumn = 0;
 
-      if (s.activeRow < n)
-        s.startRowStates[s.activeRow] = (short) (rowState | squareFlg);
+      if (activeRow < n)
+        startRowStates[activeRow] = (short) (rowState | squareFlg);
       else {
-        pr("...generating result");
+        if (log)
+          pr("...generating result");
         // If we finished all rows, it's a result
-        generateResult(s);
+
+        List<String> soln = new ArrayList<>();
+        for (int y = 0; y < boardSize; y++) {
+          sb.setLength(0);
+          for (int x = 0; x < boardSize; x++) {
+            if (x == queenSlots[y])
+              sb.append('Q');
+            else
+              sb.append('.');
+          }
+          soln.add(sb.toString());
+        }
+        result.add(soln);
 
         // backtrack and increment column 
-        pr("backtracking, incrementing column");
-        s.activeRow--;
-        s.activeColumn = s.queenSlots[s.activeRow] + 1;
+        if (log)
+          pr("backtracking, incrementing column");
+        activeRow--;
+        activeColumn = queenSlots[activeRow] + 1;
       }
 
     }
