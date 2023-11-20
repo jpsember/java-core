@@ -371,11 +371,14 @@ public final class BasePrinter {
    * Append long integer, padding to particular fixed width
    */
   private void formatInt(long longVal, int fixedWith) {
-    String stringOfAbsVal = Long.toString(Math.abs(longVal));
-    int paddingChars = fixedWith - stringOfAbsVal.length();
-    appendString(spaces(Math.max(1, paddingChars)));
-    appendString(longVal < 0 ? "-" : " ");
-    appendString(stringOfAbsVal);
+    appendSpace();
+    appendString(""+longVal);
+    //    I'm not always wanting this excessive indentation
+//    String stringOfAbsVal = Long.toString(Math.abs(longVal));
+//    int paddingChars = fixedWith - stringOfAbsVal.length();
+//    appendString(spaces(Math.max(1, paddingChars)));
+//    appendString(longVal < 0 ? "-" : " ");
+//    appendString(stringOfAbsVal);
   }
 
   private void appendThrowableStackTrace(Throwable throwable) {
