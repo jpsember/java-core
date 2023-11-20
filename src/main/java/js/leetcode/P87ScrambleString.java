@@ -14,14 +14,14 @@ public class P87ScrambleString {
   }
 
   private void run() {
-//    go2("abc", "acb");
-//    go2("great", "rgeat");
-//    go2("abcde", "caebd");
-//    go2("a", "a");
-    // This doesn't work with my original algorithm, since there are duplicates
-     go2("abcdbdacbdac", "bdacabcdbdac");
-     
-    go2("ab","aa");
+    //    go2("abc", "acb");
+    //    go2("great", "rgeat");
+    //    go2("abcde", "caebd");
+    //    go2("a", "a");
+
+    // This takes way too long; there must be a simpler algorithm
+    go2("eebaacbcbcadaaedceaaacadccd", "eadcaacabaddaceacbceaabeccd");
+
   }
 
   private void go2(String orig, String scr) {
@@ -32,6 +32,10 @@ public class P87ScrambleString {
     // If there are duplicate characters, use the second algorithm
     if (hasDuplicateChars(s1) || hasDuplicateChars(s2))
       return isScramble2(s1, s2);
+    return isScramble1(s1, s2);
+  }
+
+  private boolean isScramble1(String s1, String s2) {
     // Define a mapping over the characters to convert them to their position within the string
     Map<Character, Integer> m = new HashMap<>();
     int[] dig1 = new int[s1.length()];
@@ -164,10 +168,13 @@ public class P87ScrambleString {
   }
 
   private boolean isScramble2(String s1, String s2) {
-    
+
     if (!sorted(s1).equals(sorted(s2))) {
       return false;
     }
+
+    if (!hasDuplicateChars(s1) && !hasDuplicateChars(s2))
+      return isScramble1(s1, s2);
 
     if (s1.length() == 1)
       return true;
