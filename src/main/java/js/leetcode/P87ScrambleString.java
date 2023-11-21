@@ -14,17 +14,14 @@ public class P87ScrambleString {
     new P87ScrambleString().run();
   }
 
-  private static final boolean log = false;
   private static final boolean sameCharHeuristic = true;
 
   private void run() {
     checkpoint("starting");
-    //go2("abc", "acb");
-      go2("great", "rgeat");
-    //  go2("abcde", "caebd");
-    //    go2("a", "a");
-
-    // This takes way too long; there must be a simpler algorithm
+    go2("abc", "acb");
+    go2("great", "rgeat");
+    go2("abcde", "caebd");
+    go2("a", "a");
     go2("eebaacbcbcadaaedceaaacadccd", "eadcaacabaddaceacbceaabeccd");
     checkpoint("stopping");
   }
@@ -35,25 +32,19 @@ public class P87ScrambleString {
     pr(CR, orig, CR, scr, isScramble(orig, scr), "iter:", iter);
   }
 
-  private int depth;
-
   private static final int MAX_STR_LEN = 30;
   private static byte[] work1 = new byte[MAX_STR_LEN];
   private static byte[] work2 = new byte[MAX_STR_LEN];
 
   private static boolean sameChars(String s1, String s2) {
-    if (log)
-      pr("same chars:", s1, s2);
     int n = s1.length();
     for (int i = 0; i < n; i++) {
       work1[i] = (byte) (s1.charAt(i) - 'a');
       work2[i] = (byte) (s2.charAt(i) - 'a');
     }
     int work2Length = n;
-
     outer: for (int i = 0; i < n; i++) {
       byte a = work1[i];
-
       for (int j = 0; j < work2Length; j++) {
         if (work2[j] == a) {
           work2Length--;
@@ -61,12 +52,8 @@ public class P87ScrambleString {
           continue outer;
         }
       }
-      if (log)
-        pr("...no!");
       return false;
     }
-    if (log)
-      pr("...yes");
     return true;
   }
 
@@ -80,15 +67,6 @@ public class P87ScrambleString {
     Boolean cached = resultCache.get(key);
     if (cached != null)
       return cached;
-
-    iter++;
-
-    String sp = null;
-    if (log) {
-      sp = "| " + spaces(depth);
-      depth++;
-      pr(VERT_SP, sp, s1, s2);
-    }
 
     // If s2 is a scrambled version of s1, then 
     //
@@ -122,8 +100,6 @@ public class P87ScrambleString {
 
         var prefix = s1.substring(0, i);
         var suffix = s1.substring(i);
-        if (log)
-          pr(sp, "n:", n, "i:", i, "prefix:", prefix, "suffix:", suffix);
 
         if (isScramble(prefix, s2.substring(0, i)) && isScramble(suffix, s2.substring(i))) {
           break outer;
@@ -134,10 +110,7 @@ public class P87ScrambleString {
       }
       result = false;
     } while (false);
-    if (log) {
-      pr(sp, result);
-      depth--;
-    }
+
     resultCache.put(key, result);
     return result;
   }
