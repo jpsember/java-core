@@ -12,12 +12,12 @@ public class P84LargestRectangleInHistogram {
   }
 
   private void run() {
-    if (true) {
+    if (false) {
       withDump = true;
-      x(5,5);
+      x(5, 5);
       return;
     }
-    
+
     if (false) {
       for (int i = 0; i < 100; i++) {
         rand();
@@ -25,19 +25,16 @@ public class P84LargestRectangleInHistogram {
       return;
     }
 
-    //
-    //    x(3, 2, 1, 2);
-    //    x(10, 2, 1, 5, 6, 2, 3);
-    //    x(4, 2, 4);
-    //    x(9, 9, 0);
-    //    x(9, 5, 4, 3, 2, 1);
-    //    x(9, 1, 2, 3, 4, 5);
-    //    x(9, 1, 2, 3, 4, 5, 1, 2, 3);
-    //    
-    //    rand();
-    //    rand();
-
     withDump = false;
+
+    x(3, 2, 1, 2);
+    x(10, 2, 1, 5, 6, 2, 3);
+    x(4, 2, 4);
+    x(9, 9, 0);
+    x(9, 5, 4, 3, 2, 1);
+    x(9, 1, 2, 3, 4, 5);
+    x(9, 1, 2, 3, 4, 5, 1, 2, 3);
+    x(8, 0, 0, 0, 4, 5, 1, 1, 1, 0, 0, 1, 0);
     x(28, 0, 7, 9, 0, 6, 9, 7, 8, 4, 6, 4);
     x(30, 0, 1, 8, 2, 9, 4, 9, 1, 5, 2, 7, 4, 1, 6, 6, 7, 6, 9, 1, 2, 5);
     x(30, 3, 8, 7, 5, 1, 6, 2, 7, 2, 8, 2, 0, 2, 2, 9, 6, 2, 8, 5, 9, 2, 3, 9, 3, 3, 3, 9, 1, 2, 3, 4, 0, 5,
@@ -160,8 +157,15 @@ public class P84LargestRectangleInHistogram {
     for (int i = 0; i < width; i++)
       h[i] = r.nextInt(10);
     var area = largestRectangleArea(h);
+    displayResults(area, h);
+  }
+
+  private void displayResults(int area, int[] h) {
     StringBuilder sb = new StringBuilder("x(");
     sb.append(area);
+    sb.append(',');
+    sb.append(spaces(7 - sb.length()));
+    sb.append("/* area, heights: */ ");
     for (int x : h) {
       sb.append(',');
       sb.append(x);
@@ -171,15 +175,15 @@ public class P84LargestRectangleInHistogram {
   }
 
   private void x(int expectedArea, int... heights) {
-    pr(heights);
     var answer = largestRectangleArea(heights);
-    pr(heights, "answer:", answer);
+    displayResults(answer, heights);
+    //    pr(heights, "answer:", answer);
     if (answer != expectedArea)
       halt("expected area was", expectedArea);
   }
 
   private boolean withDump = true;
-  
+
   private void dump(Column c, String prompt) {
     if (!withDump)
       return;
@@ -211,57 +215,57 @@ public class P84LargestRectangleInHistogram {
 
   public int largestRectangleArea(int[] heights) {
 
-    Column head = null;
+    Column c = null;
     {
       Column current = null;
       for (int h : heights) {
-        Column c = new Column(h);
-        c.height = h;
+        Column ch = new Column(h);
+        ch.height = h;
 
         if (current == null) {
-          head = c;
+          c = ch;
         } else {
-          join(current, c);
+          join(current, ch);
         }
-        current = c;
+        current = ch;
       }
-      
+
       // Add a height=0 column at the end to ensure all previous columns get 'cleaned up'
       join(current, new Column(0));
     }
 
     int maxArea = 0;
 
-    Column c = head;
-
     dump(c, "starting iteration");
 
     while (c.next != null) {
-      var cNext = c.next;
-
-      if (cNext.height > c.height) {
-        c = cNext;
+      var c2 = c.next;
+      if (c2.height > c.height) {
+        c = c2;
         dump(c, "next is higher, moved to next");
         continue;
-      } else if (cNext.height == c.height) {
-        c.width += cNext.width;
-        join(c, cNext.next);
-        dump(c, "next is same height, merged with it");
-      } else {
-        int area = c.height * c.width;
-        maxArea = Math.max(area, maxArea);
+      }
 
-        int leftHeight = 0;
-        if (c.prev != null)
-          leftHeight = c.prev.height;
-        int rightHeight = cNext.height;
-        c.height = Math.max(leftHeight, rightHeight);
-        dump(c, "next is lower; trimmed current; added candidate area:" + area);
-        // Back up, if we can, in case current has dropped at or below its previous
-        if (c.prev != null) {
-          c = c.prev;
-          dump(c, "moved to previous");
-        }
+      if (c2.height == c.height) {
+        c.width += c2.width;
+        join(c, c2.next);
+        dump(c, "next is same height, merged with it");
+        continue;
+      }
+
+      int area = c.height * c.width;
+      maxArea = Math.max(area, maxArea);
+      int leftHeight = 0;
+      if (c.prev != null)
+        leftHeight = c.prev.height;
+      int rightHeight = c2.height;
+      c.height = Math.max(leftHeight, rightHeight);
+      dump(c, "next is lower; trimmed current; added candidate area:" + area);
+
+      // Back up, if we can, in case current has dropped at or below its previous
+      if (c.prev != null) {
+        c = c.prev;
+        dump(c, "moved to previous");
       }
     }
     dump(c, "done; max area: " + maxArea);
