@@ -5,6 +5,10 @@ import static js.base.Tools.*;
 
 import java.util.Random;
 
+// Beats 92.90% runtime, 27% memory
+//
+// Uses a linked list to solve the problem in linear time.
+//
 public class P84LargestRectangleInHistogram {
 
   public static void main(String[] args) {
