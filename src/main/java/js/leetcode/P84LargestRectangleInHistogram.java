@@ -10,20 +10,13 @@ public class P84LargestRectangleInHistogram {
   }
 
   private void run() {
-    x(2, 1, 5, 6, 2, 3);
+    x(9, 0);
   }
 
   private void x(int... heights) {
     pr(heights);
     var answer = largestRectangleArea(heights);
     pr(heights, "answer:", answer);
-  }
-
-  private static class Column {
-    int height;
-    int width;
-    Column prev;
-    Column next;
   }
 
   private void dump(Column c, String prompt) {
@@ -41,7 +34,7 @@ public class P84LargestRectangleInHistogram {
       else
         sb.append(" ");
 
-      sb.append(" " + w.height);
+      sb.append(" #" + w.id + " " + w.height);
 
       sb.append("|");
       for (int x = 0; x < w.width; x++) {
@@ -51,6 +44,22 @@ public class P84LargestRectangleInHistogram {
       w = w.next;
     }
     pr(sb.toString());
+  }
+
+  static int uniqueId = 50;
+
+  private static class Column {
+    int height;
+    int width;
+    Column prev;
+    Column next;
+    int id = uniqueId++;
+
+    @Override
+    public String toString() {
+      return "#" + id + " ht:" + height + " wd:" + width;
+    }
+
   }
 
   public int largestRectangleArea(int[] heights) {
@@ -77,36 +86,45 @@ public class P84LargestRectangleInHistogram {
       join(current, tail);
     }
 
-    dump(head, "Initial chain");
-
     int maxArea = 0;
 
-    Column c = head.next;
+    Column c = head; //.next;
 
     while (true) {
+      dump(c, "iteration");
       var cNext = c.next;
       if (cNext == null)
         break;
-      dump(c, "Walking chain; maxArea:" + maxArea);
 
       // If all we have left are the original head and tail, we're done
       if (c == head && cNext == tail)
         break;
-      if (cNext.height > c.height) {
+
+      pr("c:", c, "head:", head, "cNext:", cNext, "tail:", tail);
+      
+      if (cNext.height > c.height ) {
         c = cNext;
         continue;
       }
-
+      
+      // If current is head, next is also zero; delete the next
+      if (c == head) {
+        join(c,cNext.next);
+        continue;
+      }
+      
       // Next height is lower than current.
       // Calculate area of rectangle positioned at top of current as candidate,
       // then truncate it and add it to its predecessor.
 
       int area = c.height * c.width;
       maxArea = Math.max(area, maxArea);
-      // pr("next height is lower; area of previous block:", area, "newmax:", maxArea);
+      pr("next height is lower; area of previous block:", area, "newmax:", maxArea);
 
       // Extend predecessor by current's width
       Column cp = c.prev;
+
+      pr("c prev:", cp);
 
       // Not strictly necessary, but avoid modifying original head (its height is zero so it doesn't matter what width it has)
       if (cp != head) {
