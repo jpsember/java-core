@@ -28,8 +28,57 @@ public class P87ScrambleString {
 
   private void go2(String orig, String scr) {
     resultCache.clear();
-    iter = 0;
-    pr(CR, orig, CR, scr, isScramble(orig, scr), "iter:", iter);
+    pr(CR, orig, CR, scr, isScramble(orig, scr));
+  }
+
+  public boolean isScramble(String s1, String s2) {
+
+    String key = s1 + " " + s2;
+    Boolean cached = resultCache.get(key);
+    if (cached != null)
+      return cached;
+
+    // If s2 is a scrambled version of s1, then 
+    //
+    //  a) the same characters (with corresponding multiplicities) must exist in s1 and s2
+    //  b) there must exist for some 0<i<ceil(n/2) a prefix s1[0..i] and suffix s1[i..n] that are 
+    //      scrambled forms of either (s2[0..i] and s2[i..n]) or (s2[0..n-i] and s2[n-i..n]) respectively.
+    // 
+    // If b) is true then a) is also true, but for optimization a) is useful
+    //
+    // The key optimization is to memoize the intermediate results!
+
+    boolean result = false;
+    outer: do {
+      int n = s1.length();
+      if (n <= 1) {
+        result = s1.equals(s2);
+        break;
+      }
+
+      if (sameCharHeuristic) {
+        if (!sameChars(s1, s2))
+          break;
+      }
+
+      result = true;
+
+      for (int i = 1; i < n; i++) {
+        int j = n - i;
+        var prefix = s1.substring(0, i);
+        var suffix = s1.substring(i);
+        if (isScramble(prefix, s2.substring(0, i)) && isScramble(suffix, s2.substring(i))) {
+          break outer;
+        }
+        if (isScramble(prefix, s2.substring(j)) && isScramble(suffix, s2.substring(0, j))) {
+          break outer;
+        }
+      }
+      result = false;
+    } while (false);
+
+    resultCache.put(key, result);
+    return result;
   }
 
   private static final int MAX_STR_LEN = 30;
@@ -57,61 +106,6 @@ public class P87ScrambleString {
     return true;
   }
 
-  private int iter;
-
   private Map<String, Boolean> resultCache = hashMap();
 
-  public boolean isScramble(String s1, String s2) {
-
-    String key = s1 + " " + s2;
-    Boolean cached = resultCache.get(key);
-    if (cached != null)
-      return cached;
-
-    // If s2 is a scrambled version of s1, then 
-    //
-    //  a) the same characters (with corresponding multiplicities) must exist in s1 and s2
-    //  b) there must exist for some 0<i<ceil(n/2) a prefix s1[0..i] and suffix s1[i..n] that are 
-    //      scrambled forms of either (s2[0..i] and s2[i..n]) or (s2[0..n-i] and s2[n-i..n]) respectively.
-    // 
-    // If b) is true then a) is also true, but for optimization a) might be useful
-
-    // Recursion base case
-
-    boolean result = false;
-    outer: do {
-
-      if (s1.length() <= 1) {
-        result = s1.equals(s2);
-        break;
-      }
-
-      if (sameCharHeuristic) {
-        if (!sameChars(s1, s2))
-          break;
-      }
-
-      result = true;
-
-      int n = s1.length();
-
-      for (int i = 1; i < n; i++) {
-        int j = n - i;
-
-        var prefix = s1.substring(0, i);
-        var suffix = s1.substring(i);
-
-        if (isScramble(prefix, s2.substring(0, i)) && isScramble(suffix, s2.substring(i))) {
-          break outer;
-        }
-        if (isScramble(prefix, s2.substring(j)) && isScramble(suffix, s2.substring(0, j))) {
-          break outer;
-        }
-      }
-      result = false;
-    } while (false);
-
-    resultCache.put(key, result);
-    return result;
-  }
 }
