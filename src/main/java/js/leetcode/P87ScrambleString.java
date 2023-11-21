@@ -2,10 +2,11 @@ package js.leetcode;
 
 import static js.base.Tools.*;
 
-import java.util.HashMap;
 import java.util.Map;
 
 // There is a complication if there are duplicate characters in the string.
+//
+// I threw out my old (O(n) !) algorithm  and am using a different, recursive one.
 //
 public class P87ScrambleString {
 
@@ -13,194 +14,131 @@ public class P87ScrambleString {
     new P87ScrambleString().run();
   }
 
+  private static final boolean log = false;
+  private static final boolean sameCharHeuristic = true;
+
   private void run() {
-    //    go2("abc", "acb");
-    //    go2("great", "rgeat");
-    //    go2("abcde", "caebd");
+    checkpoint("starting");
+    //go2("abc", "acb");
+      go2("great", "rgeat");
+    //  go2("abcde", "caebd");
     //    go2("a", "a");
 
     // This takes way too long; there must be a simpler algorithm
     go2("eebaacbcbcadaaedceaaacadccd", "eadcaacabaddaceacbceaabeccd");
-
+    checkpoint("stopping");
   }
 
   private void go2(String orig, String scr) {
-    pr(CR, orig, CR, scr, isScramble(orig, scr));
+    resultCache.clear();
+    iter = 0;
+    pr(CR, orig, CR, scr, isScramble(orig, scr), "iter:", iter);
   }
+
+  private int depth;
+
+  private static final int MAX_STR_LEN = 30;
+  private static byte[] work1 = new byte[MAX_STR_LEN];
+  private static byte[] work2 = new byte[MAX_STR_LEN];
+
+  private static boolean sameChars(String s1, String s2) {
+    if (log)
+      pr("same chars:", s1, s2);
+    int n = s1.length();
+    for (int i = 0; i < n; i++) {
+      work1[i] = (byte) (s1.charAt(i) - 'a');
+      work2[i] = (byte) (s2.charAt(i) - 'a');
+    }
+    int work2Length = n;
+
+    outer: for (int i = 0; i < n; i++) {
+      byte a = work1[i];
+
+      for (int j = 0; j < work2Length; j++) {
+        if (work2[j] == a) {
+          work2Length--;
+          work2[j] = work2[work2Length];
+          continue outer;
+        }
+      }
+      if (log)
+        pr("...no!");
+      return false;
+    }
+    if (log)
+      pr("...yes");
+    return true;
+  }
+
+  private int iter;
+
+  private Map<String, Boolean> resultCache = hashMap();
 
   public boolean isScramble(String s1, String s2) {
-    // If there are duplicate characters, use the second algorithm
-    if (hasDuplicateChars(s1) || hasDuplicateChars(s2))
-      return isScramble2(s1, s2);
-    return isScramble1(s1, s2);
-  }
 
-  private boolean isScramble1(String s1, String s2) {
-    // Define a mapping over the characters to convert them to their position within the string
-    Map<Character, Integer> m = new HashMap<>();
-    int[] dig1 = new int[s1.length()];
-    int[] dig2 = new int[s2.length()];
-    for (int i = 0; i < s1.length(); i++) {
-      m.put(s1.charAt(i), i + 1);
-      dig1[i] = i;
+    String key = s1 + " " + s2;
+    Boolean cached = resultCache.get(key);
+    if (cached != null)
+      return cached;
+
+    iter++;
+
+    String sp = null;
+    if (log) {
+      sp = "| " + spaces(depth);
+      depth++;
+      pr(VERT_SP, sp, s1, s2);
     }
-    for (int i = 0; i < s2.length(); i++) {
-      Integer j = m.get(s2.charAt(i));
-      if (j == null)
-        return false;
-      dig2[i] = j;
-    }
-    return auxScramble(dig2, 0, dig2.length);
-  }
 
-  private static boolean hasDuplicateChars(String s) {
-    for (int i = 0; i < s.length(); i++) {
-      char c = s.charAt(i);
-      if (s.substring(i + 1).indexOf(c) >= 0)
-        return true;
-    }
-    return false;
-  }
+    // If s2 is a scrambled version of s1, then 
+    //
+    //  a) the same characters (with corresponding multiplicities) must exist in s1 and s2
+    //  b) there must exist for some 0<i<ceil(n/2) a prefix s1[0..i] and suffix s1[i..n] that are 
+    //      scrambled forms of either (s2[0..i] and s2[i..n]) or (s2[0..n-i] and s2[n-i..n]) respectively.
+    // 
+    // If b) is true then a) is also true, but for optimization a) might be useful
 
-  private boolean less(MinMax a, MinMax b, boolean fwd) {
-    if (fwd) {
-      return a.max < b.min;
-    } else {
-      return b.max < a.min;
-    }
-  }
+    // Recursion base case
 
-  private boolean auxScramble(int[] s, int i0, int i1) {
-    // pr("auxScramble", Arrays.copyOfRange(s, i0, i1), i0, i1);
+    boolean result = false;
+    outer: do {
 
-    int len = i1 - i0;
-    if (len <= 2)
-      return true;
-
-    int j = i0;
-    int k = i1 - 1;
-
-    boolean fwd = s[j] < s[k];
-
-    var jM = new MinMax(s[j]);
-    var kM = new MinMax(s[k]);
-
-    while (true) {
-      //  pr("j:", j, "k:", k, "jM:", jM, "kM:", kM);
-
-      if (j + 1 == k)
+      if (s1.length() <= 1) {
+        result = s1.equals(s2);
         break;
-
-      var jM2 = jM.add(s[j + 1]);
-      if (less(jM2, kM, fwd)) {
-        jM = jM2;
-        j++;
-        continue;
       }
 
-      var kM2 = kM.add(s[k - 1]);
-      if (less(jM, kM2, fwd)) {
-        kM = kM2;
-        k--;
-        continue;
+      if (sameCharHeuristic) {
+        if (!sameChars(s1, s2))
+          break;
       }
 
-      return false;
-    }
-    return auxScramble(s, i0, k) && auxScramble(s, k, i1);
-  }
+      result = true;
 
-  private static class MinMax {
-    int min;
-    int max;
+      int n = s1.length();
 
-    MinMax(int... vals) {
-      for (int i = 0; i < vals.length; i++) {
-        int v = vals[i];
-        if (i == 0) {
-          min = v;
-          max = v;
-        } else {
-          if (min > v)
-            min = v;
-          if (max < v)
-            max = v;
+      for (int i = 1; i < n; i++) {
+        int j = n - i;
+
+        var prefix = s1.substring(0, i);
+        var suffix = s1.substring(i);
+        if (log)
+          pr(sp, "n:", n, "i:", i, "prefix:", prefix, "suffix:", suffix);
+
+        if (isScramble(prefix, s2.substring(0, i)) && isScramble(suffix, s2.substring(i))) {
+          break outer;
+        }
+        if (isScramble(prefix, s2.substring(j)) && isScramble(suffix, s2.substring(0, j))) {
+          break outer;
         }
       }
+      result = false;
+    } while (false);
+    if (log) {
+      pr(sp, result);
+      depth--;
     }
-
-    MinMax add(int val) {
-      return new MinMax(min, max, val);
-    }
-
-    @Override
-    public String toString() {
-      return "{min:" + min + " max:" + max + "}";
-    }
-
-  }
-
-  private Map<String, String> sortedMap = new HashMap<>();
-  private StringBuilder sb = new StringBuilder();
-
-  private String sorted(String s) {
-    String result = sortedMap.get(s);
-    if (result == null) {
-      sb.setLength(0);
-      sb.append(s);
-      for (int i = 0; i < s.length(); i++) {
-        char ci = sb.charAt(i);
-        for (int j = 0; j < s.length(); j++) {
-          char cj = sb.charAt(j);
-          if (ci > cj) {
-            sb.setCharAt(j, ci);
-            sb.setCharAt(i, cj);
-            var tmp = ci;
-            ci = cj;
-            cj = tmp;
-          }
-        }
-      }
-      result = sb.toString();
-      sortedMap.put(s, result);
-    }
+    resultCache.put(key, result);
     return result;
   }
-
-  private boolean isScramble2(String s1, String s2) {
-
-    if (!sorted(s1).equals(sorted(s2))) {
-      return false;
-    }
-
-    if (!hasDuplicateChars(s1) && !hasDuplicateChars(s2))
-      return isScramble1(s1, s2);
-
-    if (s1.length() == 1)
-      return true;
-
-    for (int i = 1; i < s1.length(); i++) {
-
-      // Divide both a and b at i
-      var s1a = s1.substring(0, i);
-      var s1b = s1.substring(i);
-
-      var s2a = s2.substring(0, i);
-      var s2b = s2.substring(i);
-
-      if (isScramble2(s1a, s2a) && isScramble(s1b, s2b))
-        return true;
-
-      // Simulate effect of swapping at i
-      int j = s1.length() - i;
-      var s3a = s2.substring(j);
-      var s3b = s2.substring(0, j);
-
-      if (isScramble2(s1a, s3a) && isScramble(s1b, s3b))
-        return true;
-    }
-
-    return false;
-  }
-
 }
