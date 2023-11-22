@@ -5,14 +5,16 @@ import static js.base.Tools.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 import java.util.TreeMap;
 
 public class P15ThreeSum {
+
+  private static final boolean shortCircuit = true;
+  private int steps;
 
   public static void main(String[] args) {
     new P15ThreeSum().run();
@@ -47,7 +49,7 @@ public class P15ThreeSum {
       x(nums);
     }
 
-    if (false) {
+    if (true) {
       var r = new Random(1965);
       int[] nums = new int[1000];
 
@@ -63,11 +65,11 @@ public class P15ThreeSum {
   private void x(int... nums) {
     var verified = sorted(slow(nums));
     var result = sorted(threeSum(nums));
-    pr(CR, result, CR, "count:", result.size(), "steps:", steps);
+    /**/pr(CR, result, CR, "count:", result.size(), "steps:", steps);
     if (!result.equals(verified)) {
       halt(CR, "*** Expected this instead:", CR, verified, CR, "count:", verified.size());
     }
-    pr(CR);
+    /**/pr(CR);
   }
 
   private List<List<Integer>> sorted(List<List<Integer>> nums) {
@@ -81,10 +83,7 @@ public class P15ThreeSum {
   }
 
   private List<List<Integer>> slow(int[] nums) {
-
     result.clear();
-    unique.clear();
-
     Arrays.sort(nums);
     int n = nums.length;
     for (int a = 0; a < n; a++) {
@@ -105,20 +104,16 @@ public class P15ThreeSum {
       }
     }
 
-    return new ArrayList<>(result);
+    return new ArrayList<>(result.values());
   }
 
-  final boolean shortCircuit = true;
-  
   public List<List<Integer>> threeSum(int[] nums) {
 
     result.clear();
-    unique.clear();
     steps = 0;
 
     Arrays.sort(nums);
 
-    // pr("sorted:", nums);
     int a = 0;
     int b = nums.length - 1;
 
@@ -128,24 +123,16 @@ public class P15ThreeSum {
       if ((va ^ vb) >= 0)
         break;
 
-      pr(VERT_SP, "[a " + a + "]:", va, "[b " + b + "]:", vb);
+      /**/pr(VERT_SP, "[a " + a + "]:", va, "[b " + b + "]:", vb);
 
       for (var a1 = a; a1 + 1 < b; a1++) {
         steps++;
 
         int va1 = nums[a1];
         int vc = 0 - (va1 + vb);
-        pr(" [a1 " + a1 + "]:", va1, "vc:", vc);
-
         int k = Arrays.binarySearch(nums, a1 + 1, b, vc);
-
+        /**/pr(" [a1 " + a1 + "]:", va1, "vc:", vc, "k:", k);
         if (k >= 0) {
-
-          // This is causing things to fail
-          if (vc < va1 || vc > vb) {
-            halt("found soln at k:", k, "for vc:", vc, "va1:", va1, "vb:", vb);
-          }
-
           addSoln(va1, vb, vc);
         } else if (shortCircuit) {
           // Short circuit: 
@@ -160,20 +147,19 @@ public class P15ThreeSum {
         steps++;
         int vb1 = nums[b1];
         int vc = 0 - (va + vb1);
-        pr(" [b1 " + b1 + "]:", vb1, "vc:", vc);
 
         // This is causing things to fail
         //                if (vc < va || vc > vb1)
         //                break;
         int k = Arrays.binarySearch(nums, a + 1, b1, vc);
-        pr("k:", k);
+        /**/pr(" [b1 " + b1 + "]:", vb1, "vc:", vc, "k:", k);
         if (k >= 0) {
           // This is causing things to fail
           if (vc < va || vc > vb1) {
             halt("found soln at k:", k, "for vc:", vc, "va:", va, "vb:", vb1);
           }
           addSoln(va, vb1, vc);
-        }  else if (shortCircuit) {
+        } else if (shortCircuit) {
           // Short circuit: 
           // If the insertion position for this missing value is to the right, we won't find any more results 
           // stepping further to the left.
@@ -188,7 +174,7 @@ public class P15ThreeSum {
     // Add 0,0,0 if there are at least three zeros
     {
       int k = Arrays.binarySearch(nums, 0);
-      pr("search for zero:", k);
+      /**/pr("search for zero:", k);
       if (k >= 0) {
         while (k > 0 && nums[k - 1] == 0)
           k--;
@@ -198,25 +184,21 @@ public class P15ThreeSum {
       }
     }
 
-    return result;
+    return new ArrayList<>(result.values());
   }
 
   private void addSoln(int a, int b, int c) {
     final long minNum = -100000;
 
     long key = (a - minNum) + ((b - minNum) << 17) + ((c - minNum) << (17 * 2));
-    if (!unique.add(key))
-      return;
-
-    List<Integer> soln = new ArrayList<>();
-
+    List<Integer> soln = new ArrayList<>(3);
     soln.add(a);
     soln.add(b);
     soln.add(c);
-    result.add(soln);
+    pr("...add soln:", soln);
+    result.put(key, soln);
   }
 
-  private List<List<Integer>> result = new ArrayList<>();
-  private Set<Long> unique = new HashSet<>();
-  private int steps;
+  private Map<Long, List<Integer>> result = new HashMap<>();
+
 }
