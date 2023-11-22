@@ -3,9 +3,9 @@ package js.leetcode;
 
 import static js.base.Tools.*;
 
-import java.nio.charset.Charset;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.List;
 
 public class P44WildcardMatching {
 
@@ -41,37 +41,66 @@ public class P44WildcardMatching {
   }
 
   public boolean isMatch(String s, String p) {
-    sb = (s + "!").getBytes(cs);
-    pb = (p + "!").getBytes(cs);
+    byte[] sb;
+    byte[] pb;
+    sb = (s + "!").getBytes();
+    pb = (p + "!").getBytes();
+    patLength = pb.length + 1;
 
-    visitedStates.clear();
-    return auxMatch(0, 0);
-  }
+    stack.clear();
+    BitSet visited = new BitSet(sb.length * pb.length);
+    stack.add(0);
 
-  private boolean auxMatch(int strCursor, int patCursor) {
+    while (!stack.isEmpty()) {
 
-    if (!visitedStates.add(strCursor | (patCursor << 11)))
-      return false;
+      int val = stack.remove(stack.size() - 1);
+      if (visited.get(val))
+        continue;
+      visited.set(val);
 
-    byte sc = sb[strCursor];
-    byte pc = pb[patCursor];
+      int strCursor = val / patLength;
+      int patCursor = val % patLength;
 
-    if (pc == '!')
-      return sc == '!';
-    if (pc == '?')
-      return sc != '!' && auxMatch(strCursor + 1, patCursor + 1);
-    if (pc == '*') {
-      while (pb[patCursor + 1] == '*')
-        patCursor++;
-      return (sc != '!' && auxMatch(strCursor + 1, patCursor)) || auxMatch(strCursor, patCursor + 1);
+      boolean result = false;
+      do {
+
+        byte sc = sb[strCursor];
+        byte pc = pb[patCursor];
+
+        if (pc == '!') {
+          result = sc == '!';
+          break;
+        }
+        if (pc == '?') {
+          if (sc != '!')
+            push((strCursor + 1), (patCursor + 1));
+          break;
+        }
+        if (pc == '*') {
+          while (pb[patCursor + 1] == '*')
+            patCursor++;
+
+          push(strCursor, patCursor + 1);
+
+          if (sc != '!') {
+            push(strCursor + 1, patCursor);
+          }
+          break;
+        }
+        if (sc == pc) {
+          push(strCursor + 1, patCursor + 1);
+        }
+      } while (false);
+      if (result)
+        return true;
     }
-    return (sc == pc) && auxMatch(strCursor + 1, patCursor + 1);
+    return false;
   }
 
-  private Set<Integer> visitedStates = new HashSet<>();
+  private void push(int strCursor, int patCursor) {
+    stack.add(strCursor * patLength + patCursor);
+  }
 
-  private byte[] sb;
-  private byte[] pb;
-  private static Charset cs = Charset.forName("US-ASCII");
-
+  private List<Integer> stack = new ArrayList<>();
+  private int patLength;
 }
