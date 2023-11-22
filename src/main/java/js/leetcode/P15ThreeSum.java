@@ -19,16 +19,42 @@ public class P15ThreeSum {
     new P15ThreeSum().run();
   }
 
+  private void rand(int seed, int count) {
+    var r = new Random(seed);
+    int[] nums = new int[count];
+
+    final int numMag = 1000;
+
+    for (int i = 0; i < nums.length; i++)
+      nums[i] = r.nextInt(numMag * 2) - numMag;
+    x(nums);
+  }
+
   private void run() {
     checkpoint("start");
+
+    x(-12, -4, 8);
+
+    x(-647, -566, -499, -278, -258, -120, -64, -44, -26, -4, 18, 140, 322, 327, 405, 502, 742, 889, 928, 996);
+
+        x(-8,-6,3,8,10);
+    //    
+         x(-747, -289, 709, 747, 840);
+        rand(340, 5);
+
+    for (int s = 1; s < 800; s++) {
+      pr(VERT_SP, "seed:", s);
+      rand(s + 4000, 20);
+    }
+
+    //  rand(1965,1000);
 
     // x(0, 0, 0);
     // x(1, 0, 0, 0, 0, 0, 1, -1, -1, 1);
 
-    x(-1, 0, 1, 2, -1, -4);
-    // That is supposed to produce [[-1,-1,2],[-1,0,1]]
+    // x(-1, 0, 1, 2, -1, -4);
 
-    if (false)
+    
 
       x(34, 55, 79, 28, 46, 33, 2, 48, 31, -3, 84, 71, 52, -3, 93, 15, 21, -43, 57, -6, 86, 56, 94, 74, 83,
           -14, 28, -66, 46, -49, 62, -11, 43, 65, 77, 12, 47, 61, 26, 1, 13, 29, 55, -82, 76, 26, 15, -29, 36,
@@ -37,7 +63,7 @@ public class P15ThreeSum {
 
     //x(-1, 0, 1, 0);
 
-    if (false) {
+     {
       int y = 20;
       int[] nums = new int[2 * y + 3];
       int i = 3;
@@ -48,23 +74,13 @@ public class P15ThreeSum {
       x(nums);
     }
 
-    if (false) {
-      var r = new Random(1965);
-      int[] nums = new int[1000];
-
-      final int numMag = 100000;
-
-      for (int i = 0; i < nums.length; i++)
-        nums[i] = r.nextInt(numMag * 2) - numMag;
-      x(nums);
-    }
     checkpoint("stop");
   }
 
   private void x(int... nums) {
     var verified = sorted(slow(nums));
     pr(CR);
-    
+
     var result = sorted(threeSum(nums));
     /**/pr(CR, result, CR, "count:", result.size());
     if (!result.equals(verified)) {
@@ -132,11 +148,11 @@ public class P15ThreeSum {
       for (int x : nums) {
         var p = x + c;
         if (p < c) {
-          u[belowC++] = p;
+          u[belowC++] = x;
         } else if (p == c)
           equalC++;
         else if (p <= c3) {
-          w[midC++] = p;
+          w[midC++] = x;
         }
       }
     }
@@ -144,58 +160,57 @@ public class P15ThreeSum {
       addSoln(0, 0, 0);
     }
 
-    pr("nums:",nums);
-    pr("c:", c, "3c:", c3, "u:", u, "w:", w,"below:",belowC,"midC:",midC,"equal:",equalC);
+    pr("nums:", nums);
+    pr("c:", c, "3c:", c3, "u:", u, "w:", w, "below:", belowC, "midC:", midC, "equal:", equalC);
 
     var umap = buildFreqMap(u, belowC);
     var wmap = buildFreqMap(w, midC);
     pr("umap:", umap);
     pr("wmap:", wmap);
-    
-    
+
     for (int i = 0; i < belowC; i++) {
       var uVal = u[i];
-    pr("u["+i+"]: ",uVal);
-    
-      {
-        var wVal = 2 * c - uVal;
-        pr("w:",wVal);
+      pr("u[" + i + "]: ", uVal);
+
+      if (equalC > 0) {
+        var wVal = -uVal;
+        pr("w:", wVal);
         if (wmap.containsKey(wVal)) {
-          addSoln(uVal - c, c, wVal - c);
+          addSoln(uVal, 0, wVal);
         }
       }
-      var ww = findTwoSum(w, wmap, c3 - uVal);
-      if (ww != null)
-        addSoln(uVal - c, ww[0] - c, ww[1] - c);
+      findTwoSums(w, wmap, -uVal);
+
     }
 
     for (int i = 0; i < midC; i++) {
       var wVal = w[i];
-      var uu = findTwoSum(u, umap, c3 - wVal);
-      if (uu != null)
-        addSoln(uu[0] - c, uu[1] - c, wVal - c);
+      findTwoSums(u, umap, -wVal);
+
     }
 
     return new ArrayList<>(result.values());
   }
 
-  private static int[] work = new int[2];
-
-  private int[] findTwoSum(int[] list, Map<Integer, Integer> freq, int sum) {
+  private void findTwoSums(int[] list, Map<Integer, Integer> freq, int sum) {
     int size = freq.size();
+
+    // We want to avoid choosing the pairs (a,b) AND (b,a)
+    Integer prevA = null;
+
     for (int i = 0; i < size; i++) {
       int a = list[i];
       int b = sum - a;
+      if (prevA != null && b == prevA)
+        break;
       Integer count = freq.get(b);
       if (count != null) {
         if (a == b && count < 2)
           break;
-        work[0] = a;
-        work[1] = b;
-        return work;
+        addSoln(a, b, -sum);
+        prevA = a;
       }
     }
-    return null;
   }
 
   private Map<Integer, Integer> buildFreqMap(int[] a, int len) {
@@ -211,7 +226,7 @@ public class P15ThreeSum {
   }
 
   private void addSoln(int a, int b, int c) {
-    pr("===>",a,b,c);
+    pr("===>", a, b, c);
     final long minNum = -100000;
     long key = (a - minNum) + ((b - minNum) << 17) + ((c - minNum) << (17 * 2));
     List<Integer> soln = new ArrayList<>(3);
