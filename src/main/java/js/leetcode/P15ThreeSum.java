@@ -11,7 +11,9 @@ import java.util.Map;
 import java.util.Random;
 import java.util.TreeMap;
 
-// This works, but is still 6 times slower than most of the 'best' solutions.
+// A new algorithm that partitions the numbers into regions such that 
+// a solution must be x numbers from one region and y numbers from another;
+// it uses 2Sum as a subroutine
 //
 public class P15ThreeSum {
 
@@ -37,10 +39,9 @@ public class P15ThreeSum {
 
     x(-647, -566, -499, -278, -258, -120, -64, -44, -26, -4, 18, 140, 322, 327, 405, 502, 742, 889, 928, 996);
 
-        x(-8,-6,3,8,10);
-    //    
-         x(-747, -289, 709, 747, 840);
-        rand(340, 5);
+    x(-8, -6, 3, 8, 10);
+    x(-747, -289, 709, 747, 840);
+    rand(340, 5);
 
     for (int s = 1; s < 800; s++) {
       pr(VERT_SP, "seed:", s);
@@ -54,16 +55,14 @@ public class P15ThreeSum {
 
     // x(-1, 0, 1, 2, -1, -4);
 
-    
-
-      x(34, 55, 79, 28, 46, 33, 2, 48, 31, -3, 84, 71, 52, -3, 93, 15, 21, -43, 57, -6, 86, 56, 94, 74, 83,
-          -14, 28, -66, 46, -49, 62, -11, 43, 65, 77, 12, 47, 61, 26, 1, 13, 29, 55, -82, 76, 26, 15, -29, 36,
-          -29, 10, -70, 69, 17, 49);
+    x(34, 55, 79, 28, 46, 33, 2, 48, 31, -3, 84, 71, 52, -3, 93, 15, 21, -43, 57, -6, 86, 56, 94, 74, 83, -14,
+        28, -66, 46, -49, 62, -11, 43, 65, 77, 12, 47, 61, 26, 1, 13, 29, 55, -82, 76, 26, 15, -29, 36, -29,
+        10, -70, 69, 17, 49);
     // x(-1, 0, 1, 2, -1, -4);
 
     //x(-1, 0, 1, 0);
 
-     {
+    {
       int y = 20;
       int[] nums = new int[2 * y + 3];
       int i = 3;
@@ -160,21 +159,21 @@ public class P15ThreeSum {
       addSoln(0, 0, 0);
     }
 
-    pr("nums:", nums);
-    pr("c:", c, "3c:", c3, "u:", u, "w:", w, "below:", belowC, "midC:", midC, "equal:", equalC);
+//    pr("nums:", nums);
+//    pr("c:", c, "3c:", c3, "u:", u, "w:", w, "below:", belowC, "midC:", midC, "equal:", equalC);
 
     var umap = buildFreqMap(u, belowC);
     var wmap = buildFreqMap(w, midC);
-    pr("umap:", umap);
-    pr("wmap:", wmap);
+//    pr("umap:", umap);
+//    pr("wmap:", wmap);
 
     for (int i = 0; i < belowC; i++) {
       var uVal = u[i];
-      pr("u[" + i + "]: ", uVal);
+      //pr("u[" + i + "]: ", uVal);
 
       if (equalC > 0) {
         var wVal = -uVal;
-        pr("w:", wVal);
+     //   pr("w:", wVal);
         if (wmap.containsKey(wVal)) {
           addSoln(uVal, 0, wVal);
         }
@@ -226,7 +225,7 @@ public class P15ThreeSum {
   }
 
   private void addSoln(int a, int b, int c) {
-    pr("===>", a, b, c);
+   // pr("===>", a, b, c);
     final long minNum = -100000;
     long key = (a - minNum) + ((b - minNum) << 17) + ((c - minNum) << (17 * 2));
     List<Integer> soln = new ArrayList<>(3);
