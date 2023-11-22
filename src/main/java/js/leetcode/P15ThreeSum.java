@@ -11,10 +11,9 @@ import java.util.Map;
 import java.util.Random;
 import java.util.TreeMap;
 
+// This works, but is still 6 times slower than most of the 'best' solutions.
+//
 public class P15ThreeSum {
-
-  private static final boolean shortCircuit = true;
-  private int steps;
 
   public static void main(String[] args) {
     new P15ThreeSum().run();
@@ -65,7 +64,7 @@ public class P15ThreeSum {
   private void x(int... nums) {
     var verified = sorted(slow(nums));
     var result = sorted(threeSum(nums));
-    /**/pr(CR, result, CR, "count:", result.size(), "steps:", steps);
+    /**/pr(CR, result, CR, "count:", result.size());
     if (!result.equals(verified)) {
       halt(CR, "*** Expected this instead:", CR, verified, CR, "count:", verified.size());
     }
@@ -108,10 +107,7 @@ public class P15ThreeSum {
   }
 
   public List<List<Integer>> threeSum(int[] nums) {
-
     result.clear();
-    steps = 0;
-
     Arrays.sort(nums);
 
     int a = 0;
@@ -123,18 +119,13 @@ public class P15ThreeSum {
       if ((va ^ vb) >= 0)
         break;
 
-      /**/pr(VERT_SP, "[a " + a + "]:", va, "[b " + b + "]:", vb);
-
       for (var a1 = a; a1 + 1 < b; a1++) {
-        steps++;
-
         int va1 = nums[a1];
         int vc = 0 - (va1 + vb);
         int k = Arrays.binarySearch(nums, a1 + 1, b, vc);
-        /**/pr(" [a1 " + a1 + "]:", va1, "vc:", vc, "k:", k);
         if (k >= 0) {
           addSoln(va1, vb, vc);
-        } else if (shortCircuit) {
+        } else {
           // Short circuit: 
           // If the insertion position for this missing value is to the left, we won't find any more results 
           // stepping further to the right.
@@ -144,22 +135,12 @@ public class P15ThreeSum {
       }
 
       for (var b1 = b - 1; b1 - 1 > a; b1--) {
-        steps++;
         int vb1 = nums[b1];
         int vc = 0 - (va + vb1);
-
-        // This is causing things to fail
-        //                if (vc < va || vc > vb1)
-        //                break;
         int k = Arrays.binarySearch(nums, a + 1, b1, vc);
-        /**/pr(" [b1 " + b1 + "]:", vb1, "vc:", vc, "k:", k);
         if (k >= 0) {
-          // This is causing things to fail
-          if (vc < va || vc > vb1) {
-            halt("found soln at k:", k, "for vc:", vc, "va:", va, "vb:", vb1);
-          }
           addSoln(va, vb1, vc);
-        } else if (shortCircuit) {
+        } else {
           // Short circuit: 
           // If the insertion position for this missing value is to the right, we won't find any more results 
           // stepping further to the left.
@@ -172,15 +153,12 @@ public class P15ThreeSum {
     }
 
     // Add 0,0,0 if there are at least three zeros
-    {
-      int k = Arrays.binarySearch(nums, 0);
-      /**/pr("search for zero:", k);
-      if (k >= 0) {
-        while (k > 0 && nums[k - 1] == 0)
-          k--;
-        if (k + 2 < nums.length && nums[k + 1] == 0 && nums[k + 2] == 0) {
-          addSoln(0, 0, 0);
-        }
+    int k = Arrays.binarySearch(nums, 0);
+    if (k >= 0) {
+      while (k > 0 && nums[k - 1] == 0)
+        k--;
+      if (k + 2 < nums.length && nums[k + 1] == 0 && nums[k + 2] == 0) {
+        addSoln(0, 0, 0);
       }
     }
 
@@ -189,13 +167,11 @@ public class P15ThreeSum {
 
   private void addSoln(int a, int b, int c) {
     final long minNum = -100000;
-
     long key = (a - minNum) + ((b - minNum) << 17) + ((c - minNum) << (17 * 2));
     List<Integer> soln = new ArrayList<>(3);
     soln.add(a);
     soln.add(b);
     soln.add(c);
-    pr("...add soln:", soln);
     result.put(key, soln);
   }
 
