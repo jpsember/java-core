@@ -140,7 +140,6 @@ public class P15ThreeSum {
 
     // Sort into order to optimize sum2 subroutine
     Arrays.sort(nums);
-    pr("nums:", nums);
 
     var nmap = new HashMap<Integer, Integer>(nums.length);
     for (int x : nums) {
@@ -153,10 +152,8 @@ public class P15ThreeSum {
     for (int u : nums) {
       var sum = -u;
 
-//      pr(VERT_SP, "u:", u, "sum:", sum);
       for (var a : nums) {
         int b = sum - a;
-       // pr("a:", a, "b:", b);
         if (b < a)
           break;
 
@@ -168,46 +165,28 @@ public class P15ThreeSum {
 
         Integer acount = nmap.get(a);
         int aReq = 1;
-        if (a == u) aReq++;
-        if (a == b) aReq++;
-//        pr("a:", a, "acount:", acount, "req:", aReq);
+        if (a == u)
+          aReq++;
+        if (a == b)
+          aReq++;
         if (acount < aReq)
           continue;
 
         int bReq = 1;
         if (b == u)
           bReq = 2;
-      //  pr("b:", b, "bcount:", bcount, "req:", bReq);
         if (bcount < bReq)
           continue;
 
         {
-          final long minNum = nums[0];
-          int x = u;
-          int y = a;
-          int z = b;
-          if (x > y) {
-            int tmp = x;
-            x = y;
-            y = tmp;
-          }
-          if (x > z) {
-            int tmp = x;
-            x = z;
-            z = tmp;
-          }
-          if (y > z) {
-            int tmp = y;
-            y = z;
-            z = tmp;
-          }
-
-          long key = (x - minNum) + ((y - minNum) << 17) + ((z - minNum) << (17 * 2));
           List<Integer> soln = new ArrayList<>(3);
-          soln.add(x);
-          soln.add(y);
-          soln.add(z);
-         // pr("===>", x, y, z);
+          soln.add(u);
+          soln.add(a);
+          soln.add(b);
+          soln.sort(null);
+          final long minNum = nums[0];
+          long key = (soln.get(0) - minNum) + ((soln.get(1) - minNum) << 17)
+              + ((soln.get(2) - minNum) << (17 * 2));
           result.put(key, soln);
         }
       }
