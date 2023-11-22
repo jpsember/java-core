@@ -15,6 +15,8 @@ import java.util.TreeMap;
 // a solution must be x numbers from one region and y numbers from another;
 // it uses 2Sum as a subroutine
 //
+// An even simpler solution that just uses 2Sum; but is slower
+//
 public class P15ThreeSum {
 
   public static void main(String[] args) {
@@ -100,16 +102,6 @@ public class P15ThreeSum {
     return new ArrayList<>(mp.values());
   }
 
-  private void addSoln(int a, int b, int c) {
-    final long minNum = -100000;
-    long key = (a - minNum) + ((b - minNum) << 17) + ((c - minNum) << (17 * 2));
-    List<Integer> soln = new ArrayList<>(3);
-    soln.add(a);
-    soln.add(b);
-    soln.add(c);
-    result.put(key, soln);
-  }
-
   private List<List<Integer>> slow(int[] nums) {
     result.clear();
     Arrays.sort(nums);
@@ -137,62 +129,40 @@ public class P15ThreeSum {
 
   public List<List<Integer>> threeSum(int[] nums) {
     result.clear();
-
-    // Sort into order to optimize sum2 subroutine
     Arrays.sort(nums);
 
-    var nmap = new HashMap<Integer, Integer>(nums.length);
-    for (int x : nums) {
-      Integer count = nmap.get(x);
-      if (count == null)
-        count = 0;
-      nmap.put(x, count + 1);
-    }
+    for (int ai = 0; ai < nums.length - 2; ai++) {
+      int a = nums[ai];
+      int target = -a;
 
-    for (int u : nums) {
-      var sum = -u;
+      int bi = ai + 1;
+      int ci = nums.length - 1;
 
-      for (var a : nums) {
-        int b = sum - a;
-        if (b < a)
-          break;
+      while (bi < ci) {
+        int b = nums[bi];
+        int c = nums[ci];
 
-        // If we need to use a value more than once, but it doesn't appear in the list enough times, skip
-
-        Integer bcount = nmap.get(b);
-        if (bcount == null)
-          continue;
-
-        Integer acount = nmap.get(a);
-        int aReq = 1;
-        if (a == u)
-          aReq++;
-        if (a == b)
-          aReq++;
-        if (acount < aReq)
-          continue;
-
-        int bReq = 1;
-        if (b == u)
-          bReq = 2;
-        if (bcount < bReq)
-          continue;
-
-        {
-          List<Integer> soln = new ArrayList<>(3);
-          soln.add(u);
-          soln.add(a);
-          soln.add(b);
-          soln.sort(null);
-          final long minNum = nums[0];
-          long key = (soln.get(0) - minNum) + ((soln.get(1) - minNum) << 17)
-              + ((soln.get(2) - minNum) << (17 * 2));
-          result.put(key, soln);
+        int sum = b + c;
+        if (sum > target) {
+          ci--;
+        } else {
+          if (sum == target)
+            addSoln(a, b, c);
+          bi++;
         }
       }
     }
-
     return new ArrayList<>(result.values());
+  }
+
+  private void addSoln(int a, int b, int c) {
+    final long minNum = -100000;
+    long key = (a - minNum) + ((b - minNum) << 17) + ((c - minNum) << (17 * 2));
+    List<Integer> soln = new ArrayList<>(3);
+    soln.add(a);
+    soln.add(b);
+    soln.add(c);
+    result.put(key, soln);
   }
 
   private Map<Long, List<Integer>> result = new HashMap<>();
