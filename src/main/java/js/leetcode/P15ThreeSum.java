@@ -35,6 +35,8 @@ public class P15ThreeSum {
   private void run() {
     checkpoint("start");
 
+    x(-8, -6, 3, 8, 10);
+
     x(-12, -4, 8);
 
     x(-647, -566, -499, -278, -258, -120, -64, -44, -26, -4, 18, 140, 322, 327, 405, 502, 742, 889, 928, 996);
@@ -98,6 +100,16 @@ public class P15ThreeSum {
     return new ArrayList<>(mp.values());
   }
 
+  private void addSoln(int a, int b, int c) {
+    final long minNum = -100000;
+    long key = (a - minNum) + ((b - minNum) << 17) + ((c - minNum) << (17 * 2));
+    List<Integer> soln = new ArrayList<>(3);
+    soln.add(a);
+    soln.add(b);
+    soln.add(c);
+    result.put(key, soln);
+  }
+
   private List<List<Integer>> slow(int[] nums) {
     result.clear();
     Arrays.sort(nums);
@@ -125,94 +137,83 @@ public class P15ThreeSum {
 
   public List<List<Integer>> threeSum(int[] nums) {
     result.clear();
+
+    // Sort into order to optimize sum2 subroutine
     Arrays.sort(nums);
+    pr("nums:", nums);
 
-    // Find c, the minimum value
-    int c = nums[0];
-    for (int x : nums)
-      if (x < c)
-        c = x;
-    c = -c;
-    var c3 = c * 3;
-
-    int[] u = new int[nums.length];
-    int[] w = new int[nums.length];
-
-    int belowC = 0;
-    int equalC = 0;
-    int midC = 0;
-
+    var nmap = new HashMap<Integer, Integer>(nums.length);
     for (int x : nums) {
-      var p = x + c;
-      if (p < c) {
-        u[belowC++] = x;
-      } else if (p == c)
-        equalC++;
-      else if (p <= c3) {
-        w[midC++] = x;
-      }
-    }
-    u = Arrays.copyOfRange(u, 0, belowC);
-    w = Arrays.copyOfRange(w, 0, midC);
-
-    if (equalC >= 3)
-      addSoln(0, 0, 0);
-
-    var umap = buildFreqMap(u);
-    var wmap = buildFreqMap(w);
-
-    for (var uVal : u) {
-      if (equalC > 0) {
-        var wVal = -uVal;
-        if (wmap.containsKey(wVal))
-          addSoln(uVal, 0, wVal);
-      }
-      findTwoSums(w, wmap, -uVal);
-    }
-
-    for (var wVal : w)
-      findTwoSums(u, umap, -wVal);
-
-    return new ArrayList<>(result.values());
-  }
-
-  private void findTwoSums(int[] list, Map<Integer, Integer> freq, int sum) {
-    // We want to avoid choosing the pairs (a,b) AND (b,a)
-    Integer prevA = null;
-
-    for (var a : list) {
-      int b = sum - a;
-      if (prevA != null && b == prevA)
-        break;
-      Integer count = freq.get(b);
-      if (count != null) {
-        if (a == b && count < 2)
-          break;
-        addSoln(a, b, -sum);
-        prevA = a;
-      }
-    }
-  }
-
-  private Map<Integer, Integer> buildFreqMap(int[] a) {
-    var res = new HashMap<Integer, Integer>(a.length);
-    for (int x : a) {
-      Integer count = res.get(x);
+      Integer count = nmap.get(x);
       if (count == null)
         count = 0;
-      res.put(x, count + 1);
+      nmap.put(x, count + 1);
     }
-    return res;
-  }
 
-  private void addSoln(int a, int b, int c) {
-    final long minNum = -100000;
-    long key = (a - minNum) + ((b - minNum) << 17) + ((c - minNum) << (17 * 2));
-    List<Integer> soln = new ArrayList<>(3);
-    soln.add(a);
-    soln.add(b);
-    soln.add(c);
-    result.put(key, soln);
+    for (int u : nums) {
+      var sum = -u;
+
+//      pr(VERT_SP, "u:", u, "sum:", sum);
+      for (var a : nums) {
+        int b = sum - a;
+       // pr("a:", a, "b:", b);
+        if (b < a)
+          break;
+
+        // If we need to use a value more than once, but it doesn't appear in the list enough times, skip
+
+        Integer bcount = nmap.get(b);
+        if (bcount == null)
+          continue;
+
+        Integer acount = nmap.get(a);
+        int aReq = 1;
+        if (a == u) aReq++;
+        if (a == b) aReq++;
+//        pr("a:", a, "acount:", acount, "req:", aReq);
+        if (acount < aReq)
+          continue;
+
+        int bReq = 1;
+        if (b == u)
+          bReq = 2;
+      //  pr("b:", b, "bcount:", bcount, "req:", bReq);
+        if (bcount < bReq)
+          continue;
+
+        {
+          final long minNum = nums[0];
+          int x = u;
+          int y = a;
+          int z = b;
+          if (x > y) {
+            int tmp = x;
+            x = y;
+            y = tmp;
+          }
+          if (x > z) {
+            int tmp = x;
+            x = z;
+            z = tmp;
+          }
+          if (y > z) {
+            int tmp = y;
+            y = z;
+            z = tmp;
+          }
+
+          long key = (x - minNum) + ((y - minNum) << 17) + ((z - minNum) << (17 * 2));
+          List<Integer> soln = new ArrayList<>(3);
+          soln.add(x);
+          soln.add(y);
+          soln.add(z);
+         // pr("===>", x, y, z);
+          result.put(key, soln);
+        }
+      }
+    }
+
+    return new ArrayList<>(result.values());
   }
 
   private Map<Long, List<Integer>> result = new HashMap<>();
