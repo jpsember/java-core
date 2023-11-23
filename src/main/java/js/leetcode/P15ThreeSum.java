@@ -11,11 +11,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.TreeMap;
 
-// A new algorithm that partitions the numbers into regions such that 
-// a solution must be x numbers from one region and y numbers from another;
-// it uses 2Sum as a subroutine
-//
-// An even simpler solution that just uses 2Sum; but is slower
+// This is the solution that uses the 'two pointer' trick
 //
 public class P15ThreeSum {
 
@@ -36,8 +32,6 @@ public class P15ThreeSum {
 
   private void run() {
     checkpoint("start");
-
-    x(-8, -6, 3, 8, 10);
 
     x(-12, -4, 8);
 
@@ -131,27 +125,26 @@ public class P15ThreeSum {
     result.clear();
     Arrays.sort(nums);
 
-    for (int ai = 0; ai < nums.length - 2; ai++) {
-      int a = nums[ai];
-      int target = -a;
+    for (int i = 0; i < nums.length - 2; i++) {
+      var a = nums[i];
+      int j = i + 1;
+      int b = nums[j];
+      int k = nums.length - 1;
+      int c = nums[k];
 
-      int bi = ai + 1;
-      int ci = nums.length - 1;
-
-      while (bi < ci) {
-        int b = nums[bi];
-        int c = nums[ci];
-
-        int sum = b + c;
-        if (sum > target) {
-          ci--;
+      while (j < k) {
+        var sum = a + b + c;
+        if (sum == 0) {
+          addSoln(a, b, c);
+        }
+        if (sum < 0) {
+          b = nums[++j];
         } else {
-          if (sum == target)
-            addSoln(a, b, c);
-          bi++;
+          c = nums[--k];
         }
       }
     }
+
     return new ArrayList<>(result.values());
   }
 
