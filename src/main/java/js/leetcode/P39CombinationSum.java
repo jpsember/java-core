@@ -43,8 +43,7 @@ public class P39CombinationSum {
     //pr("combinationSum, coinValues:", coinValues, "target:", target);
     resultList = new ArrayList<>();
     mCoinValues = coinValues;
-    mCoinValueCount = coinValues.length;
-    int[] counts = new int[mCoinValueCount];
+    int[] counts = new int[coinValues.length];
     aux(counts, target, 0);
     return resultList;
   }
@@ -64,11 +63,12 @@ public class P39CombinationSum {
     //pr(VERT_SP, "target:", target, "coinVals:", mCoinValues, "counts:", coinCounts, "start:", coinCountStart);
 
     // Base case: are there no more coin types to be selected?
-    if (coinCountStart == mCoinValueCount) {
+    var coinTypes = coinCounts.length;
+    if (coinCountStart == coinTypes) {
       // If we've reached the target value sum, we have a solution
       if (targetSum == 0) {
         List<Integer> result = new ArrayList<>();
-        for (int i = 0; i < mCoinValueCount; i++) {
+        for (int i = 0; i < coinTypes; i++) {
           var coinValue = mCoinValues[i];
           int count = coinCounts[i];
           for (int j = 0; j < count; j++)
@@ -92,7 +92,6 @@ public class P39CombinationSum {
     coinCounts[coinCountStart] = 0;
   }
 
-  private int mCoinValueCount;
   private List<List<Integer>> resultList;
   private int[] mCoinValues;
 
