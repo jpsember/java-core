@@ -4,10 +4,8 @@ package js.leetcode;
 import static js.base.Tools.*;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-import js.data.DataUtil;
 
 // I thought at first that I could use linear algebra, but a) the system of linear equations
 // is under constrained, so the matrix is invertible; and b) we are only interested in INTEGER
