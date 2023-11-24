@@ -5,10 +5,9 @@ import static js.base.Tools.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
+import js.data.DataUtil;
 import js.json.JSList;
 
 // I thought at first that I could use linear algebra, but a) the system of linear equations
@@ -18,6 +17,10 @@ import js.json.JSList;
 // Given the relatively small number of candidates and target, I think a set of states is the best
 // approach.
 //
+// I realize now that this is the integer knapsack problem.
+//
+// First attempt: runs slower than 95% of the accepted solutions.
+//
 public class P39CombinationSum {
 
   public static void main(String[] args) {
@@ -26,100 +29,95 @@ public class P39CombinationSum {
 
   private void run() {
     x(7, 2, 3, 6, 7);
+    //  x(1, 2);
   }
 
   private void x(int target, int... candidates) {
-
     var result = combinationSum(candidates, target);
     pr(result);
   }
 
-  private static class State {
-    List<int[]> coeff = new ArrayList<>();
-
-    void addCombo(int[] combo) {
-      // If combo is already in state, do nothing
-      for (var c : coeff) {
-        if (Arrays.equals(c, combo))
-          return;
-      }
-      coeff.add(combo);
-    }
-
-    @Override
-    public String toString() {
-      StringBuilder sb = new StringBuilder();
-      for (var c : coeff) {
-        sb.append(' ');
-        sb.append(JSList.with(c).toString());
-      }
-      return sb.toString();
-    }
-  }
-
   public List<List<Integer>> combinationSum(int[] candidates, int target) {
-    int clen = candidates.length;
+    int numCandidates = candidates.length;
 
     State states[] = new State[1 + target];
     for (int i = 0; i <= target; i++)
       states[i] = new State();
+    states[0].addCombination(new int[numCandidates]);
 
-    List<Integer> stack = new ArrayList<>();
-    List<Integer> stack2 = new ArrayList<>();
+    long frontier = 1;
+    while (frontier != 0) {
 
-    {
-      states[0].addCombo(new int[clen]);
-      stack.add(0);
-    }
+      pr(VERT_SP, "next iteration; stack:", DataUtil.bitString((int) (frontier >> 32)),
+          DataUtil.bitString((int) frontier));
+      long nextFrontier = 0;
 
-    Set<Integer> stackSet = new HashSet<>();
+      for (var stateNumber = 0; stateNumber < 40; stateNumber++, frontier >>= 1) {
+        if ((frontier & 1) == 0)
+          continue;
 
-    while (!stack.isEmpty()) {
-      pr(VERT_SP, "next iteration; stack size:", stack.size());
-      stackSet.clear();
-
-      for (var stateNumber : stack) {
         var s = states[stateNumber];
-        pr("state #" + stateNumber + ":", s);
 
-        for (var c : s.coeff) {
-          for (int j = 0; j < clen; j++) {
+        for (var c : s.combinations) {
+          loop: for (int j = 0; j < numCandidates; j++) {
+            // If this combination already has higher-valued values, skip this value
+            for (int k = j + 1; k < numCandidates; k++)
+              if (c[k] > 0)
+                continue loop;
             int newSum = stateNumber + candidates[j];
             if (newSum > target)
               continue;
-            checkState(newSum > stateNumber);
-            State s2 = states[newSum];
-            int[] c2 = Arrays.copyOf(c, c.length);
-            c2[j]++;
-            s2.addCombo(c2);
-
-            if (stackSet.add(newSum)) {
-              pr("...pushing state to stack:", newSum);
-              stack2.add(newSum);
-            }
+            State nextState = states[newSum];
+            int[] newCombination = Arrays.copyOf(c, c.length);
+            newCombination[j]++;
+            if (nextState.addCombination(newCombination))
+              nextFrontier |= 1L << newSum;
           }
         }
       }
-      stack.clear();
-      var tmp = stack;
-      stack = stack2;
-      stack2 = tmp;
+      frontier = nextFrontier;
     }
 
-    var result = states[target];
+    var targetState = states[target];
 
-    List<List<Integer>> out = new ArrayList<>();
+    List<List<Integer>> resultList = new ArrayList<>();
 
-    for (var c : result.coeff) {
-      List<Integer> x = new ArrayList<>();
-      for (int i = 0; i < clen; i++) {
-        int j = c[i];
-        for (int k = 0; k < j; k++)
-          x.add(candidates[i]);
+    for (var combination : targetState.combinations) {
+      List<Integer> result = new ArrayList<>();
+      int i = 0;
+      for (var count : combination) {
+        var value = candidates[i];
+        for (int k = 0; k < count; k++)
+          result.add(value);
+        i++;
       }
-      out.add(x);
+      resultList.add(result);
     }
-    return out;
+    return resultList;
+  }
+
+  private static class State {
+    List<int[]> combinations = new ArrayList<>();
+
+    boolean addCombination(int[] combo) {
+      // If combination is already in the state, do nothing
+      for (var c : combinations) {
+        if (Arrays.equals(c, combo))
+          return false;
+      }
+      combinations.add(combo);
+      return true;
+    }
+
+    //    @Override
+    //    public String toString() {
+    //      StringBuilder sb = new StringBuilder();
+    //      for (var c : combinations) {
+    //        sb.append(' ');
+    //        sb.append(JSList.with(c).toString());
+    //      }
+    //      return sb.toString();
+    //    }
   }
 
 }
