@@ -3,10 +3,6 @@ package js.leetcode;
 
 import static js.base.Tools.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-
 public class P38CountAndSay {
 
   public static void main(String[] args) {
@@ -25,18 +21,15 @@ public class P38CountAndSay {
   }
 
   public String countAndSay(int n) {
-    //pr("countAndSay, n:", n);
     answers[0] = "1";
-    int nIndex = n-1;
+    int nIndex = n - 1;
     String res = answers[nIndex];
     if (res != null) {
-      //pr("result:", res);
       return res;
     }
 
     String aux = countAndSay(n - 1);
 
-    //pr("aux value:", aux);
     StringBuilder sb = new StringBuilder();
     int j = 0;
     while (j < aux.length()) {
@@ -45,7 +38,6 @@ public class P38CountAndSay {
       while (j + k < aux.length() && aux.charAt(j + k) == c) {
         k++;
       }
-     // pr("j:", j, "c:", Character.toString(c), "k:", k);
       sb.append(Integer.toString(k));
       sb.append(c);
       j += k;
