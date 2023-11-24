@@ -4,15 +4,9 @@ package js.leetcode;
 import static js.base.Tools.*;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
-// Running out of time on some inputs.
-// Memoization?
-//
 public class P40CombinationSumII {
 
   public static void main(String[] args) {
@@ -22,12 +16,9 @@ public class P40CombinationSumII {
   private void run() {
     x(8, 10, 1, 2, 7, 6, 1, 5);
 
-    if (true)
-      x(30, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-          1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-          1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-          1);
-
+    x(30, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
   }
 
   private void x(int target, int... candidates) {
@@ -35,44 +26,33 @@ public class P40CombinationSumII {
     pr(result);
   }
 
-  
-  private static final boolean WITH_MEMO = false;
-  
   public List<List<Integer>> combinationSum2(int[] coinValues, int target) {
-    Arrays.sort(coinValues);
 
     // Build subsets of distinct values
-
-    var mValueSets = new HashMap<Integer, Integer>();
+    var coinFrequencyMap = new HashMap<Integer, Integer>();
     for (var value : coinValues) {
-      Integer count = mValueSets.get(value);
+      Integer count = coinFrequencyMap.get(value);
       if (count == null)
         count = 0;
-      mValueSets.put(value, count + 1);
+      coinFrequencyMap.put(value, count + 1);
     }
 
-    int sz = mValueSets.size();
-    mCoinValues = new int[sz];
-    mCoinCounts = new int[sz];
-    {
-      int i = 0;
-      for (var val : mValueSets.keySet()) {
-        mCoinValues[i++] = val;
-      }
-    }
-    {
-      int i = 0;
-      for (int coinVal : mCoinValues) {
-        mCoinCounts[i++] = mValueSets.get(coinVal);
-      }
-    }
+    mCoinValues = toArray(coinFrequencyMap.keySet());
+    mCoinCounts = toArray(coinFrequencyMap.values());
 
-    if (WITH_MEMO)
-    mUniqueKeySet = new HashSet<>();
     resultList = new ArrayList<>();
     mResultBuffer = new ArrayList<Integer>(coinValues.length);
     aux(target, 0);
     return resultList;
+  }
+
+  private static int[] toArray(java.util.Collection<Integer> c) {
+    var res = new int[c.size()];
+    int i = 0;
+    for (var x : c) {
+      res[i++] = x;
+    }
+    return res;
   }
 
   /**
@@ -93,12 +73,7 @@ public class P40CombinationSumII {
       // If we've reached the target value sum, we have a solution
       if (targetSum == 0) {
         ArrayList<Integer> copy = new ArrayList<>(mResultBuffer);
-        if (WITH_MEMO) {
-        var key = mUniqueKeyBuffer.toString();
-        if (mUniqueKeySet.add(key))
-          resultList.add(copy);
-        } else
-          resultList.add(copy);
+        resultList.add(copy);
       }
       return;
     }
@@ -113,17 +88,13 @@ public class P40CombinationSumII {
 
     // Save some values so we can restore them below
     var origLength = mResultBuffer.size();
-    var origSbLen = mUniqueKeyBuffer.length();
 
     while (true) {
       targetSum -= currentCoinValue;
       if (targetSum < 0)
         break;
       mResultBuffer.add(currentCoinValue);
-      if (WITH_MEMO) {
-      mUniqueKeyBuffer.append(' ');
-      mUniqueKeyBuffer.append(currentCoinValue);
-      }
+
       aux(targetSum, coinCursor + 1);
 
       frequency--;
@@ -136,14 +107,11 @@ public class P40CombinationSumII {
       sz--;
       mResultBuffer.remove(sz);
     }
-    mUniqueKeyBuffer.setLength(origSbLen);
   }
 
   private List<List<Integer>> resultList;
   private int[] mCoinValues;
   private int[] mCoinCounts;
-  private StringBuilder mUniqueKeyBuffer = new StringBuilder();
-  private Set<String> mUniqueKeySet;
   private ArrayList<Integer> mResultBuffer;
 
 }
