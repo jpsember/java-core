@@ -39,7 +39,6 @@ public class P39CombinationSum {
     pr(result);
   }
 
-  
   public List<List<Integer>> combinationSum(int[] coinValues, int target) {
     //pr("combinationSum, coinValues:", coinValues, "target:", target);
     resultList = new ArrayList<>();
@@ -50,10 +49,24 @@ public class P39CombinationSum {
     return resultList;
   }
 
-  private void aux(int[] coinCounts, int target, int coinCountStart) {
+  /**
+   * Helper function to support recursive calls
+   * 
+   * @param coinCounts
+   *          the counts for each coin value
+   * @param targetSum
+   *          the sum of remaining coin values to be selected
+   * @param coinCountStart
+   *          the index of the next coin type to be selected; ones prior to this
+   *          are considered immutable
+   */
+  private void aux(int[] coinCounts, int targetSum, int coinCountStart) {
     //pr(VERT_SP, "target:", target, "coinVals:", mCoinValues, "counts:", coinCounts, "start:", coinCountStart);
+
+    // Base case: are there no more coin types to be selected?
     if (coinCountStart == mCoinValueCount) {
-      if (target == 0) {
+      // If we've reached the target value sum, we have a solution
+      if (targetSum == 0) {
         List<Integer> result = new ArrayList<>();
         for (int i = 0; i < mCoinValueCount; i++) {
           var coinValue = mCoinValues[i];
@@ -65,16 +78,18 @@ public class P39CombinationSum {
       }
       return;
     }
-    int c = mCoinValues[coinCountStart];
+
+    int currentCoinValue = mCoinValues[coinCountStart];
     //pr("coinValue #" + coinCountStart + ":", c);
-    int saveCount = coinCounts[coinCountStart];
-    var newTarget = target;
-    while (newTarget >= 0) {
-      aux(coinCounts, newTarget, coinCountStart + 1);
+
+    var newTargetSum = targetSum;
+    while (newTargetSum >= 0) {
+      aux(coinCounts, newTargetSum, coinCountStart + 1);
       coinCounts[coinCountStart]++;
-      newTarget -= c;
+      newTargetSum -= currentCoinValue;
     }
-    coinCounts[coinCountStart] = saveCount;
+    // Restore current coin's count to zero for subsequent recursive calls
+    coinCounts[coinCountStart] = 0;
   }
 
   private int mCoinValueCount;
