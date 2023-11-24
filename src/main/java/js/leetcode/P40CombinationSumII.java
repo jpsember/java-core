@@ -9,6 +9,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+// Running out of time on some inputs.
+// Memoization?
+//
 public class P40CombinationSumII {
 
   public static void main(String[] args) {
@@ -17,6 +20,11 @@ public class P40CombinationSumII {
 
   private void run() {
     x(8, 10, 1, 2, 7, 6, 1, 5);
+
+    x(30, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
+
   }
 
   private void x(int target, int... candidates) {
@@ -25,7 +33,8 @@ public class P40CombinationSumII {
   }
 
   public List<List<Integer>> combinationSum2(int[] coinValues, int target) {
-    unique= new HashSet<>();
+    Arrays.sort(coinValues);
+    unique = new HashSet<>();
     resultList = new ArrayList<>();
     mCoinValues = coinValues;
     var result = new ArrayList<Integer>(coinValues.length);
@@ -34,8 +43,8 @@ public class P40CombinationSumII {
   }
 
   private StringBuilder sb = new StringBuilder();
-  private Set<String> unique ;
-  
+  private Set<String> unique;
+
   /**
    * Helper function to support recursive calls
    * 
@@ -49,6 +58,7 @@ public class P40CombinationSumII {
   private void aux(int targetSum, int coinCountStart, List<Integer> valueList) {
     //    pr(VERT_SP, "target:", targetSum, "coinVals:", mCoinValues, "valueList:", valueList, "start:",
     //        coinCountStart);
+    pr("target", targetSum, "cs", coinCountStart);
 
     // Base case: are there no more coin types to be selected?
     var coinTypes = mCoinValues.length;
@@ -56,25 +66,25 @@ public class P40CombinationSumII {
       // If we've reached the target value sum, we have a solution
       if (targetSum == 0) {
         ArrayList<Integer> copy = new ArrayList<>(valueList);
-        copy.sort(null);
-        sb.setLength(0);
-        for (var x : copy) {
-          sb.append(' ');
-          sb.append(x);
-        }
+
         var key = sb.toString();
         if (unique.add(key))
-        resultList.add(copy);
+          resultList.add(copy);
       }
       return;
     }
 
+    
     aux(targetSum, coinCountStart + 1, valueList);
     int currentCoinValue = mCoinValues[coinCountStart];
     //pr("coinValue #" + coinCountStart + ":", currentCoinValue);
     if (targetSum >= currentCoinValue) {
       valueList.add(currentCoinValue);
+      var len = sb.length();
+      sb.append(' ');
+      sb.append(currentCoinValue);
       aux(targetSum - currentCoinValue, coinCountStart + 1, valueList);
+      sb.setLength(len);
       valueList.remove(valueList.size() - 1);
     }
   }
