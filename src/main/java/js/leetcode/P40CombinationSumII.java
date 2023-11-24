@@ -8,7 +8,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 // Running out of time on some inputs.
@@ -36,12 +35,15 @@ public class P40CombinationSumII {
     pr(result);
   }
 
+  
+  private static final boolean WITH_MEMO = false;
+  
   public List<List<Integer>> combinationSum2(int[] coinValues, int target) {
     Arrays.sort(coinValues);
 
     // Build subsets of distinct values
 
-    mValueSets = new HashMap<>();
+    var mValueSets = new HashMap<Integer, Integer>();
     for (var value : coinValues) {
       Integer count = mValueSets.get(value);
       if (count == null)
@@ -49,14 +51,23 @@ public class P40CombinationSumII {
       mValueSets.put(value, count + 1);
     }
 
-    mCoinValues = new int[mValueSets.size()];
+    int sz = mValueSets.size();
+    mCoinValues = new int[sz];
+    mCoinCounts = new int[sz];
     {
       int i = 0;
       for (var val : mValueSets.keySet()) {
         mCoinValues[i++] = val;
       }
     }
+    {
+      int i = 0;
+      for (int coinVal : mCoinValues) {
+        mCoinCounts[i++] = mValueSets.get(coinVal);
+      }
+    }
 
+    if (WITH_MEMO)
     mUniqueKeySet = new HashSet<>();
     resultList = new ArrayList<>();
     mResultBuffer = new ArrayList<Integer>(coinValues.length);
@@ -82,9 +93,11 @@ public class P40CombinationSumII {
       // If we've reached the target value sum, we have a solution
       if (targetSum == 0) {
         ArrayList<Integer> copy = new ArrayList<>(mResultBuffer);
-
+        if (WITH_MEMO) {
         var key = mUniqueKeyBuffer.toString();
         if (mUniqueKeySet.add(key))
+          resultList.add(copy);
+        } else
           resultList.add(copy);
       }
       return;
@@ -93,7 +106,7 @@ public class P40CombinationSumII {
     int currentCoinValue = mCoinValues[coinCursor];
 
     // The number of copies of this coin we can include
-    int frequency = mValueSets.get(currentCoinValue);
+    int frequency = mCoinCounts[coinCursor]; //mValueSets.get(currentCoinValue);
 
     // Make recursive call for case when we don't use any copies of this coin
     aux(targetSum, coinCursor + 1);
@@ -107,8 +120,10 @@ public class P40CombinationSumII {
       if (targetSum < 0)
         break;
       mResultBuffer.add(currentCoinValue);
+      if (WITH_MEMO) {
       mUniqueKeyBuffer.append(' ');
       mUniqueKeyBuffer.append(currentCoinValue);
+      }
       aux(targetSum, coinCursor + 1);
 
       frequency--;
@@ -126,9 +141,9 @@ public class P40CombinationSumII {
 
   private List<List<Integer>> resultList;
   private int[] mCoinValues;
+  private int[] mCoinCounts;
   private StringBuilder mUniqueKeyBuffer = new StringBuilder();
   private Set<String> mUniqueKeySet;
   private ArrayList<Integer> mResultBuffer;
-  private Map<Integer, Integer> mValueSets;
 
 }
