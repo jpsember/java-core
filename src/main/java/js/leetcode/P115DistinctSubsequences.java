@@ -9,6 +9,8 @@ import java.util.Map;
 /**
  * Algorithm works, but is much slower than most solutions.
  * 
+ * Alternative algorithm; works a bit faster
+ * 
  */
 public class P115DistinctSubsequences {
 
@@ -78,6 +80,17 @@ public class P115DistinctSubsequences {
   // ---------------------------------------------------------
 
   public int numDistinct(String s, String t) {
+    
+    // This doesn't seem to help, but doesn't hurt:
+    
+    // Remove all chars from s that don't occur in t
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < s.length(); i++) {
+      char sc = s.charAt(i);
+      if (t.indexOf(sc) >= 0)
+        sb.append(sc);
+    }
+    s = sb.toString();
     if (s.length() < t.length())
       return 0;
     return lookup(s, t);
@@ -85,15 +98,13 @@ public class P115DistinctSubsequences {
 
   private int lookup(String s, String t) {
 
-    if (s.length() < t.length()) {
+    if (s.length() < t.length())
       return 0;
-    }
 
     if (t.length() == 0)
       return 1;
 
     var key = s + "|" + t;
-  //  pr(VERT_SP, "lookup:", key);
     Integer cachedValue = mMemo.get(key);
     if (cachedValue != null) {
       return cachedValue;
@@ -113,7 +124,6 @@ public class P115DistinctSubsequences {
       // Split T into Ta and Tb.
 
       int tMid = t.length() / 2;
-   //   pr("|s|:", s.length(), "|t|:", t.length(), "tmid:", tMid);
 
       // Let tb = tStartChar|tRemainder
       //
@@ -128,15 +138,11 @@ public class P115DistinctSubsequences {
       var scanStart = tMid;
       var scanStop = s.length() - tMid;
 
-//      pr("tMid: t[", tMid, "]=", Character.toString(tMidChar), "scanStop:", scanStop, "t.length:",          t.length());
-
       for (int j = scanStart; j <= scanStop; j++) {
         if (s.charAt(j) == tMidChar) {
-         // pr("found tMid at j=", j);
           if (ta == null) {
             ta = t.substring(0, tMid);
           }
-        //  pr("...recursively looking for ta", ta, "within s", s, "up to j", j);
 
           int resultA = lookup(s.substring(0, j), ta);
           if (resultA != 0) {
@@ -146,16 +152,13 @@ public class P115DistinctSubsequences {
             else {
               if (tRemainder == null)
                 tRemainder = t.substring(tMid + 1);
-              // pr("|s|=",s.length(),"j+1:",j+1,"|trem|=",tRemainder.length());
               resultB = lookup(s.substring(j + 1), tRemainder);
             }
             result += resultA * resultB;
           }
         }
       }
-
     }
-   // pr("...storing", key, "=>", result);
     mMemo.put(key, result);
     return result;
   }
