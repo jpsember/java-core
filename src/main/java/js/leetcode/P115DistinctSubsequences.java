@@ -19,12 +19,12 @@ public class P115DistinctSubsequences {
   }
 
   private void run() {
-    //x("bcbabaa", "bba");
-    //    x("aaa", "aa");
-    //    // x("rabbbit", "rabbit");
-    //    x("babgbag", "bag");
-    //    x("a", "hello");
-    //    x("hello", "e");
+    x("bcbabaa", "bba");
+    x("aaa", "aa");
+    x("rabbbit", "rabbit");
+    x("babgbag", "bag");
+    x("a", "hello");
+    x("hello", "e");
 
     x("aaaaaaaaaaaaaaaaaaaaaa", "aaaaa");
   }
@@ -79,12 +79,10 @@ public class P115DistinctSubsequences {
 
   // ---------------------------------------------------------
 
-  
-  
   /**
-   * For each ti in T, we have an array of integers of length |S| that
-   * represent the number p of distinct subsequences of s that equal T1...i 
-   * that end at that character.
+   * For each ti in T, we have an array of integers of length |S| that represent
+   * the number p of distinct subsequences of s that equal T1...i that end at
+   * that character.
    * 
    * The logic for each row of integers is as follows:
    * 
@@ -92,24 +90,22 @@ public class P115DistinctSubsequences {
    * 
    * For r = 0...|T|-1:
    * 
-   *    set newbuffer = [0,0,...]
-   *    
-   *    Set sum = 0
-   *    
-   *    For each i = 0...|S|-1:
-   *    
-   *      If Si = Tr:
-   *          set newBuffer[i] = sum
-   *      
-   *      Add buffer[i] to sum
-   *      
-   *    end
-   *    
-   *    set buffer = newbuffer
+   * set newbuffer = [0,0,...]
+   * 
+   * Set sum = 0
+   * 
+   * For each i = 0...|S|-1:
+   * 
+   * If Si = Tr: set newBuffer[i] = sum
+   * 
+   * Add buffer[i] to sum
    * 
    * end
    * 
-   *      
+   * set buffer = newbuffer
+   * 
+   * end
+   * 
    */
   public int numDistinct(String s, String t) {
     // This doesn't seem to help, but doesn't hurt:
@@ -121,28 +117,29 @@ public class P115DistinctSubsequences {
         sb.append(sc);
     }
 
+    // Add a unique sentinal character to the end of each string corresponding
+    // to where we will read the final result
+
     sb.append(']');
     s = sb.toString();
     t = t + ']';
 
-    int[] buffer = new int[s.length()];
+    int sLength = s.length();
+    int[] buffer1 = new int[sLength];
+    int[] buffer2 = new int[sLength];
 
     for (int ti = 0; ti < t.length(); ti++) {
       char tc = t.charAt(ti);
-      //      pr("t[", ti, "]=", tc);
-      //      pr(buffer);
-      int[] newBuffer = new int[buffer.length];
       int sum = (ti == 0) ? 1 : 0;
-      for (int i = 0; i < buffer.length; i++) {
-        if (s.charAt(i) == tc) {
-          newBuffer[i] = sum;
-//          pr("storing", sum, "in", i);
-        }
-        sum += buffer[i];
+      for (int i = 0; i < sLength; i++) {
+        buffer2[i] = (s.charAt(i) == tc) ? sum : 0;
+        sum += buffer1[i];
       }
-      buffer = newBuffer;
+      var tmp = buffer1;
+      buffer1 = buffer2;
+      buffer2 = tmp;
     }
-    return buffer[buffer.length - 1];
+    return buffer1[sLength - 1];
   }
 
 }
