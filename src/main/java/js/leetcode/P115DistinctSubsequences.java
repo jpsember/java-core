@@ -3,6 +3,7 @@ package js.leetcode;
 
 import static js.base.Tools.*;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,14 +20,68 @@ public class P115DistinctSubsequences {
   }
 
   private void run() {
-    x("bcbabaa", "bba");
-    x("aaa", "aa");
-    x("rabbbit", "rabbit");
-    x("babgbag", "bag");
-    x("a", "hello");
-    x("hello", "e");
+    //    x("bcbabaa", "bba");
+    //    x("aaa", "aa");
+    //    x("rabbbit", "rabbit");
+    //    x("babgbag", "bag");
+    //    x("a", "hello");
+    //    x("hello", "e");
+    //
+    //    
+    //    x("aaaaaaaaaaaaaaaaaaaaaa", "aaaaa");
 
-    x("aaaaaaaaaaaaaaaaaaaaaa", "aaaaa");
+    var s = "aaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    s = s + s;
+    s = s + s;
+    s = s + s;
+    // s = s+s;
+    var t = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    checkpoint("old");
+    pr(numDistinct2(s, t));
+    checkpoint("new");
+    pr(numDistinct(s, t));
+    checkpoint("old");
+    pr(numDistinct2(s, t));
+    checkpoint("new");
+    pr(numDistinct(s, t));
+    checkpoint("old");
+    pr(numDistinct2(s, t));
+    checkpoint("new");
+    pr(numDistinct(s, t));
+    checkpoint("stop");
+    //    x(s,t);
+  }
+
+  private int[][] memo;
+
+  public int numDistinct2(String s, String t) {
+    int m = s.length();
+    int n = t.length();
+    memo = new int[m][n];
+    for (int i = 0; i < m; i++) {
+      Arrays.fill(memo[i], -1);
+    }
+    return dp(s, 0, t, 0);
+  }
+
+  public int dp(String s, int i, String t, int j) {
+    if (t.length() - j > s.length() - i) {
+      return 0;
+    }
+    if (j == t.length()) {
+      return 1;
+    }
+    if (memo[i][j] != -1) {
+      return memo[i][j];
+    }
+    int ans = 0;
+    if (s.charAt(i) == t.charAt(j)) {
+      ans = dp(s, i + 1, t, j + 1) + dp(s, i + 1, t, j);
+    } else {
+      ans = dp(s, i + 1, t, j);
+    }
+    memo[i][j] = ans;
+    return memo[i][j];
   }
 
   private void x(String s, String t) {
@@ -107,34 +162,29 @@ public class P115DistinctSubsequences {
    * end
    * 
    */
+  private static byte[] extractChars(String x) {
+    // We allocate an extra zero byte so both s and t will end with a distinct sentinal byte
+    byte[] result = new byte[x.length() + 1];
+    for (int i = 0; i < x.length(); i++)
+      result[i] = (byte) x.charAt(i);
+    return result;
+  }
+
   public int numDistinct(String s, String t) {
-    // This doesn't seem to help, but doesn't hurt:
-    // Remove all chars from s that don't occur in t
-    StringBuilder sb = new StringBuilder();
-    for (int i = 0; i < s.length(); i++) {
-      char sc = s.charAt(i);
-      if (t.indexOf(sc) >= 0)
-        sb.append(sc);
-    }
+    final byte[] sBytes = extractChars(s);
+    final byte[] tBytes = extractChars(t);
 
-    // Add a unique sentinal character to the end of each string corresponding
-    // to where we will read the final result
-
-    sb.append(']');
-    s = sb.toString();
-    t = t + ']';
-
-    int sLength = s.length();
+    final int sLength = sBytes.length;
     int[] buffer1 = new int[sLength];
     int[] buffer2 = new int[sLength];
 
-    for (int ti = 0; ti < t.length(); ti++) {
-      char tc = t.charAt(ti);
-      int sum = (ti == 0) ? 1 : 0;
+    int sum = 1;
+    for (var tc : tBytes) {
       for (int i = 0; i < sLength; i++) {
-        buffer2[i] = (s.charAt(i) == tc) ? sum : 0;
+        buffer2[i] = sBytes[i] == tc ? sum : 0;
         sum += buffer1[i];
       }
+      sum = 0;
       var tmp = buffer1;
       buffer1 = buffer2;
       buffer2 = tmp;
