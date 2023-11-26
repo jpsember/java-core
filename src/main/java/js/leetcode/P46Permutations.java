@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import js.base.BasePrinter;
 import js.json.JSList;
 
 // 46. Permutations
@@ -24,7 +25,7 @@ public class P46Permutations {
   }
 
   private void run() {
-    x(5);
+    x(4);
   }
 
   private void x(int n) {
@@ -36,7 +37,8 @@ public class P46Permutations {
     for (var x : result) {
       var s = str(x);
       checkState(us.add(s));
-      pr(s);
+      pr(s.replace('[', ' ').replace(']',' ').replace(',',' ').trim());
+//      pr(s);
     }
   }
 
