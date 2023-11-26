@@ -7,7 +7,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import js.base.BasePrinter;
 import js.json.JSList;
 
 // 46. Permutations
@@ -25,7 +24,7 @@ public class P46Permutations {
   }
 
   private void run() {
-    x(4);
+    x(3);
   }
 
   private void x(int n) {

@@ -84,7 +84,7 @@ public class P115DistinctSubsequences {
     return memo[i][j];
   }
 
-  private void x(String s, String t) {
+  /*private*/ void x(String s, String t) {
     var expected = slow(s, t);
     var result = numDistinct(s, t);
 
