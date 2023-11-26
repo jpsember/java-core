@@ -19,13 +19,14 @@ public class P115DistinctSubsequences {
   }
 
   private void run() {
-    x("aaa", "aa");
-    // x("rabbbit", "rabbit");
-    x("babgbag", "bag");
-    x("a", "hello");
-    x("hello", "e");
+    //x("bcbabaa", "bba");
+    //    x("aaa", "aa");
+    //    // x("rabbbit", "rabbit");
+    //    x("babgbag", "bag");
+    //    x("a", "hello");
+    //    x("hello", "e");
 
-    x("aaaaaaaaaaa", "aaaaa");
+    x("aaaaaaaaaaaaaaaaaaaaaa", "aaaaa");
   }
 
   private void x(String s, String t) {
@@ -36,19 +37,20 @@ public class P115DistinctSubsequences {
     checkState(result == expected, "expected:", expected);
   }
 
+  private Map<String, Integer> mMemo0 = new HashMap<>();
+
   private int slow(String s, String t) {
     mMemo0.clear();
-    return lookup0(s, t);
+    return slowLookup(s, t);
   }
 
-  private int lookup0(String s, String t) {
+  private int slowLookup(String s, String t) {
     if (t.isEmpty())
       return 1;
     if (s.length() < t.length())
       return 0;
 
     var key = s + "|" + t;
-    //pr(VERT_SP, "lookup:", key);
     Integer cachedValue = mMemo0.get(key);
     if (cachedValue != null) {
       return cachedValue;
@@ -66,7 +68,7 @@ public class P115DistinctSubsequences {
       if (s.charAt(j) == tFirst) {
         if (tRemaining == null)
           tRemaining = t.substring(1);
-        sum += lookup0(s.substring(j + 1), tRemaining);
+        sum += slowLookup(s.substring(j + 1), tRemaining);
       }
     }
 
@@ -75,14 +77,42 @@ public class P115DistinctSubsequences {
     return sum;
   }
 
-  private Map<String, Integer> mMemo0 = new HashMap<>();
-
   // ---------------------------------------------------------
 
+  
+  
+  /**
+   * For each ti in T, we have an array of integers of length |S| that
+   * represent the number p of distinct subsequences of s that equal T1...i 
+   * that end at that character.
+   * 
+   * The logic for each row of integers is as follows:
+   * 
+   * set buffer = [0,0,....]
+   * 
+   * For r = 0...|T|-1:
+   * 
+   *    set newbuffer = [0,0,...]
+   *    
+   *    Set sum = 0
+   *    
+   *    For each i = 0...|S|-1:
+   *    
+   *      If Si = Tr:
+   *          set newBuffer[i] = sum
+   *      
+   *      Add buffer[i] to sum
+   *      
+   *    end
+   *    
+   *    set buffer = newbuffer
+   * 
+   * end
+   * 
+   *      
+   */
   public int numDistinct(String s, String t) {
-    
     // This doesn't seem to help, but doesn't hurt:
-    
     // Remove all chars from s that don't occur in t
     StringBuilder sb = new StringBuilder();
     for (int i = 0; i < s.length(); i++) {
@@ -90,79 +120,29 @@ public class P115DistinctSubsequences {
       if (t.indexOf(sc) >= 0)
         sb.append(sc);
     }
+
+    sb.append(']');
     s = sb.toString();
-    if (s.length() < t.length())
-      return 0;
-    return lookup(s, t);
-  }
+    t = t + ']';
 
-  private int lookup(String s, String t) {
+    int[] buffer = new int[s.length()];
 
-    if (s.length() < t.length())
-      return 0;
-
-    if (t.length() == 0)
-      return 1;
-
-    var key = s + "|" + t;
-    Integer cachedValue = mMemo.get(key);
-    if (cachedValue != null) {
-      return cachedValue;
-    }
-    int result = 0;
-
-    // Base case: |T| = 1
-    //
-    if (t.length() == 1) {
-      var tch = t.charAt(0);
-      for (int j = 0; j < s.length(); j++) {
-        if (s.charAt(j) == tch)
-          result++;
-      }
-    } else {
-
-      // Split T into Ta and Tb.
-
-      int tMid = t.length() / 2;
-
-      // Let tb = tStartChar|tRemainder
-      //
-      // Look for occurrences si of tStartChar within S.
-      //
-      // For each of these, add numDistinct(S..si, ta) * numDistinct(si+1...n, tRemainder).
-
-      char tMidChar = t.charAt(tMid);
-      String tRemainder = null;
-      String ta = null;
-
-      var scanStart = tMid;
-      var scanStop = s.length() - tMid;
-
-      for (int j = scanStart; j <= scanStop; j++) {
-        if (s.charAt(j) == tMidChar) {
-          if (ta == null) {
-            ta = t.substring(0, tMid);
-          }
-
-          int resultA = lookup(s.substring(0, j), ta);
-          if (resultA != 0) {
-            int resultB;
-            if (tMid + 1 == t.length())
-              resultB = 1;
-            else {
-              if (tRemainder == null)
-                tRemainder = t.substring(tMid + 1);
-              resultB = lookup(s.substring(j + 1), tRemainder);
-            }
-            result += resultA * resultB;
-          }
+    for (int ti = 0; ti < t.length(); ti++) {
+      char tc = t.charAt(ti);
+      //      pr("t[", ti, "]=", tc);
+      //      pr(buffer);
+      int[] newBuffer = new int[buffer.length];
+      int sum = (ti == 0) ? 1 : 0;
+      for (int i = 0; i < buffer.length; i++) {
+        if (s.charAt(i) == tc) {
+          newBuffer[i] = sum;
+//          pr("storing", sum, "in", i);
         }
+        sum += buffer[i];
       }
+      buffer = newBuffer;
     }
-    mMemo.put(key, result);
-    return result;
+    return buffer[buffer.length - 1];
   }
-
-  private Map<String, Integer> mMemo = new HashMap<>();
 
 }
