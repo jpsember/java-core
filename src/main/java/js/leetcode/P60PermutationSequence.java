@@ -25,9 +25,24 @@ public class P60PermutationSequence {
     checkState(result.equals(expected), "expected:", expected);
   }
 
-  private long[] factorials;
+  public String getPermutation(int n, int k) {
+    var sb = new StringBuilder("123456789".substring(0, n));
+    for (int digit = n; digit > 1; digit--) {
+      // In calculations, work with k (0..n-1), not (1..n)
+      var a = (k - 1) % fact(digit);
+      var b = fact(digit - 1);
+      if (a >= b) {
+        int i = n - digit;
+        int j = i + 1;
+        var tmp = sb.charAt(i);
+        sb.setCharAt(i, sb.charAt(j));
+        sb.setCharAt(j, tmp);
+      }
+    }
+    return sb.toString();
+  }
 
-  private long fact(int n) {
+  private static long fact(int n) {
     if (factorials == null) {
       final int maxN = 9;
       factorials = new long[maxN + 1];
@@ -43,82 +58,6 @@ public class P60PermutationSequence {
     return factorials[n];
   }
 
-  public String getPermutation(int n, int k) {
+  private static long[] factorials;
 
-    int[] ordered = new int[n];
-    for (int i = 0; i < n; i++)
-      ordered[i] = i + 1;
-
-    pr(VERT_SP, "n:", n, "k:", k);
-
-    k--;
-    for (int digit = n; digit > 1; digit--) {
-      var a = k % fact(digit);
-      var b = fact(digit - 1);
-      pr("digit:", digit, "fact:", fact(digit), " fact-1:", fact(digit - 1), "a:", a, "b:", b);
-      if (a >= b) {
-        swap(ordered, n - digit, n - digit + 1);
-        pr("...after swap:",ordered);
-      }
-    }
-
-
-    var sb = new StringBuilder();
-    for (int digit = 0; digit < n; digit++)
-      sb.append((char) ('0' + ordered[digit]));
-    return sb.toString();
-
-    //    long kwork = k;
-    //
-    //    var sb = new StringBuilder();
-    //    for (int position = n; position > 0; position--) {
-    //      var f = factorials[position - 1];
-    //      int digit = (int) ((kwork - 1) / f + 1);
-    //      pr("position:", position, "digit:", digit, "kw:", kwork, "f:", f, "sb:", sb, "ordered:", ordered);
-    //
-    //      sb.append((char) (ordered[digit] + '0'));
-    //
-    //      swap(ordered, n - position, digit);
-    //
-    //      pr("...after swap:", ordered);
-    //
-    //      kwork = kwork % f;
-    //      pr("...new k:", kwork);
-    //    }
-    //    return sb.toString();
-  }
-
-  private static void swap(int[] array, int a, int b) {
-    int tmp = array[a];
-    array[a] = array[b];
-    array[b] = tmp;
-  }
-  /**
-   * <pre>
-  1 2 3 4
-  1 2 4 3
-  1 3 2 4
-  1 3 4 2
-  1 4 3 2
-  1 4 2 3
-  2 1 3 4
-  2 1 4 3
-  2 3 1 4
-  2 3 4 1
-  2 4 3 1
-  2 4 1 3
-  3 2 1 4
-  3 2 4 1
-  3 1 2 4
-  3 1 4 2
-  3 4 1 2
-  3 4 2 1
-  4 2 3 1
-  4 2 1 3
-  4 3 2 1
-  4 3 1 2
-  4 1 3 2
-  4 1 2 3
-   * </pre>
-   */
 }
