@@ -12,6 +12,11 @@ import java.util.Map;
 import js.json.JSList;
 import js.json.JSMap;
 
+/**
+ * The tricky part was figuring out that a step was required to prune edges that
+ * lead to nodes that don't have a path to the target.
+ *
+ */
 public class P126WordLadder {
 
   public static void main(String[] args) {
@@ -23,9 +28,9 @@ public class P126WordLadder {
     //    x("hit cog hot dot dog lot log", 0);
     //    x("a b c d e f b g h", 1);
 
-    y("abc","def","abd","abe","abf","abg","aec","aef","def");
-    if (false)
-    y("aaaaa", "ggggg", //
+    // y("abc", "def",2, "abd", "abe", "abf", "abg", "aec", "aef", "def");
+
+    y("aaaaa", "ggggg", 1, //
         "aaaaa", "caaaa", "cbaaa", "daaaa", "dbaaa", "eaaaa", "ebaaa", "faaaa", "fbaaa", "gaaaa", "gbaaa",
         "haaaa", "hbaaa", "iaaaa", "ibaaa", "jaaaa", "jbaaa", "kaaaa", "kbaaa", "laaaa", "lbaaa", "maaaa",
         "mbaaa", "naaaa", "nbaaa", "oaaaa", "obaaa", "paaaa", "pbaaa", "bbaaa", "bbcaa", "bbcba", "bbdaa",
@@ -71,22 +76,15 @@ public class P126WordLadder {
         "kkokg", "kkpjg", "kkpkg", "kkkkg", "ggggx", "gggxx", "ggxxx", "gxxxx", "xxxxx", "xxxxy", "xxxyy",
         "xxyyy", "xyyyy", "yyyyy", "yyyyw", "yyyww", "yywww", "ywwww", "wwwww", "wwvww", "wvvww", "vvvww",
         "vvvwz", "avvwz", "aavwz", "aaawz", "aaaaz");
-
   }
 
-  private void y(String begin, String end, String... words) {
-    // List<String> wd = new ArrayList<>();
-    //    for (var x : words)
-    //      wd.add(x);
+  private void y(String begin, String end, int expectedCount, String... words) {
     var ls = yAux(begin, end, new ArrayList<>(Arrays.asList(words)));
     pr(ls);
-    //  checkState(ls.size() == expectedCount, "expected:", expectedCount, "but got:", ls.size());
+    checkState(ls.size() == expectedCount, "expected:", expectedCount, "but got:", ls.size());
   }
 
   private JSList yAux(String begin, String end, List<String> wd) {
-    //    List<String> wd = new ArrayList<>();
-    //    for (var x : words)
-    //      wd.add(x);
     var result = findLadders(begin, end, wd);
     var ls = list();
     for (var x : result) {
@@ -111,7 +109,7 @@ public class P126WordLadder {
     for (var n : mGraph.values()) {
       var lst = list();
       m.put((n == beginNode ? "*" : "") + n.word, lst);
-      for (var s : n.links) {
+      for (var s : n.edges) {
         lst.add("" + s.depth + ":" + s.word);
       }
     }
@@ -122,6 +120,7 @@ public class P126WordLadder {
     results.clear();
     wordLength = beginWord.length();
     wordList.add(beginWord);
+    checkpoint("construct graph");
     constructGraph(wordList);
     wordList.remove(wordList.size() - 1);
 
@@ -129,64 +128,53 @@ public class P126WordLadder {
     endNode = mGraph.get(endWord);
 
     {
+      checkpoint("BFS");
+
       doBFS();
       //dumpGraph("after BFS");
-      filterEdges();
-      if (withDeadEndFilter) {
-        auxFilterDeadEnd(beginNode);
-        //dumpGraph("after filter");
-        // halt();
-      }
+      checkpoint("filter bwd");
+      filterBackwardEdges();
+
+      checkpoint("filter edges to dead ends");
+
+      filterEdgesLeadingToDeadEnds(beginNode);
+      checkpoint("find results");
+
       findResults(beginNode);
+      checkpoint("done");
+
     }
     return results;
   }
 
-  int depth;
-
   private void findResults(Node node) {
+    path.add(node);
     if (node == endNode) {
-      checkState(node.links.isEmpty());
       List<String> solution = new ArrayList<>(path.size());
       for (var n : path)
         solution.add(n.word);
       results.add(solution);
-      pr("added solution:", solution);
-      return;
     }
-
-   // pr(spaces(depth * 2), "find;", node.word);
-    checkState(!node.dead);
-    depth++;
-    path.add(node);
-    //    if (node == endNode) {
-    //      List<String> solution = new ArrayList<>(path.size());
-    //      for (var n : path)
-    //        solution.add(n.word);
-    //      results.add(solution);
-    //      pr("added solution:", solution);
-    //    }
-    if (withDeadEndFilter) {
-    checkState(node.links.size() != 0);
-    }
-    for (var sib : node.links) {
+    for (var sib : node.edges)
       findResults(sib);
-    }
     path.remove(path.size() - 1);
-    depth--;
   }
 
   private void constructGraph(List<String> words) {
-    mGraph = new HashMap<>();
+    mGraph = new HashMap<>(words.size() );
+    var g = mGraph;
+    checkpoint("create nodes");
     for (var w : words) {
-      if (mGraph.containsKey(w))
-        continue;
-      mGraph.put(w, new Node(w));
+      if (g.get(w) == null) {
+        g.put(w, new Node(w));
+      }
     }
+    checkpoint("created nodes");
 
-    // Create links
+    // Create edges by creating sets of node names with a particular character removed
     Map<String, List<String>> edgeMap = new HashMap<>();
     for (int i = 0; i < wordLength; i++) {
+      checkpoint("edges", i);
       edgeMap.clear();
       for (var w : mGraph.keySet()) {
         var w2 = w.substring(0, i) + w.substring(i + 1);
@@ -202,8 +190,8 @@ public class P126WordLadder {
           var nk = mGraph.get(set.get(k));
           for (int j = k + 1; j < set.size(); j++) {
             var nj = mGraph.get(set.get(j));
-            nk.links.add(nj);
-            nj.links.add(nk);
+            nk.edges.add(nj);
+            nj.edges.add(nk);
           }
         }
       }
@@ -217,54 +205,54 @@ public class P126WordLadder {
     var sptr = 0;
     while (sptr < frontier.size()) {
       var node = frontier.get(sptr++);
-      for (var sib : node.links) {
+      for (var sib : node.edges) {
         if (sib.depth >= 0)
           continue;
         sib.depth = node.depth + 1;
-        pr(node.word, "->", sib.depth, sib.word);
+        //pr(node.word, "->", sib.depth, sib.word);
         frontier.add(sib);
       }
     }
   }
 
-  private void filterEdges() {
+  /**
+   * Delete any edges that don't make progress towards the target depth
+   */
+  private void filterBackwardEdges() {
     for (var n : mGraph.values()) {
       List<Node> filtered = new ArrayList<>();
       if (n != endNode) {
-        for (var s : n.links) {
+        for (var s : n.edges) {
           if (s.depth == n.depth + 1) {
             filtered.add(s);
           }
         }
       }
-      n.links = filtered;
+      n.edges = filtered;
     }
   }
 
-  private static final boolean withDeadEndFilter = true;
-  
-  private boolean auxFilterDeadEnd(Node node) {
+  /**
+   * Delete any edges that only lead to dead ends. Return true if this node has
+   * a path to the target.
+   */
+  private boolean filterEdgesLeadingToDeadEnds(Node node) {
     if (node == endNode)
       return true;
     List<Node> filtered = new ArrayList<>();
-    for (var sib : node.links) {
-      if (!auxFilterDeadEnd(sib))
+    for (var sib : node.edges) {
+      if (!filterEdgesLeadingToDeadEnds(sib))
         continue;
       filtered.add(sib);
     }
-    node.links = filtered;
-    if (filtered.isEmpty()) {
-      pr("node doesn't reach target:", node.word);
-      node.dead = true;
-    }
+    node.edges = filtered;
     return !filtered.isEmpty();
   }
 
   private static class Node {
     String word;
-    List<Node> links = new ArrayList<>();
+    List<Node> edges = new ArrayList<>();
     int depth = -1;
-    boolean dead;
 
     Node(String w) {
       this.word = w;
@@ -272,7 +260,7 @@ public class P126WordLadder {
 
     @Override
     public String toString() {
-      return "<" + word + " d:" + depth + " #links:" + links.size() + ">";
+      return "<" + word + " d:" + depth + " #links:" + edges.size() + ">";
     }
 
   }
