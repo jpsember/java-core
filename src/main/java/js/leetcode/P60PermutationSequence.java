@@ -23,11 +23,11 @@ public class P60PermutationSequence {
 
   private void run() {
 
-    var n = 4;
-    for (int k = 0; k < fact(n); k++)
-      pr("n:", n, "k:", k, INDENT, getPermutation(n, k));
+//    var n = 4;
+//    for (int k = 0; k < fact(n); k++)
+//      pr(getPermutation(n, k),"n:",n,"k:",k);
 
-    // x(4, 1, "1234");
+    x(4, 1, "1234");
 
     //    1 2 3
     //    1 3 2
@@ -36,13 +36,13 @@ public class P60PermutationSequence {
     //    3 2 1
     //    3 1 2
 
-    //x(3, 5, "312");
+   x(3, 5, "312");
     //    x(9, 1, "123456789");
     //    x(4, 1, "1234");
     //
-    //    x(3, 3, "213");
-    //    x(4, 9, "2314");
-    //    x(3, 1, "123");
+         x(3, 3, "213");
+       x(4, 9, "2314");
+       x(3, 1, "123");
 
   }
 
@@ -104,6 +104,7 @@ public class P60PermutationSequence {
     // Attempt #5
     if (true) {
 
+      k--;
      // k = 7;
       
       pr(VERT_SP,"k:", k, "n:", n, str());
@@ -121,8 +122,8 @@ public class P60PermutationSequence {
         
         var targSlot = base; //jz;
         var c = seq[slot];
-        pr("k':", kEff, "j:", jz, "slot:", slot, "target:", targSlot);
-        pr("before moving:",str());
+         pr("k':", kEff, "j:", jz, "slot:", slot, "target:", targSlot);
+         pr("before moving:",str());
         while (slot > targSlot) {
           seq[slot ] = seq[slot-1];
           slot--;
