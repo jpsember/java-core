@@ -9,28 +9,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import js.json.JSList;
-import js.json.JSMap;
-
-/**
- * The tricky part was figuring out that a step was required to prune edges that
- * lead to nodes that don't have a path to the target.
- *
- */
-public class P126WordLadder {
+public class P127WordLadder {
 
   public static void main(String[] args) {
-    new P126WordLadder().run();
+    new P127WordLadder().run();
   }
 
   private void run() {
-    //    x("hit cog hot dot dog lot log cog", 2);
-    //    x("hit cog hot dot dog lot log", 0);
-    //    x("a b c d e f b g h", 1);
 
-    // y("abc", "def",2, "abd", "abe", "abf", "abg", "aec", "aef", "def");
-
-    y("aaaaa", "ggggg", 1, //
+    y("aaaaa", "ggggg", 25, //
         "aaaaa", "caaaa", "cbaaa", "daaaa", "dbaaa", "eaaaa", "ebaaa", "faaaa", "fbaaa", "gaaaa", "gbaaa",
         "haaaa", "hbaaa", "iaaaa", "ibaaa", "jaaaa", "jbaaa", "kaaaa", "kbaaa", "laaaa", "lbaaa", "maaaa",
         "mbaaa", "naaaa", "nbaaa", "oaaaa", "obaaa", "paaaa", "pbaaa", "bbaaa", "bbcaa", "bbcba", "bbdaa",
@@ -81,95 +68,31 @@ public class P126WordLadder {
   private void y(String begin, String end, int expectedCount, String... words) {
     var ls = yAux(begin, end, new ArrayList<>(Arrays.asList(words)));
     pr(ls);
-    checkState(ls.size() == expectedCount, "expected:", expectedCount, "but got:", ls.size());
+    checkState(ls == expectedCount, "expected:", expectedCount, "but got:", ls);
   }
 
-  private JSList yAux(String begin, String end, List<String> wd) {
-    var result = findLadders(begin, end, wd);
-    var ls = list();
-    for (var x : result) {
-      ls.add(JSList.withStringRepresentationsOf(x));
-    }
-    return ls;
+  private int yAux(String begin, String end, List<String> wd) {
+    return findLadders(begin, end, wd);
   }
 
-  /* private */ void x(String s, int expectedCount) {
-    var ws = split(s, ' ');
-    int i = 0;
-    var beginWord = ws.get(i++);
-    var endWord = ws.get(i++);
-    var wordList = ws.subList(i, ws.size());
-    var result = yAux(beginWord, endWord, wordList);
-    pr(result);
-    checkState(result.size() == expectedCount, "expected:", expectedCount, "but got:", result.size());
-  }
-
-  /* private */ void dumpGraph(String prompt) {
-    JSMap m = map();
-    for (var n : mGraph.values()) {
-      var lst = list();
-      m.put((n == beginNode ? "*" : "") + n.word, lst);
-      for (var s : n.edges) {
-        lst.add("" + s.depth + ":" + s.word);
-      }
-    }
-    pr(prompt, INDENT, m);
-  }
-
-  public List<List<String>> findLadders(String beginWord, String endWord, List<String> wordList) {
-    results.clear();
+  public int findLadders(String beginWord, String endWord, List<String> wordList) {
     wordLength = beginWord.length();
     wordList.add(beginWord);
-    checkpoint("construct graph");
     constructGraph(wordList);
     wordList.remove(wordList.size() - 1);
-
     beginNode = mGraph.get(beginWord);
     endNode = mGraph.get(endWord);
-
-    {
-      checkpoint("BFS");
-
-      doBFS();
-      //dumpGraph("after BFS");
-      checkpoint("filter bwd");
-      filterBackwardEdges();
-
-      checkpoint("filter edges to dead ends");
-
-      filterEdgesLeadingToDeadEnds(beginNode);
-      checkpoint("find results");
-
-      findResults(beginNode);
-      checkpoint("done");
-
-    }
-    return results;
-  }
-
-  private void findResults(Node node) {
-    path.add(node);
-    if (node == endNode) {
-      List<String> solution = new ArrayList<>(path.size());
-      for (var n : path)
-        solution.add(n.word);
-      results.add(solution);
-    }
-    for (var sib : node.edges)
-      findResults(sib);
-    path.remove(path.size() - 1);
+    return doBFS();
   }
 
   private void constructGraph(List<String> words) {
-    mGraph = new HashMap<>(words.size() );
+    mGraph = new HashMap<>(words.size());
     var g = mGraph;
-    checkpoint("create nodes");
     for (var w : words) {
       if (g.get(w) == null) {
-        g.put(w, new Node(w));
+        g.put(w, new Node());
       }
     }
-    checkpoint("created nodes");
 
     // Create edges by creating sets of node names with a particular character removed
     Map<String, List<String>> edgeMap = new HashMap<>();
@@ -198,78 +121,36 @@ public class P126WordLadder {
     }
   }
 
-  private void doBFS() {
+  private int doBFS() {
     List<Node> frontier = new ArrayList<>();
     beginNode.depth = 0;
     frontier.add(beginNode);
     var sptr = 0;
     while (sptr < frontier.size()) {
       var node = frontier.get(sptr++);
+      if (node == endNode)
+        return node.depth + 1;
       for (var sib : node.edges) {
         if (sib.depth >= 0)
           continue;
         sib.depth = node.depth + 1;
-        //pr(node.word, "->", sib.depth, sib.word);
         frontier.add(sib);
       }
     }
-  }
-
-  /**
-   * Delete any edges that don't make progress towards the target depth
-   */
-  private void filterBackwardEdges() {
-    for (var n : mGraph.values()) {
-      List<Node> filtered = new ArrayList<>();
-      if (n != endNode) {
-        for (var s : n.edges) {
-          if (s.depth == n.depth + 1) {
-            filtered.add(s);
-          }
-        }
-      }
-      n.edges = filtered;
-    }
-  }
-
-  /**
-   * Delete any edges that only lead to dead ends. Return true if this node has
-   * a path to the target.
-   */
-  private boolean filterEdgesLeadingToDeadEnds(Node node) {
-    if (node == endNode)
-      return true;
-    List<Node> filtered = new ArrayList<>();
-    for (var sib : node.edges) {
-      if (!filterEdgesLeadingToDeadEnds(sib))
-        continue;
-      filtered.add(sib);
-    }
-    node.edges = filtered;
-    return !filtered.isEmpty();
+    return 0;
   }
 
   private static class Node {
-    String word;
     List<Node> edges = new ArrayList<>();
     int depth = -1;
 
-    Node(String w) {
-      this.word = w;
+    Node() {
     }
-
-    @Override
-    public String toString() {
-      return "<" + word + " d:" + depth + " #links:" + edges.size() + ">";
-    }
-
   }
 
   private int wordLength;
   private Map<String, Node> mGraph;
   private Node beginNode;
   private Node endNode;
-  private List<Node> path = new ArrayList<>();
-  private List<List<String>> results = new ArrayList<>();
 
 }

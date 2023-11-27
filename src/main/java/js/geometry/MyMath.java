@@ -38,7 +38,7 @@ public final class MyMath {
     int k = value % divisor;
     if (value < 0) {
       if (k != 0)
-        k = divisor + k;
+        k+=divisor;
     }
     return k;
   }
