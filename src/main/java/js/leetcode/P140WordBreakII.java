@@ -15,6 +15,8 @@ import java.util.Set;
  * all valid sentences.
  * 
  * It will use memoization and will try to 'peel off' single words to the left.
+ * 
+ * Works!  Added optimization to use a StringBuilder to avoid excessive string construction.
  */
 public class P140WordBreakII {
 
@@ -23,8 +25,11 @@ public class P140WordBreakII {
   }
 
   private void run() {
-    x("catsanddog", "cat cats and sand dog");
-    x("pineapplepenapple", "apple pen applepen pine pineapple");
+    x("aaaa", "aa a aaa");
+
+    //    x("catsanddog", "cat cats and sand dog");
+    //    x("pineapplepenapple", "apple pen applepen pine pineapple");
+    //    x("aaaaaaa", "aaaa aa a" );
   }
 
   private void x(String s, String dict) {
@@ -52,8 +57,9 @@ public class P140WordBreakII {
       if (!wordDictSet.contains(prefixWord))
         continue;
       if (i == s.length()) {
-        result = new ArrayList<>();
-        result.add(prefixWord);
+        if (result == null)
+          result = new ArrayList<>();
+        result.add(s);
         continue;
       }
 
@@ -64,8 +70,17 @@ public class P140WordBreakII {
 
       if (result == null)
         result = new ArrayList<>();
-      for (var suffixSentence : suffixResult)
-        result.add(prefixWord + " " + suffixSentence);
+
+      var sb = this.sb;
+      sb.setLength(0);
+      sb.append(prefixWord);
+      sb.append(' ');
+      int saveLength = sb.length();
+      for (var suffixSentence : suffixResult) {
+        sb.append(suffixSentence);
+        result.add(sb.toString());
+        sb.setLength(saveLength);
+      }
     }
 
     if (result != null)
@@ -75,5 +90,5 @@ public class P140WordBreakII {
 
   private Map<String, List<String>> memo = new HashMap<>();
   private Set<String> wordDictSet = new HashSet<>();
-
+  private StringBuilder sb = new StringBuilder();
 }
