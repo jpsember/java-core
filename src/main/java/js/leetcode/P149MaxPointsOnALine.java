@@ -31,6 +31,11 @@ import java.util.Set;
  * 
  * dividing A,B, and C by the gcd of the three numbers.
  * 
+ * 
+ * Other solutions seem quicker, but one of the quickest is just using the brute force
+ * three loops, i.e. an O(n^3) solution.
+ * 
+ * In in the top 25% or so, running time.
  */
 public class P149MaxPointsOnALine {
 
@@ -78,9 +83,7 @@ public class P149MaxPointsOnALine {
     if (points.length == 1)
       return 1;
 
-    var pointsOnLinesMap = new HashMap<String, Set<Integer>>();
-
-    int longestPointList = 0;
+    var pointsOnLinesMap = new HashMap<String, List<Integer>>();
 
     var sb = new StringBuilder();
 
@@ -121,15 +124,22 @@ public class P149MaxPointsOnALine {
 
         var pointsList = pointsOnLinesMap.get(key);
         if (pointsList == null) {
-          pointsList = new HashSet<>();
+          pointsList = new ArrayList<>();
           pointsOnLinesMap.put(key, pointsList);
         }
 
         pointsList.add(i);
         pointsList.add(j);
 
-        longestPointList = Math.max(longestPointList, pointsList.size());
       }
+    }
+
+    int longestPointList = 0;
+    Set<Integer> set = new HashSet<>();
+    for (var pts : pointsOnLinesMap.values()) {
+      set.clear();
+      set.addAll(pts);
+      longestPointList = Math.max(longestPointList, set.size());
     }
 
     return longestPointList;
