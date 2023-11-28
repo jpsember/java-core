@@ -4,6 +4,7 @@ package js.leetcode;
 import static js.base.Tools.*;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * <pre>
@@ -29,6 +30,8 @@ import java.util.ArrayList;
  * 
  * Reworking the state storage to attempt to deal with very large strings
  * without running out of memory.
+ * 
+ * Now running out of time with large inputs.
  */
 public class P214ShortestPalindrome {
 
@@ -42,7 +45,7 @@ public class P214ShortestPalindrome {
       xRep("a", i);
     checkpoint("before big");
     xRep("a", 40002);
-    checkpoint("after big"); // 6.749
+    checkpoint("after big"); // 6.749; 7.608 after refactor to use state objects
 
     x("", "");
     x("AH", "HAH");
@@ -70,6 +73,26 @@ public class P214ShortestPalindrome {
     checkState(result.equals(expected), "expected:", expected);
   }
 
+  private static class State {
+    int h;
+    int x;
+  }
+
+  private List<State> mStateBin = new ArrayList<>();
+
+  private State newState(int h, int x) {
+    int slot = mStateBin.size() - 1;
+    State s = null;
+    if (slot < 0) {
+      s = new State();
+    } else {
+      s = mStateBin.remove(slot);
+    }
+    s.h = h;
+    s.x = x;
+    return s;
+  }
+
   public String shortestPalindrome(String s) {
     //    final boolean tr = false ; //s.length() < 15;
     //    if (tr)
@@ -81,30 +104,30 @@ public class P214ShortestPalindrome {
 
     // Define a state T(h, x) to mean that a palindrome of length h exists in s starting at character x.
 
-    // We'll store all states for a particular h in its own list, so we can just store the state as x.
-
     // Determine which values of x might be useful.  x must be <= this value.  Note, special care is
     // taken to make sure this is correct for both even- and odd-length strings.
     var xUseful = n / 2;
 
-    var sH = new ArrayList<Integer>(n);
-    var sHPlus1 = new ArrayList<Integer>(n);
-    var sHPlus2 = new ArrayList<Integer>(n);
+    var stack0 = new ArrayList<State>();
+    var stack1 = new ArrayList<State>();
+
     for (int i = 0; i <= xUseful; i++) {
-      sH.add(i);
-      sHPlus1.add(i);
+      stack0.add(newState(0, i));
+      stack0.add(newState(1, i));
     }
 
     int longestPrefixLength = 0;
 
-    int h = 0;
-    while (!(sH.isEmpty() && sHPlus1.isEmpty())) {
+    while (!stack0.isEmpty()) {
 
-      //      if (tr)
-      //        pr(VERT_SP, quote(s), "S" + h + ":", stackX, "S" + (h + 1) + ":", stackXPlus1, "S" + (h + 2) + ":",
-      //            stackXPlus2);
+      for (var st : stack0) {
+        var x = st.x;
+        var h = st.h;
 
-      for (var x : sH) {
+        //      if (tr)
+        //        pr(VERT_SP, quote(s), "S" + h + ":", stackX, "S" + (h + 1) + ":", stackXPlus1, "S" + (h + 2) + ":",
+        //            stackXPlus2);
+
         //        if (tr)
         //          pr("...x:", x, "pal:", quote(s.substring(x, x + h)));
         if (x == 0) {
@@ -119,17 +142,15 @@ public class P214ShortestPalindrome {
             //            if (tr)
             //              pr("....extending to h" + (h + 2) + "[", x, "]:", s.charAt(x - 1), s.substring(x, x + h),
             //                  s.charAt(j));
-            sHPlus2.add(x - 1);
+            stack1.add(newState(h + 2, x - 1));
           }
         }
       }
 
-      var tmp = sH;
-      sH = sHPlus1;
-      sHPlus1 = sHPlus2;
-      sHPlus2 = tmp;
-      sHPlus2.clear();
-      h++;
+      var tmp = stack0;
+      stack0 = stack1;
+      stack1 = tmp;
+      stack1.clear();
     }
 
     var sb = new StringBuilder(2 * n - longestPrefixLength);
