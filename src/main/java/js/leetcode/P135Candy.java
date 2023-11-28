@@ -17,6 +17,9 @@ import js.json.JSList;
  * 
  * Ok, that works, but I am in the 10th percentile of speed. There must be a
  * more clever algorithm.
+ * 
+ * Came up with a linear algorithm that looks for strictly decreasing rating sequences to the
+ * right of the current child to determine the lower bound to that side.
  */
 public class P135Candy {
 
