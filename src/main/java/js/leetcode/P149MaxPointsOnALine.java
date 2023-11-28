@@ -121,11 +121,8 @@ public class P149MaxPointsOnALine {
 
         var pointsList = pointsOnLinesMap.get(key);
         if (pointsList == null) {
-          //  pr("new key:", key,"for points",x1,y1,x2,y2);
           pointsList = new HashSet<>();
           pointsOnLinesMap.put(key, pointsList);
-        } else {
-          //pr("additional points for key:",key, x1,y1,x2,y2);
         }
 
         pointsList.add(i);
@@ -134,6 +131,7 @@ public class P149MaxPointsOnALine {
         longestPointList = Math.max(longestPointList, pointsList.size());
       }
     }
+
     return longestPointList;
   }
 
