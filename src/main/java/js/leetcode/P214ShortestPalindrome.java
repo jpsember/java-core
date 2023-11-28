@@ -40,7 +40,11 @@ public class P214ShortestPalindrome {
   private void run() {
     for (int i = 1; i < 20; i++)
       xRep("a", i);
+    checkpoint("before big");
+    xRep("a", 40002);
+    checkpoint("after big"); // 6.749
 
+    x("", "");
     x("AH", "HAH");
 
     x("aacecaaa", "aaacecaaa");
@@ -67,11 +71,13 @@ public class P214ShortestPalindrome {
   }
 
   public String shortestPalindrome(String s) {
-    final boolean tr = false ; //s.length() < 15;
-    if (tr)
-      pr(s);
+    //    final boolean tr = false ; //s.length() < 15;
+    //    if (tr)
+    //      pr(s);
 
     final var n = s.length();
+    if (n == 0)
+      return s;
 
     // Define a state T(h, x) to mean that a palindrome of length h exists in s starting at character x.
 
@@ -81,56 +87,52 @@ public class P214ShortestPalindrome {
     // taken to make sure this is correct for both even- and odd-length strings.
     var xUseful = n / 2;
 
-    var stackX = new ArrayList<Integer>(n);
-    var stackXPlus1 = new ArrayList<Integer>(n);
-    var stackXPlus2 = new ArrayList<Integer>(n);
+    var sH = new ArrayList<Integer>(n);
+    var sHPlus1 = new ArrayList<Integer>(n);
+    var sHPlus2 = new ArrayList<Integer>(n);
     for (int i = 0; i <= xUseful; i++) {
-      stackX.add(i);
-      stackXPlus1.add(i);
+      sH.add(i);
+      sHPlus1.add(i);
     }
 
     int longestPrefixLength = 0;
 
     int h = 0;
-    while (!(stackX.isEmpty() && stackXPlus1.isEmpty())) {
+    while (!(sH.isEmpty() && sHPlus1.isEmpty())) {
 
-      if (tr)
-        pr(VERT_SP, quote(s), "S" + h + ":", stackX, "S" + (h + 1) + ":", stackXPlus1, "S" + (h + 2) + ":",
-            stackXPlus2);
+      //      if (tr)
+      //        pr(VERT_SP, quote(s), "S" + h + ":", stackX, "S" + (h + 1) + ":", stackXPlus1, "S" + (h + 2) + ":",
+      //            stackXPlus2);
 
-      //      if (!tr && h % 100 == 0)
-      //        pr("h:", h);
-
-      for (var x : stackX) {
-        if (tr)
-          pr("...x:", x, "pal:", quote(s.substring(x, x + h)));
+      for (var x : sH) {
+        //        if (tr)
+        //          pr("...x:", x, "pal:", quote(s.substring(x, x + h)));
         if (x == 0) {
           if (h > longestPrefixLength) {
             longestPrefixLength = h;
-            if (tr)
-              pr("...new longest prefix:", longestPrefixLength);
+            //            if (tr)
+            //              pr("...new longest prefix:", longestPrefixLength);
           }
         } else {
           int j = x + h;
           if (j < n && s.charAt(x - 1) == s.charAt(j)) {
-            if (tr)
-              pr("....extending to h" + (h + 2) + "[", x, "]:", s.charAt(x - 1), s.substring(x, x + h),
-                  s.charAt(j));
-            stackXPlus2.add(x - 1);
+            //            if (tr)
+            //              pr("....extending to h" + (h + 2) + "[", x, "]:", s.charAt(x - 1), s.substring(x, x + h),
+            //                  s.charAt(j));
+            sHPlus2.add(x - 1);
           }
         }
       }
 
-      var tmp = stackX;
-      stackX = stackXPlus1;
-      stackXPlus1 = stackXPlus2;
-      stackXPlus2 = tmp;
-      stackXPlus2.clear();
-      // pr("new stack X:", stackX, "X1:", stackXPlus1, "stackX2", stackXPlus2);
+      var tmp = sH;
+      sH = sHPlus1;
+      sHPlus1 = sHPlus2;
+      sHPlus2 = tmp;
+      sHPlus2.clear();
       h++;
     }
 
-    var sb = new StringBuilder(n * 2);
+    var sb = new StringBuilder(2 * n - longestPrefixLength);
     for (int j = n - 1; j >= longestPrefixLength; j--)
       sb.append(s.charAt(j));
     sb.append(s);
