@@ -47,25 +47,25 @@ public class P140WordBreakII {
     if (result != null)
       return result;
 
-    for (int i = 0; i < s.length(); i++) {
-      var suffixWord = s.substring(i);
-      if (!wordDictSet.contains(suffixWord))
+    for (int i = 1; i <= s.length(); i++) {
+      var prefixWord = s.substring(0, i);
+      if (!wordDictSet.contains(prefixWord))
         continue;
-      if (i == 0) {
+      if (i == s.length()) {
         result = new ArrayList<>();
-        result.add(suffixWord);
+        result.add(prefixWord);
         continue;
       }
 
-      var prefix = s.substring(0, i);
-      var prefixResult = auxWordBreak(prefix);
-      if (prefixResult == null)
+      var suffix = s.substring(i);
+      var suffixResult = auxWordBreak(suffix);
+      if (suffixResult == null)
         continue;
 
       if (result == null)
         result = new ArrayList<>();
-      for (var prefixSentence : prefixResult)
-        result.add(prefixSentence + " " + suffixWord);
+      for (var suffixSentence : suffixResult)
+        result.add(prefixWord + " " + suffixSentence);
     }
 
     if (result != null)
