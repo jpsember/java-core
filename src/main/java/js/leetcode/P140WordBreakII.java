@@ -16,7 +16,8 @@ import java.util.Set;
  * 
  * It will use memoization and will try to 'peel off' single words to the left.
  * 
- * Works!  Added optimization to use a StringBuilder to avoid excessive string construction.
+ * Works! Added optimizations to use a StringBuilder and 'null list' to 
+ * avoid unnecessary object construction.
  */
 public class P140WordBreakII {
 
@@ -41,10 +42,7 @@ public class P140WordBreakII {
   public List<String> wordBreak(String s, List<String> wordDict) {
     memo.clear();
     wordDictSet.addAll(wordDict);
-    var result = auxWordBreak(s);
-    if (result == null)
-      result = new ArrayList<>();
-    return result;
+    return auxWordBreak(s);
   }
 
   private List<String> auxWordBreak(String s) {
@@ -83,11 +81,13 @@ public class P140WordBreakII {
       }
     }
 
-    if (result != null)
-      memo.put(s, result);
+    if (result == null)
+      return nullList;
+    memo.put(s, result);
     return result;
   }
 
+  private List<String> nullList = new ArrayList<>();
   private Map<String, List<String>> memo = new HashMap<>();
   private Set<String> wordDictSet = new HashSet<>();
   private StringBuilder sb = new StringBuilder();
