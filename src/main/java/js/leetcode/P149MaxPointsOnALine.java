@@ -96,8 +96,7 @@ public class P149MaxPointsOnALine {
 
         var A = yd;
         var B = -xd;
-        var C = -(A * x1 + B*y1);
-pr("A:",A,"B:",B,"C:",C);
+        var C = -(A * x1 + B * y1);
 
         // Find GCD of A,B,C
         var g = gcd(gcd(A, B), C);
@@ -122,11 +121,11 @@ pr("A:",A,"B:",B,"C:",C);
 
         var pointsList = pointsOnLinesMap.get(key);
         if (pointsList == null) {
-          pr("new key:", key,"for points",x1,y1,x2,y2);
+          //  pr("new key:", key,"for points",x1,y1,x2,y2);
           pointsList = new HashSet<>();
           pointsOnLinesMap.put(key, pointsList);
         } else {
-        pr("additional points for key:",key, x1,y1,x2,y2);
+          //pr("additional points for key:",key, x1,y1,x2,y2);
         }
 
         pointsList.add(i);
@@ -146,7 +145,6 @@ pr("A:",A,"B:",B,"C:",C);
       a = b;
       b = tmp;
     }
-    checkState(a != 0);
     while (b != 0) {
       if (a == b)
         return a;
