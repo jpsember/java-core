@@ -3,10 +3,6 @@ package js.leetcode;
 
 import static js.base.Tools.*;
 
-import java.util.ArrayList;
-
-import js.json.JSList;
-
 /**
  * First stab is sort by rating, and assign lowest-rated children candy as
  * necessary; as each child is assigned, look at its neighbors and ensure candy
