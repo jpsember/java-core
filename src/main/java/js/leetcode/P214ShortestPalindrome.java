@@ -36,11 +36,16 @@ public class P214ShortestPalindrome {
   }
 
   private void run() {
-    x("a", "a");
+    x("AH", "HAH");
+
     x("aacecaaa", "aaacecaaa");
+    // x("aacaaa", "aaacaaa");
+
+    x("a", "a");
     x("abcd", "dcbabcd");
 
-    {
+    // This string of 50000 identical characters is causing memory problems.
+   if (false) {
       int t = 50000;
       var s = "a";
       while (s.length() < t) {
@@ -60,44 +65,56 @@ public class P214ShortestPalindrome {
   }
 
   public String shortestPalindrome(String s) {
+    pr(s);
 
     final var n = s.length();
 
     // Define a state T(h, x) to mean that a palindrome of length h exists in s starting at character x.
 
-    // We'll represent a state as an integer, with h in the lower 16 bits and x in the upper.
-    // Note that the length of the input can exceed the 15 bit capacity for signed shorts, so 
-    // we must be careful to cast them as unsigned values when decoding them.
+    // We'll store all states for a particular h in its own list, so we can just store the state as x.
 
-    List<Integer> stack = new ArrayList<>(n * 5);
-    for (int i = 0; i < n; i++)
-      stack.add(0 | (i << 16));
-    for (int i = 0; i < n; i++)
-      stack.add(1 | (i << 16));
+    var xUseful = (n - 1) / 2;
+    var stackX = new ArrayList<Integer>(n);
+    var stackXPlus1 = new ArrayList<Integer>(n);
+    var stackXPlus2 = new ArrayList<Integer>(n);
+    for (int i = 0; i <= xUseful; i++) {
+      stackX.add(i);
+      stackXPlus1.add(i);
+    }
 
     int longestPrefixLength = 0;
-    int cursor = 0;
-    while (cursor < stack.size()) {
-      var state = stack.get(cursor++);
-      var h = state & 0xffff;
-      var x = ((state >> 16) & 0xffff);
-      //pr("state h:", h, "x:", x, "pal:", s.substring(x, x + h));
-      if (x == 0) {
-        if (h > longestPrefixLength) {
-          longestPrefixLength = h;
-          //pr("...new longest prefix:",longestPrefixLength);
-        }
-      } else {
-        int j = x + h;
-        if (j < n && s.charAt(x - 1) == s.charAt(j)) {
-          //pr("....extending:",s.charAt(x-1),s.substring(x,x+h),s.charAt(j));
-          stack.add((h + 2) | ((x - 1) << 16));
+
+    int h = 0;
+    while (!(stackX.isEmpty() && stackXPlus1.isEmpty())) {
+
+      pr(VERT_SP, quote(s), "h:", h, "stackX:", stackX, "X1:", stackXPlus1, "X2:", stackXPlus2);
+
+      for (var x : stackX) {
+        pr("state h:", h, "x:", x, "pal:", quote(s.substring(x, x + h)));
+        if (x == 0) {
+          if (h > longestPrefixLength) {
+            longestPrefixLength = h;
+            pr("...new longest prefix:", longestPrefixLength);
+          }
+        } else {
+          int j = x + h;
+          if (j < n && s.charAt(x - 1) == s.charAt(j)) {
+            pr("....extending:", s.charAt(x - 1), s.substring(x, x + h), s.charAt(j));
+            stackXPlus2.add(x - 1);
+          }
         }
       }
+
+      var tmp = stackX;
+      stackX = stackXPlus1;
+      stackXPlus1 = stackXPlus2;
+      stackXPlus2 = tmp;
+      stackXPlus2.clear();
+      pr("new stack X:", stackX, "X1:", stackXPlus1, "stackX2", stackXPlus2);
+      h++;
     }
 
     var sb = new StringBuilder(n * 2);
-    //pr("longestpref:",longestPrefixLength);
     for (int j = n - 1; j >= longestPrefixLength; j--)
       sb.append(s.charAt(j));
     sb.append(s);
