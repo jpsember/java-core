@@ -20,15 +20,27 @@ import java.util.List;
  * 
  * There might be robustness issues due to roundoff; but I will deal with that
  * if the tests fail.
+ * 
+ * Second attempt:
+ * 
+ * I'm using integer math only by calculating, for each pair of points, the line
+ * equation Ax + By + C = 0, then normalizing by:
+ * 
+ * negating all three if A < 0 (or A=0 && B < 0);
+ * 
+ * dividing A,B, and C by the gcd of the three numbers.
+ * 
  */
 public class P149MaxPointsOnALine {
 
   public static void main(String[] args) {
+
     new P149MaxPointsOnALine().run();
   }
 
   private void run() {
-    x(4, 1, 1, 3, 2, 5, 3, 4, 1, 2, 3, 1, 4);
+     x(4, 1, 1, 3, 2, 5, 3, 4, 1, 2, 3, 1, 4);
+
     x(14,
         "[[-424,-512],[-4,-47],[0,-23],[-7,-65],[7,138],[0,27],[-5,-90],[-106,-146],[-420,-158],[-7,-128],[0,16],[-6,9],[-34,26],[-9,-166],[-570,-69],[-665,-85],[560,248],[1,-17],[630,277],[1,-7],[-287,-222],[30,250],[5,5],[-475,-53],[950,187],[7,-6],[-700,-274],[3,62],[-318,-390],[7,19],[-285,-21],[-5,4],[53,37],[-5,-1],[-2,-33],[-95,11],[4,1],[8,25],[700,306],[1,24],[-2,-6],[-35,-387],[-630,-245],[-328,-260],[-350,-129],[35,299],[-380,-37],[-9,-9],[210,103],[7,-5],[-3,-52],[-51,23],[-8,-147],[-371,-451],[-1,-14],[-41,6],[-246,-184],[350,161],[-212,-268],[-140,-42],[-9,-4],[-7,5],[10,6],[-15,-191],[-7,-4],[318,342],[-8,-71],[-68,20],[6,119],[6,13],[-280,-100],[140,74],[-760,-101],[0,-24],[-70,-13],[0,2],[0,-9],[106,98]]");
   }
@@ -45,58 +57,6 @@ public class P149MaxPointsOnALine {
     x(expected, points);
   }
 
-  private int slowMaxPoints(int[][] points) {
-    if (points.length == 1)
-      return 1;
-
-    int maxcount = 0;
-    for (int i = 0; i < points.length; i++) {
-      int x1 = points[i][0];
-      int y1 = points[i][1];
-      for (int j = i + 1; j < points.length; j++) {
-        int x2 = points[j][0];
-        int y2 = points[j][1];
-
-        double m;
-        double b;
-        boolean horz = true;
-        double mag, perpx, perpy;
-        if (Math.abs(x1 - x2) >= Math.abs(y1 - y2)) {
-          m = (y2 - y1) / (double) (x2 - x1);
-          b = y1 - m * x1;
-          mag = Math.sqrt(m * m + 1);
-          perpx = -m / mag;
-          perpy = 1 / mag;
-
-        } else {
-          m = (x2 - x1) / (double) (y2 - y1);
-          b = x1 - m * y1;
-          horz = false;
-
-          mag = Math.sqrt(m * m + 1);
-          perpy = -m / mag;
-          perpx = 1 / mag;
-        }
-
-        int kcount = 0;
-        for (int k = 0; k < points.length; k++) {
-          int x3 = points[k][0];
-          int y3 = points[k][1];
-          double dist;
-          if (horz) {
-            dist = (perpx * (x3 - 0) + perpy * (y3 - b));
-          } else {
-            dist = (perpy * (y3 - 0) + perpx * (x3 - b));
-          }
-          if (dist < 0.00002)
-            kcount++;
-        }
-        maxcount = Math.max(maxcount, kcount);
-      }
-    }
-    return maxcount;
-  }
-
   private void x(int expected, int... points) {
     int[][] pts = new int[points.length / 2][];
     for (int i = 0; i < points.length; i += 2) {
@@ -107,15 +67,19 @@ public class P149MaxPointsOnALine {
     }
     var answer = maxPoints(pts);
     pr("points:", points, "answer:", answer);
-    pr("slow answer:",slowMaxPoints(pts));
     checkState(answer == expected, "expected", expected);
   }
 
   public int maxPoints(int[][] points) {
     if (points.length == 1)
       return 1;
-    var map = new HashMap<Long, List<Integer>>();
-    List<Integer> maximalList = new ArrayList<>();
+
+    var pointsOnLinesMap = new HashMap<String, List<Integer>>();
+
+    List<Integer> longestPointList = new ArrayList<>();
+
+    var sb = new StringBuilder();
+
     for (int i = 0; i < points.length; i++) {
       int x1 = points[i][0];
       int y1 = points[i][1];
@@ -123,32 +87,68 @@ public class P149MaxPointsOnALine {
         int x2 = points[j][0];
         int y2 = points[j][1];
 
-        double m;
-        double b;
-        if (Math.abs(x1 - x2) >= Math.abs(y1 - y2)) {
-          m = 3.1 + (y2 - y1) / (double) (x2 - x1);
-          b = y1 - m * x1;
-        } else {
-          m = 1.1 + (x2 - x1) / (double) (y2 - y1);
-          b = x1 - m * y1;
-        }
-        int mKey = (int) (m * 0x8000);
-        int bKey = (int) (b * 1000);
-        long key = ((((long) mKey) & 0x7fffffff) << 32) | bKey;
-        var ptList = map.get(key);
-        if (ptList == null) {
-          ptList = new ArrayList<>(2);
-          map.put(key, ptList);
+        var xd = x1 - x2;
+        var yd = y1 - y2;
+
+        var A = yd;
+        var B = -xd;
+        var C = y1 * (xd - yd);
+
+        // Find GCD of A,B,C
+        var g = gcd(gcd(A, B), C);
+        A /= g;
+        B /= g;
+        C /= g;
+
+        if (A < 0 || (A == 0 && B < 0)) {
+          A = -A;
+          B = -B;
+          C = -C;
         }
 
-        ptList.add(i);
-        ptList.add(j);
+        sb.setLength(0);
+        sb.append(A);
+        sb.append(' ');
+        sb.append(B);
+        sb.append(' ');
+        sb.append(C);
 
-        if (ptList.size() > maximalList.size())
-          maximalList = ptList;
+        var key = sb.toString();
+
+        var pointsList = pointsOnLinesMap.get(key);
+        if (pointsList == null) {
+          pointsList = new ArrayList<>(2);
+          pointsOnLinesMap.put(key, pointsList);
+        }
+
+        pointsList.add(i);
+        pointsList.add(j);
+
+        if (pointsList.size() > longestPointList.size())
+          longestPointList = pointsList;
       }
     }
-    var set = new HashSet<>(maximalList);
-    return set.size();
+
+    return new HashSet<>(longestPointList).size();
   }
+
+  private static int gcd(int a, int b) {
+    a = Math.abs(a);
+    b = Math.abs(b);
+    if (a < b) {
+      var tmp = a;
+      a = b;
+      b = tmp;
+    }
+    checkState(a != 0);
+    while (b != 0) {
+      if (a == b)
+        return a;
+      var c = a % b;
+      a = b;
+      b = c;
+    }
+    return a;
+  }
+
 }
