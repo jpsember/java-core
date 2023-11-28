@@ -32,6 +32,9 @@ import java.util.List;
  * without running out of memory.
  * 
  * Now running out of time with large inputs.
+ * 
+ * I think I need a different algorithm...
+ * 
  */
 public class P214ShortestPalindrome {
 
@@ -41,21 +44,21 @@ public class P214ShortestPalindrome {
   }
 
   private void run() {
+
     for (int i = 1; i < 20; i++)
       xRep("a", i);
     checkpoint("before big");
-    xRep("a", 40002);
+    xRep("a", 42000);
     checkpoint("after big"); // 6.749; 7.608 after refactor to use state objects
 
-    x("", "");
-    x("AH", "HAH");
+    x("");
+    x("AH");
 
-    x("aacecaaa", "aaacecaaa");
+    x("aacecaaa");
 
-    x("a", "a");
-    x("abcd", "dcbabcd");
+    x("a");
+    x("abcd");
 
-    xRep("a", 5000);
   }
 
   private void xRep(String pattern, int repCount) {
@@ -64,6 +67,10 @@ public class P214ShortestPalindrome {
       sb.append(pattern);
     var s = sb.toString();
     x(s, s);
+  }
+
+  private void x(String s) {
+    x(s, SLOWshortestPalindrome(s));
   }
 
   private void x(String s, String expected) {
@@ -93,11 +100,7 @@ public class P214ShortestPalindrome {
     return s;
   }
 
-  public String shortestPalindrome(String s) {
-    //    final boolean tr = false ; //s.length() < 15;
-    //    if (tr)
-    //      pr(s);
-
+  public String SLOWshortestPalindrome(String s) {
     final var n = s.length();
     if (n == 0)
       return s;
@@ -123,27 +126,19 @@ public class P214ShortestPalindrome {
       for (var st : stack0) {
         var x = st.x;
         var h = st.h;
-
-        //      if (tr)
-        //        pr(VERT_SP, quote(s), "S" + h + ":", stackX, "S" + (h + 1) + ":", stackXPlus1, "S" + (h + 2) + ":",
-        //            stackXPlus2);
-
-        //        if (tr)
-        //          pr("...x:", x, "pal:", quote(s.substring(x, x + h)));
         if (x == 0) {
           if (h > longestPrefixLength) {
             longestPrefixLength = h;
-            //            if (tr)
-            //              pr("...new longest prefix:", longestPrefixLength);
           }
         } else {
-          int j = x + h;
-          if (j < n && s.charAt(x - 1) == s.charAt(j)) {
-            //            if (tr)
-            //              pr("....extending to h" + (h + 2) + "[", x, "]:", s.charAt(x - 1), s.substring(x, x + h),
-            //                  s.charAt(j));
-            stack1.add(newState(h + 2, x - 1));
+          int scanLeft = x;
+          int scanRight = x + h - 1;
+          while (scanLeft > 0 && scanRight < n - 1 && s.charAt(scanLeft - 1) == s.charAt(scanRight + 1)) {
+            scanLeft--;
+            scanRight++;
           }
+          if (scanLeft < x)
+            stack1.add(newState(scanRight + 1 - scanLeft, scanLeft));
         }
       }
 
@@ -152,11 +147,15 @@ public class P214ShortestPalindrome {
       stack1 = tmp;
       stack1.clear();
     }
-
     var sb = new StringBuilder(2 * n - longestPrefixLength);
     for (int j = n - 1; j >= longestPrefixLength; j--)
       sb.append(s.charAt(j));
     sb.append(s);
     return sb.toString();
   }
+
+  public String shortestPalindrome(String s) {
+    return s;
+  }
+
 }
