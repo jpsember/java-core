@@ -99,21 +99,7 @@ public class P214ShortestPalindrome {
     return s;
   }
 
-  private static String display(String prompt, String s, int cursor, int length) {
-    return prompt + ": " + quote(s.substring(0, cursor) + "[" + s.substring(cursor, cursor + length) + "]"
-        + s.substring(cursor + length));
-  }
-
   public String shortestPalindrome(String s) {
-    final boolean tr = s.length() < 15;
-    if (tr)
-      pr(s);
-
-    final int MAX_SPOIL = 4; // must be power of 2
-    final boolean withSpoiler = false; // doesn't help now that other heuristic is in effect
-    // Turning this off causes some inputs to fail
-    final boolean skipUnlessImprovementPossible = true;
-    final boolean initialStateOrder = true;
 
     final var n = s.length();
     if (n == 0)
@@ -128,112 +114,37 @@ public class P214ShortestPalindrome {
     var stack0 = new ArrayList<State>();
     var stack1 = new ArrayList<State>();
 
-    if (initialStateOrder) {
-      for (int i = xUseful; i >= 0; i--) {
-        if ((n & 1) == 0) {
-          stack0.add(newState(0, i));
-          stack0.add(newState(1, i));
-        } else {
-          stack0.add(newState(1, i));
-          stack0.add(newState(0, i));
-        }
-      }
-    } else {
-      for (int i = 0; i <= xUseful; i++) {
-        stack0.add(newState(0, i));
-        stack0.add(newState(1, i));
-      }
+    for (int i = xUseful; i >= 0; i--) {
+      // if (  (n & 1) == 0) {
+      stack0.add(newState(0, i));
+      stack0.add(newState(1, i));
+      //        } else {
+      //          stack0.add(newState(1, i));
+      //          stack0.add(newState(0, i));
+      //        }
     }
 
     int longestPrefixLength = 1;
-
-    int spoilIndex;
-    int[] spoil;
-    if (withSpoiler) {
-      spoilIndex = 0;
-      spoil = new int[MAX_SPOIL];
-    }
 
     while (!stack0.isEmpty()) {
 
       for (var st : stack0) {
         var x = st.x;
         var h = st.h;
-        if (tr)
-          pr("h:", h, display("state", s, x, h));
 
         // If best possible result from this state won't improve things, skip
-        if (skipUnlessImprovementPossible) {
-          if (h + 2 * x <= longestPrefixLength) {
-            if (tr)
-              pr("...skipping");
-            continue;
-          }
-        }
-
-        int minScanLeft = 0;
-        int maxScanRight = n - 1;
-
-        // Check spoiler characters if appropriate;
-        // this hueristic really helps with the 'big' problems
-        if (withSpoiler) {
-          var center = x + h / 2;
-          for (var spoiler : spoil) {
-            int spoilLeft, spoilRight;
-            var alt = 2 * center - spoiler - (h & 1);
-            if (spoiler < x) {
-              spoilLeft = spoiler;
-              spoilRight = alt;
-            } else {
-              spoilLeft = alt;
-              spoilRight = spoiler;
-            }
-            if (spoilLeft >= minScanLeft && spoilRight <= maxScanRight) {
-              if (s.charAt(spoilLeft) != s.charAt(spoilRight)) {
-                minScanLeft = Math.max(minScanLeft, spoilLeft + 1);
-                maxScanRight = Math.min(maxScanRight, spoilRight - 1);
-                if (tr)
-                  pr("...spoil; adj scan");
-              }
-            }
-          }
-        }
+        if (h + (x << 1) <= longestPrefixLength)
+          continue;
 
         int scanLeft = x;
         int scanRight = x + h - 1;
-        while (true) {
-          if (tr)
-            pr(display("scan", s, x, scanRight + 1 - x));
-          var newLeft = scanLeft - 1;
-          var newRight = scanRight + 1;
-          if (newLeft < 0 || newRight >= n)
-            break;
-          if (s.charAt(newLeft) != s.charAt(newRight)) {
-            if (withSpoiler) {
-              var ind = spoilIndex & (MAX_SPOIL - 1);
-              spoil[ind] = newLeft;
-              spoil[ind + 1] = newRight;
-              spoilIndex += 2;
-            }
-            break;
-          }
-          scanLeft = newLeft;
-          scanRight = newRight;
+        while (scanLeft > 0 && scanRight + 1 < n && s.charAt(scanLeft - 1) == s.charAt(scanRight + 1)) {
+          scanLeft--;
+          scanRight++;
         }
 
-        if (scanLeft == 0) {
-          var cand = scanRight + 1 - scanLeft;
-          if (skipUnlessImprovementPossible) {
-            if (cand < longestPrefixLength)
-              die(display("*** unexpected!", s, scanLeft, scanRight + 1 - scanLeft), "longestPref:",
-                  longestPrefixLength);
-            longestPrefixLength = cand;
-          } else {
-            if (cand >= longestPrefixLength)
-              longestPrefixLength = cand;
-          }
-        }
-        // ...we are done with this state in any case
+        if (scanLeft == 0)
+          longestPrefixLength = scanRight + 1;
       }
 
       var tmp = stack0;
