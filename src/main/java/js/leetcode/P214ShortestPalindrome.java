@@ -4,6 +4,7 @@ package js.leetcode;
 import static js.base.Tools.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -45,19 +46,19 @@ public class P214ShortestPalindrome {
 
   private void run() {
 
-    for (int i = 1; i < 20; i++)
-      xRep("a", i);
-    checkpoint("before big");
-    xRep("a", 42000);
-    checkpoint("after big"); // 6.749; 7.608 after refactor to use state objects
-
     x("");
-    x("AH");
+    x("ah");
 
     x("aacecaaa");
 
     x("a");
     x("abcd");
+
+    for (int i = 1; i < 20; i++)
+      xRep("a", i);
+    checkpoint("before big");
+    xRep("a", 42000);
+    checkpoint("after big"); // 6.749; 7.608 after refactor to use state objects
 
   }
 
@@ -154,8 +155,70 @@ public class P214ShortestPalindrome {
     return sb.toString();
   }
 
+  private static String chr(String prompt, byte[] array, int index) {
+    return prompt + "[" + index + "]:" + Character.toString((char) (array[index] + firstLetter));
+  }
+
+  private static final int firstLetter = 'a';
+  private static int letterTotal = 26;
+
+  private static final int[] firstIndex = new int[letterTotal];
+
   public String shortestPalindrome(String s) {
-    return s;
+    int n = s.length();
+    if (n <= 1)
+      return s;
+
+    Arrays.fill(firstIndex, -1);
+
+    byte[] b = new byte[s.length()];
+    for (int i = 0; i < n; i++) {
+      var value = s.charAt(i) - firstLetter;
+      if (firstIndex[value] < 0)
+        firstIndex[value] = i;
+      b[i] = (byte) value;
+    }
+
+    var z = 1000;
+
+    pr(VERT_SP, quote(s));
+    int right = n - 1;
+    outer: while (right > 0) {
+
+      pr("right:", right);
+
+      int rc = right;
+      int lc = 0;
+
+      while (rc > lc) {
+        checkState(z-- > 0);
+        pr(chr("left", b, lc), chr("right", b, rc));
+        if (b[rc] != b[lc]) {
+          var firstPos = firstIndex[b[rc]];
+          pr("...mismatch, first pos for right is:", firstPos);
+          if (firstPos < 0) {
+            right = rc - 1;
+          } else {
+            right = Math.min(rc + firstPos, right-1);
+          }
+          pr("....reset to:", right,"; n:",n);
+          continue outer;
+        }
+        rc--;
+        lc++;
+      }
+      break;
+    }
+    pr("prefix length:", right + 1, "n:", n);
+
+    var prefLen = right + 1;
+    var sb = new StringBuilder(2 * n - prefLen);
+    for (int j = n - 1; j >= prefLen; j--)
+      sb.append((char) (b[j] + firstLetter));
+    for (int j = 0; j < n; j++)
+      sb.append((char) (b[j] + firstLetter));
+    pr("result:", sb);
+    return sb.toString();
   }
 
 }
