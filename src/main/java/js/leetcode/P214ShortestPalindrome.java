@@ -44,9 +44,9 @@ public class P214ShortestPalindrome {
   }
 
   private void run() {
-    x("a", "a");
+    x("a");
 
-    x("ababbbabbaba", "ababbabbbababbbabbaba");
+    x("ababbbabbaba");
 
     for (int i = 1; i < 20; i++)
       xRep("a", i);
@@ -54,12 +54,12 @@ public class P214ShortestPalindrome {
     xRep("a", 40002);
     checkpoint("after big"); // 6.749; 7.608 after refactor to use state objects
 
-    x("", "");
-    x("AH", "HAH");
+    x("");
+    x("AH");
 
-    x("aacecaaa", "aaacecaaa");
+    x("aacecaaa");
 
-    x("abcd", "dcbabcd");
+    x("abcd");
 
     xRep("a", 5000);
   }
@@ -69,10 +69,11 @@ public class P214ShortestPalindrome {
     for (var i = 0; i < repCount; i++)
       sb.append(pattern);
     var s = sb.toString();
-    x(s, s);
+    x(s);
   }
 
-  private void x(String s, String expected) {
+  private void x(String s) {
+    var expected = SLOWshortestPalindrome(s);
     var result = shortestPalindrome(s);
     if (s.length() < 40)
       pr(s, "=>", result);
@@ -99,7 +100,7 @@ public class P214ShortestPalindrome {
     return s;
   }
 
-  public String shortestPalindrome(String s) {
+  public String SLOWshortestPalindrome(String s) {
 
     final var n = s.length();
     if (n == 0)
@@ -159,4 +160,28 @@ public class P214ShortestPalindrome {
     sb.append(s);
     return sb.toString();
   }
+
+  // This much simpler algorithm is at least as fast as mine, but
+  // the call to the system 'hasPrefix' is still expensive (and 
+  // the speed is relying on its native implementation probably).
+  //
+  public String shortestPalindrome(String s) {
+    int n = s.length();
+    String r0 = reverse(s);
+    var r = r0;
+    while (!s.startsWith(r))
+      r = r.substring(1);
+    return r0.substring(0, n - r.length()) + s;
+  }
+
+  private static StringBuilder sb = new StringBuilder();
+
+  private static String reverse(String s) {
+    sb.setLength(0);
+    sb.ensureCapacity(s.length());
+    for (int i = s.length() - 1; i >= 0; i--)
+      sb.append(s.charAt(i));
+    return sb.toString();
+  }
+
 }
