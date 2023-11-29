@@ -4,7 +4,6 @@ package js.leetcode;
 import static js.base.Tools.*;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -34,8 +33,8 @@ import java.util.List;
  * 
  * Now running out of time with large inputs.
  * 
- * I think I need a different algorithm...
- * 
+ * I think I am not skipping exploring states that can't lead to a better result
+ * than the one already found.
  */
 public class P214ShortestPalindrome {
 
@@ -46,20 +45,23 @@ public class P214ShortestPalindrome {
 
   private void run() {
 
-    x("");
-    x("ah");
-
-    x("aacecaaa");
-
-    x("a");
-    x("abcd");
+    x("ababbbabbaba", "ababbabbbababbbabbaba");
 
     for (int i = 1; i < 20; i++)
       xRep("a", i);
     checkpoint("before big");
-    xRep("a", 42000);
+    xRep("a", 40002);
     checkpoint("after big"); // 6.749; 7.608 after refactor to use state objects
 
+    x("", "");
+    x("AH", "HAH");
+
+    x("aacecaaa", "aaacecaaa");
+
+    x("a", "a");
+    x("abcd", "dcbabcd");
+
+    xRep("a", 5000);
   }
 
   private void xRep(String pattern, int repCount) {
@@ -68,10 +70,6 @@ public class P214ShortestPalindrome {
       sb.append(pattern);
     var s = sb.toString();
     x(s, s);
-  }
-
-  private void x(String s) {
-    x(s, SLOWshortestPalindrome(s));
   }
 
   private void x(String s, String expected) {
@@ -101,7 +99,11 @@ public class P214ShortestPalindrome {
     return s;
   }
 
-  public String SLOWshortestPalindrome(String s) {
+  public String shortestPalindrome(String s) {
+    //    final boolean tr = false ; //s.length() < 15;
+    //    if (tr)
+    //      pr(s);
+
     final var n = s.length();
     if (n == 0)
       return s;
@@ -120,26 +122,70 @@ public class P214ShortestPalindrome {
       stack0.add(newState(1, i));
     }
 
-    int longestPrefixLength = 0;
+    int longestPrefixLength = 1;
+
+    final int MAX_SPOIL = 4; // must be power of 2
+    int spoilIndex = 0;
+    int[] spoil = new int[MAX_SPOIL];
 
     while (!stack0.isEmpty()) {
 
       for (var st : stack0) {
         var x = st.x;
         var h = st.h;
+
         if (x == 0) {
           if (h > longestPrefixLength) {
             longestPrefixLength = h;
           }
         } else {
+
+          int minScanLeft = 0;
+          int maxScanRight = n - 1;
+
+          // Check spoiler characters if appropriate;
+          // this hueristic really helps with the 'big' problems
+          var center = x + h / 2;
+          for (var spoiler : spoil) {
+            int spoilLeft, spoilRight;
+            var alt = 2 * center - spoiler - (h & 1);
+            if (spoiler < x) {
+              spoilLeft = spoiler;
+              spoilRight = alt;
+            } else {
+              spoilLeft = alt;
+              spoilRight = spoiler;
+            }
+            if (spoilLeft >= minScanLeft && spoilRight <= maxScanRight) {
+              if (s.charAt(spoilLeft) != s.charAt(spoilRight)) {
+                minScanLeft = Math.max(minScanLeft, spoilLeft + 1);
+                maxScanRight = Math.min(maxScanRight, spoilRight - 1);
+              }
+            }
+          }
+
           int scanLeft = x;
           int scanRight = x + h - 1;
-          while (scanLeft > 0 && scanRight < n - 1 && s.charAt(scanLeft - 1) == s.charAt(scanRight + 1)) {
-            scanLeft--;
-            scanRight++;
+
+          while (true) {
+            var newLeft = scanLeft - 1;
+            var newRight = scanRight + 1;
+            if (newLeft < 0 || newRight >= n)
+              break;
+            if (s.charAt(newLeft) != s.charAt(newRight)) {
+              var ind = spoilIndex & (MAX_SPOIL - 1);
+              spoil[ind] = newLeft;
+              spoil[ind + 1] = newRight;
+              spoilIndex += 2;
+              break;
+            }
+            scanLeft = newLeft;
+            scanRight = newRight;
           }
-          if (scanLeft < x)
-            stack1.add(newState(scanRight + 1 - scanLeft, scanLeft));
+          if (scanLeft == 0) {
+            longestPrefixLength = scanRight + 1 - scanLeft;
+          }
+          // ...we are done with this state in any case
         }
       }
 
@@ -148,77 +194,11 @@ public class P214ShortestPalindrome {
       stack1 = tmp;
       stack1.clear();
     }
+
     var sb = new StringBuilder(2 * n - longestPrefixLength);
     for (int j = n - 1; j >= longestPrefixLength; j--)
       sb.append(s.charAt(j));
     sb.append(s);
     return sb.toString();
   }
-
-  private static String chr(String prompt, byte[] array, int index) {
-    return prompt + "[" + index + "]:" + Character.toString((char) (array[index] + firstLetter));
-  }
-
-  private static final int firstLetter = 'a';
-  private static int letterTotal = 26;
-
-  private static final int[] firstIndex = new int[letterTotal];
-
-  public String shortestPalindrome(String s) {
-    int n = s.length();
-    if (n <= 1)
-      return s;
-
-    Arrays.fill(firstIndex, -1);
-
-    byte[] b = new byte[s.length()];
-    for (int i = 0; i < n; i++) {
-      var value = s.charAt(i) - firstLetter;
-      if (firstIndex[value] < 0)
-        firstIndex[value] = i;
-      b[i] = (byte) value;
-    }
-
-    var z = 1000;
-
-    pr(VERT_SP, quote(s));
-    int right = n - 1;
-    outer: while (right > 0) {
-
-      pr("right:", right);
-
-      int rc = right;
-      int lc = 0;
-
-      while (rc > lc) {
-        checkState(z-- > 0);
-        pr(chr("left", b, lc), chr("right", b, rc));
-        if (b[rc] != b[lc]) {
-          var firstPos = firstIndex[b[rc]];
-          pr("...mismatch, first pos for right is:", firstPos);
-          if (firstPos < 0) {
-            right = rc - 1;
-          } else {
-            right = Math.min(rc + firstPos, right-1);
-          }
-          pr("....reset to:", right,"; n:",n);
-          continue outer;
-        }
-        rc--;
-        lc++;
-      }
-      break;
-    }
-    pr("prefix length:", right + 1, "n:", n);
-
-    var prefLen = right + 1;
-    var sb = new StringBuilder(2 * n - prefLen);
-    for (int j = n - 1; j >= prefLen; j--)
-      sb.append((char) (b[j] + firstLetter));
-    for (int j = 0; j < n; j++)
-      sb.append((char) (b[j] + firstLetter));
-    pr("result:", sb);
-    return sb.toString();
-  }
-
 }
