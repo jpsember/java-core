@@ -117,16 +117,28 @@ public class P214ShortestPalindrome {
     var stack0 = new ArrayList<State>();
     var stack1 = new ArrayList<State>();
 
-    for (int i = 0; i <= xUseful; i++) {
-      stack0.add(newState(0, i));
-      stack0.add(newState(1, i));
+    for (int i = xUseful; i >= 0; i--) {
+      if ((n & 1) == 0) {
+        stack0.add(newState(0, i));
+        stack0.add(newState(1, i));
+      } else {
+        stack0.add(newState(1, i));
+        stack0.add(newState(0, i));
+      }
     }
 
     int longestPrefixLength = 1;
 
     final int MAX_SPOIL = 4; // must be power of 2
-    int spoilIndex = 0;
-    int[] spoil = new int[MAX_SPOIL];
+    final boolean withSpoiler = false;
+    final boolean skipUnlessImprovementPossible = true;
+
+    int spoilIndex;
+    int[] spoil;
+    if (withSpoiler) {
+      spoilIndex = 0;
+      spoil = new int[MAX_SPOIL];
+    }
 
     while (!stack0.isEmpty()) {
 
@@ -134,17 +146,18 @@ public class P214ShortestPalindrome {
         var x = st.x;
         var h = st.h;
 
-        if (x == 0) {
-          if (h > longestPrefixLength) {
-            longestPrefixLength = h;
-          }
-        } else {
+        // If best possible result from this state won't improve things, skip
+        if (skipUnlessImprovementPossible) {
+          if (h + 2 * x <= longestPrefixLength)
+            continue;
+        }
 
-          int minScanLeft = 0;
-          int maxScanRight = n - 1;
+        int minScanLeft = 0;
+        int maxScanRight = n - 1;
 
-          // Check spoiler characters if appropriate;
-          // this hueristic really helps with the 'big' problems
+        // Check spoiler characters if appropriate;
+        // this hueristic really helps with the 'big' problems
+        if (withSpoiler) {
           var center = x + h / 2;
           for (var spoiler : spoil) {
             int spoilLeft, spoilRight;
@@ -163,30 +176,32 @@ public class P214ShortestPalindrome {
               }
             }
           }
+        }
 
-          int scanLeft = x;
-          int scanRight = x + h - 1;
+        int scanLeft = x;
+        int scanRight = x + h - 1;
 
-          while (true) {
-            var newLeft = scanLeft - 1;
-            var newRight = scanRight + 1;
-            if (newLeft < 0 || newRight >= n)
-              break;
-            if (s.charAt(newLeft) != s.charAt(newRight)) {
+        while (true) {
+          var newLeft = scanLeft - 1;
+          var newRight = scanRight + 1;
+          if (newLeft < 0 || newRight >= n)
+            break;
+          if (s.charAt(newLeft) != s.charAt(newRight)) {
+            if (withSpoiler) {
               var ind = spoilIndex & (MAX_SPOIL - 1);
               spoil[ind] = newLeft;
               spoil[ind + 1] = newRight;
               spoilIndex += 2;
-              break;
             }
-            scanLeft = newLeft;
-            scanRight = newRight;
+            break;
           }
-          if (scanLeft == 0) {
-            longestPrefixLength = scanRight + 1 - scanLeft;
-          }
-          // ...we are done with this state in any case
+          scanLeft = newLeft;
+          scanRight = newRight;
         }
+        if (scanLeft == 0) {
+          longestPrefixLength = scanRight + 1 - scanLeft;
+        }
+        // ...we are done with this state in any case
       }
 
       var tmp = stack0;
