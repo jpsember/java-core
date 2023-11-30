@@ -6,8 +6,6 @@ import static js.base.Tools.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import js.json.JSList;
-
 public class P85MaximalRectangle {
 
   public static void main(String[] args) {
@@ -57,7 +55,7 @@ public class P85MaximalRectangle {
     var sb = new StringBuilder();
     for (var y = 0; y < bHeight; y++) {
       for (var x = 0; x < bWidth; x++) {
-        byte c = cells[y * bWidth + x];
+        byte c = sCells[y * bWidth + x];
         if (cell != null && cell.x == x && cell.y == y) {
           sb.append('>');
         } else
@@ -74,6 +72,8 @@ public class P85MaximalRectangle {
 
   public int maximalRectangle(char[][] matrix) {
 
+    final boolean db = false;
+
     // Scale up our grid so each matrix cell occupies 4 grid cells.
     // This is so holes are handled properly.
     int gridWidth = matrix[0].length;
@@ -81,7 +81,7 @@ public class P85MaximalRectangle {
     bWidth = gridWidth * 2 + 2;
     bHeight = gridHeight * 2 + 2;
     byte[] cells = new byte[bWidth * bHeight];
-    this.cells = cells;
+    sCells = cells;
     int cc = bWidth + 1;
     for (var row : matrix) {
       var c0 = cc;
@@ -103,6 +103,8 @@ public class P85MaximalRectangle {
 
     // Construct polygons
 
+    List<List<Pt>> polygons = new ArrayList<>();
+
     int polyColor = 2;
     var start = new Pt(1, 1);
     int cellInd = start.cellIndex();
@@ -112,41 +114,31 @@ public class P85MaximalRectangle {
     //    var z = scanStop+3;
     while (cellInd < scanStop) {
       //      checkState(z-- > 0);
-      pr("cell:", cellInd, "<", scanStop);
+      // pr("cell:", cellInd, "<", scanStop);
 
       //for (while (cellInd < int i = 0; i < cells.length; i++) {
       var cLeft = cells[cellInd - 1];
       var cRight = cells[cellInd];
-      pr(" ", cLeft, cRight);
+      // pr(" ", cLeft, cRight);
       if (cLeft == 0 && cRight == 1) {
         // This is a North edge
-        extractPoly(cellInd, NORTH, polyColor);
+        polygons.add(extractPoly(cellInd, NORTH, polyColor));
         polyColor++;
         printGrid("after poly extract");
-
       } else if (cLeft == 1 && cRight == 0) {
-        printGrid("found south edge", PtWithIndex(cellInd));
+        if (db)
+          printGrid("found south edge", PtWithIndex(cellInd));
         // This is a South edge
-        extractPoly(cellInd - 1, SOUTH, polyColor);
+        polygons.add(extractPoly(cellInd - 1, SOUTH, polyColor));
         polyColor++;
         printGrid("after poly extract");
       }
       cellInd++;
-      //      x++;
-      //      if (x == bWidth) {
-      //        x = 0;
-      //        y++;
-      //        if (y == bHeight - 1)
-      //          break;
-      //      }
     }
 
-    printGrid("after poly extract");
-    return -1;
-  }
+    polygons = splitAtConcaveVertices(polygons);
 
-  private Pt coords(int cellIndex) {
-    return new Pt(cellIndex % bWidth, cellIndex % bHeight);
+    return -1;
   }
 
   private static final int NORTH = 0, EAST = 1, SOUTH = 2, WEST = 3;
@@ -176,12 +168,12 @@ public class P85MaximalRectangle {
     private static int[] ymoves = { -1, 0, 1, 0 };
 
     int lookForward(int dir) {
-      return cells[(y + ymoves[dir]) * bWidth + (x + xmoves[dir])];
+      return sCells[(y + ymoves[dir]) * bWidth + (x + xmoves[dir])];
     }
 
     int lookForwardLeft(int dir) {
 
-      return cells[(y + ymoves[dir] + ymoves[turnLeft(dir)]) * bWidth
+      return sCells[(y + ymoves[dir] + ymoves[turnLeft(dir)]) * bWidth
           + (x + xmoves[dir] + xmoves[turnLeft(dir)])];
     }
 
@@ -190,7 +182,7 @@ public class P85MaximalRectangle {
     }
 
     private void paint(int value) {
-      cells[cellIndex()] = (byte) value;
+      sCells[cellIndex()] = (byte) value;
     }
 
     @Override
@@ -210,6 +202,8 @@ public class P85MaximalRectangle {
 
   private List<Pt> extractPoly(int cellIndex, int dir, int polyColor) {
 
+    final boolean db = false;
+
     List<Pt> poly = new ArrayList<>();
 
     var c = PtWithIndex(cellIndex);
@@ -219,42 +213,108 @@ public class P85MaximalRectangle {
 
     var z = 1000;
     while (true) {
-      checkState(z-- > 0);
+      if (db)
+        checkState(z-- > 0);
 
       // Paint this cell with the poly number 
       c.paint(polyColor);
-      pr("...look forward, dir", dir, ":", c.lookForward(dir));
-      printGrid("about to look forward", c);
+      if (db) {
+        pr("...look forward, dir", dir, ":", c.lookForward(dir));
+        printGrid("about to look forward", c);
+      }
 
       if (c.lookForward(dir) == 0) {
         dir = turnRight(dir);
-        pr("...turned right");
-        printGrid("after turned right", c);
-      } else if (c.lookForwardLeft(dir) != 0) {
-        pr("lookForwardLeft was:", c.lookForwardLeft(dir));
-        printGrid("after look fwd", c);
-        // We need to move forward before turning left.
-        {
-          poly.add(c);
-          c = c.move(dir);
+        if (db) {
+          pr("...turned right");
+          printGrid("after turned right", c);
         }
+      } else if (c.lookForwardLeft(dir) != 0) {
+        if (db) {
+          pr("lookForwardLeft was:", c.lookForwardLeft(dir));
+          printGrid("after look fwd", c);
+        }
+        // We need to move forward before turning left.
+
+        poly.add(c);
+        c = c.move(dir);
+
         dir = turnLeft(dir);
-        pr("...turned left");
+        if (db)
+          pr("...turned left");
       } else {
         poly.add(c);
-        pr("...added:", c);
+        if (db)
+          pr("...added:", c);
         c = c.move(dir);
-        pr("...moved to:", c);
-        printGrid("after move", c);
+        if (db) {
+          pr("...moved to:", c);
+          printGrid("after move", c);
+        }
         if (c.is(cStart))
           break;
       }
-
     }
-    return poly;
+    return mergeEdges(poly);
   }
 
-  private static byte[] cells;
+  private List<Pt> mergeEdges(List<Pt> poly) {
+    pr("merging edges:", poly);
+
+    var result = new ArrayList<Pt>();
+    var prevPt2 = poly.get(0);
+    var prevPt1 = poly.get(1);
+    int dir = determineDir(prevPt2, prevPt1);
+//    pr("initial dir,", prevPt2, ">>", prevPt1, ":", dir);
+    int i = 2;
+    Pt firstAdded = null;
+    while (true) {
+      var pt = poly.get(i);
+      i = (i + 1) % poly.size();
+
+      int newDir = determineDir(prevPt1,pt);
+//      pr("new pt, dir:", prevPt1, ">>", pt, ":", newDir);
+
+      if (newDir != dir) {
+//        pr("dir changed from", dir, "to", newDir, "; firstAdded:", firstAdded, "prevPt:", prevPt1);
+        dir = newDir;
+        if (firstAdded == null) {
+          firstAdded = pt;
+        } else if (pt == firstAdded)
+          break;
+//        checkState(result.size() < poly.size());
+        result.add(pt);
+      }
+      prevPt1 = pt;
+    }
+//    pr("merged:", result);
+    return result;
+  }
+
+  private int determineDir(Pt a, Pt b) {
+    int dx = b.x - a.x;
+    int dy = b.y - a.y;
+    checkState(dx == 0 || dy == 0);
+    if (dx > 0)
+      return EAST;
+    else if (dx < 0)
+      return WEST;
+    if (dy > 0)
+      return SOUTH;
+    return NORTH;
+  }
+
+  private List<List<Pt>> splitAtConcaveVertices(List<List<Pt>> polygons) {
+    var result = new ArrayList<List<Pt>>();
+
+    for (var orig : polygons) {
+
+    }
+
+    return result;
+  }
+
+  private static byte[] sCells;
   private static int bWidth;
   private static int bHeight;
 }
