@@ -28,38 +28,34 @@ public class P212WordSearchII {
     result.sort(null);
     pr("result:", result);
     var exp = new ArrayList<String>();
-    for (var w : split(expected,' '))
+    for (var w : split(expected, ' '))
       exp.add(w);
     exp.sort(null);
     checkState(exp.equals(result), "expected:", exp);
   }
 
+  
   public List<String> findWords(char[][] board, String[] words) {
-
     mBoard = new Board(board);
-    //List<String> result = new ArrayList<>();
     mResult.clear();
-
     mTree = new WordTree();
     mTree.addWords(words);
-    if (words.length < 10)
-      pr(mTree);
+    //    if (words.length < 10)
+    //      pr(mTree);
 
-    pr(mBoard);
+    //pr(mBoard);
 
     mSb.setLength(0);
-    for (int y = 0; y < mBoard.height; y++) {
-      for (int x = 0; x < mBoard.width; x++) {
-        //        mSb.setLength(0);
+    for (int y = 0; y < mBoard.height; y++)
+      for (int x = 0; x < mBoard.width; x++)
         auxFind(x, y);
-      }
-    }
+
     return new ArrayList<String>(mResult);
   }
 
   private void auxFind(int x, int y) {
-    pr(VERT_SP, "auxFind, sb:", quote(mSb.toString()), "x:", x, "y:", y);
-    pr(mBoard);
+    //pr(VERT_SP, "auxFind, sb:", quote(mSb.toString()), "x:", x, "y:", y);
+    //pr(mBoard);
 
     if (!mBoard.tryVisit(x, y))
       return;
@@ -68,9 +64,9 @@ public class P212WordSearchII {
     mSb.append(mBoard.cell(x, y));
     var wd = mSb.toString();
     if (mTree.containsPrefix(wd)) {
-      pr("prefix is in tree:", quote(wd));
+      //pr("prefix is in tree:", quote(wd));
       if (mTree.contains(wd)) {
-        pr("word is in tree:", quote(wd));
+        //pr("word is in tree:", quote(wd));
         mResult.add(wd);
       }
       auxFind(x - 1, y);
@@ -78,7 +74,7 @@ public class P212WordSearchII {
       auxFind(x, y - 1);
       auxFind(x, y + 1);
     } else {
-      pr("prefix not in tree:", quote(wd));
+      //pr("prefix not in tree:", quote(wd));
     }
     mSb.setLength(len);
     mBoard.unvisit();
@@ -96,32 +92,32 @@ public class P212WordSearchII {
   private static class WordTree {
     Node rootNode = new Node();
 
-    @Override
-    public String toString() {
-      var sb = new StringBuilder();
-      auxStr("", rootNode, sb, 0);
-      return sb.toString();
-    }
-
-    private void auxStr(String wordWork, Node n, StringBuilder sb, int depth) {
-      sb.append(spaces(depth));
-
-      if (n.isWord) {
-        sb.append("*");
-        sb.append(wordWork);
-        sb.append(' ');
-      }
-      sb.append('[');
-      for (int i = 0; i < n.children.length; i++) {
-        if (n.children[i] != null)
-          sb.append((char) ('a' + i));
-      }
-      sb.append("]\n");
-      for (int i = 0; i < n.children.length; i++) {
-        if (n.children[i] != null)
-          auxStr(wordWork + Character.toString((char) ('a' + i)), n.children[i], sb, depth + 2);
-      }
-    }
+    //    @Override
+    //    public String toString() {
+    //      var sb = new StringBuilder();
+    //      auxStr("", rootNode, sb, 0);
+    //      return sb.toString();
+    //    }
+    //
+    //    private void auxStr(String wordWork, Node n, StringBuilder sb, int depth) {
+    //      sb.append(spaces(depth));
+    //
+    //      if (n.isWord) {
+    //        sb.append("*");
+    //        sb.append(wordWork);
+    //        sb.append(' ');
+    //      }
+    //      sb.append('[');
+    //      for (int i = 0; i < n.children.length; i++) {
+    //        if (n.children[i] != null)
+    //          sb.append((char) ('a' + i));
+    //      }
+    //      sb.append("]\n");
+    //      for (int i = 0; i < n.children.length; i++) {
+    //        if (n.children[i] != null)
+    //          auxStr(wordWork + Character.toString((char) ('a' + i)), n.children[i], sb, depth + 2);
+    //      }
+    //    }
 
     public boolean contains(String word) {
       var n = containsHelper(word);
@@ -156,7 +152,7 @@ public class P212WordSearchII {
           }
           node = node2;
         }
-        checkState(!node.isWord);
+        //checkState(!node.isWord);
         node.isWord = true;
       }
     }
@@ -222,12 +218,12 @@ public class P212WordSearchII {
      * If so, it is marked as having been visited
      */
     public boolean tryVisit(int x, int y) {
-      pr("try visit:", x, y);
+      //pr("try visit:", x, y);
       if (x < 0 || x >= width || y < 0 || y >= height)
         return false;
       var i = cellIndex(x, y);
       if (visited.get(i)) {
-        pr("...already visited");
+        //pr("...already visited");
         return false;
       }
       visitedList.add(i);
