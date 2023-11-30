@@ -4,9 +4,10 @@ package js.leetcode;
 import static js.base.Tools.*;
 
 import java.util.ArrayList;
-import java.util.BitSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class P212WordSearchII {
@@ -34,16 +35,20 @@ public class P212WordSearchII {
     checkState(exp.equals(result), "expected:", exp);
   }
 
-  
   public List<String> findWords(char[][] board, String[] words) {
     mBoard = new Board(board);
     mResult.clear();
-    mTree = new WordTree();
-    mTree.addWords(words);
-    //    if (words.length < 10)
-    //      pr(mTree);
+    mPrefixMap.clear();
 
-    //pr(mBoard);
+    for (var w : words) {
+      for (int i = 1; i <= w.length(); i++) {
+        var pref = w.substring(0, i);
+        Integer c = mPrefixMap.getOrDefault(pref, 0);
+        int newVal = (i == w.length()) ? 2 : 1;
+        if (newVal > c)
+          mPrefixMap.put(pref, newVal);
+      }
+    }
 
     mSb.setLength(0);
     for (int y = 0; y < mBoard.height; y++)
@@ -54,19 +59,19 @@ public class P212WordSearchII {
   }
 
   private void auxFind(int x, int y) {
-    //pr(VERT_SP, "auxFind, sb:", quote(mSb.toString()), "x:", x, "y:", y);
-    //pr(mBoard);
-
-    if (!mBoard.tryVisit(x, y))
+    var posCode = mBoard.tryVisit(x, y);
+    if (posCode < 0)
       return;
 
     var len = mSb.length();
-    mSb.append(mBoard.cell(x, y));
+    mSb.append(mBoard.c[y][x]);
     var wd = mSb.toString();
-    if (mTree.containsPrefix(wd)) {
-      //pr("prefix is in tree:", quote(wd));
-      if (mTree.contains(wd)) {
-        //pr("word is in tree:", quote(wd));
+    var code = mPrefixMap.getOrDefault(wd, 0);
+    pr("code for", quote(wd), "is", code);
+    if (code != 0) {
+      pr("prefix is in tree:", quote(wd));
+      if (code == 2) {
+        pr("word is in tree:", quote(wd));
         mResult.add(wd);
       }
       auxFind(x - 1, y);
@@ -74,112 +79,21 @@ public class P212WordSearchII {
       auxFind(x, y - 1);
       auxFind(x, y + 1);
     } else {
-      //pr("prefix not in tree:", quote(wd));
+      pr("prefix not in tree:", quote(wd));
     }
     mSb.setLength(len);
-    mBoard.unvisit();
+    mBoard.visitedCursor--;
   }
-
-  private static class Node {
-    Node[] children = new Node[26];
-    boolean isWord;
-  }
-
-  /**
-   * Tree data structure that can quickly determine if a word or a word prefix
-   * is within the dictionary.
-   */
-  private static class WordTree {
-    Node rootNode = new Node();
-
-    //    @Override
-    //    public String toString() {
-    //      var sb = new StringBuilder();
-    //      auxStr("", rootNode, sb, 0);
-    //      return sb.toString();
-    //    }
-    //
-    //    private void auxStr(String wordWork, Node n, StringBuilder sb, int depth) {
-    //      sb.append(spaces(depth));
-    //
-    //      if (n.isWord) {
-    //        sb.append("*");
-    //        sb.append(wordWork);
-    //        sb.append(' ');
-    //      }
-    //      sb.append('[');
-    //      for (int i = 0; i < n.children.length; i++) {
-    //        if (n.children[i] != null)
-    //          sb.append((char) ('a' + i));
-    //      }
-    //      sb.append("]\n");
-    //      for (int i = 0; i < n.children.length; i++) {
-    //        if (n.children[i] != null)
-    //          auxStr(wordWork + Character.toString((char) ('a' + i)), n.children[i], sb, depth + 2);
-    //      }
-    //    }
-
-    public boolean contains(String word) {
-      var n = containsHelper(word);
-      return n != null && n.isWord;
-    }
-
-    private Node containsHelper(String prefix) {
-      var n = rootNode;
-      for (int i = 0; i < prefix.length(); i++) {
-        int c = prefix.charAt(i) - 'a';
-        var n2 = n.children[c];
-        if (n2 == null)
-          return null;
-        n = n2;
-      }
-      return n;
-    }
-
-    public boolean containsPrefix(String prefix) {
-      return containsHelper(prefix) != null;
-    }
-
-    public void addWords(String[] words) {
-      for (var w : words) {
-        var node = rootNode;
-        for (int i = 0; i < w.length(); i++) {
-          int childNum = w.charAt(i) - 'a';
-          var node2 = node.children[childNum];
-          if (node2 == null) {
-            node2 = new Node();
-            node.children[childNum] = node2;
-          }
-          node = node2;
-        }
-        //checkState(!node.isWord);
-        node.isWord = true;
-      }
-    }
-  }
-
-  private Board mBoard;
-  private WordTree mTree;
-  private Set<String> mResult = new HashSet<>();
-  private StringBuilder mSb = new StringBuilder();
 
   private static class Board {
     int width;
     int height;
-    char[] cells;
-    BitSet visited;
+    char[][] c;
 
     Board(char[][] c) {
+      this.c = c;
       width = c[0].length;
       height = c.length;
-      cells = new char[width * height];
-      visited = new BitSet(cells.length);
-      int i = 0;
-      for (var row : c) {
-        for (var ch : row) {
-          cells[i++] = ch;
-        }
-      }
     }
 
     @Override
@@ -190,10 +104,11 @@ public class P212WordSearchII {
       sb.append('\n');
       for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-          var i = cellIndex(x, y);
-          int index = visitedList.indexOf(i);
+          var posCode = cellPos(x, y);
+          //var i = cellIndex(x, y);
+          int index = indexWithinVisitedList(posCode);
           sb.append(index >= 0 ? " " + index : "  ");
-          sb.append(cells[i]);
+          sb.append(c[y][x]);
         }
         sb.append('\n');
       }
@@ -203,12 +118,15 @@ public class P212WordSearchII {
       return sb.toString();
     }
 
-    public char cell(int x, int y) {
-      return cells[cellIndex(x, y)];
+    private int indexWithinVisitedList(int pos) {
+      for (int i = 0; i < visitedCursor; i++)
+        if (visitedList[i] == pos)
+          return i;
+      return -1;
     }
 
-    private int cellIndex(int x, int y) {
-      return y * width + x;
+    private int cellPos(int x, int y) {
+      return x | (y * width);
     }
 
     /**
@@ -217,27 +135,27 @@ public class P212WordSearchII {
      * 
      * If so, it is marked as having been visited
      */
-    public boolean tryVisit(int x, int y) {
-      //pr("try visit:", x, y);
+    public int tryVisit(int x, int y) {
+      pr("try visit:", x, y);
       if (x < 0 || x >= width || y < 0 || y >= height)
-        return false;
-      var i = cellIndex(x, y);
-      if (visited.get(i)) {
-        //pr("...already visited");
-        return false;
+        return -1;
+      var posCode = cellPos(x, y);
+      if (indexWithinVisitedList(posCode) >= 0) {
+        pr("...already visited");
+        return -1;
       }
-      visitedList.add(i);
-      visited.set(i);
-      return true;
+      visitedList[visitedCursor++] = posCode;
+      return posCode;
     }
 
-    private List<Integer> visitedList = new ArrayList<>();
-
-    public void unvisit() {
-      var index = visitedList.remove(visitedList.size() - 1);
-      visited.clear(index);
-    }
+    private int[] visitedList = new int[10];
+    private int visitedCursor;
 
   }
+
+  private Board mBoard;
+  private Set<String> mResult = new HashSet<>();
+  private StringBuilder mSb = new StringBuilder();
+  private Map<String, Integer> mPrefixMap = new HashMap<>();
 
 }
