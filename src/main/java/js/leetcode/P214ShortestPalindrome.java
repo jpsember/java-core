@@ -55,7 +55,7 @@ public class P214ShortestPalindrome {
     checkpoint("after big"); // 6.749; 7.608 after refactor to use state objects
 
     x("");
-    x("AH");
+    x("ah");
 
     x("aacecaaa");
 
@@ -161,27 +161,134 @@ public class P214ShortestPalindrome {
     return sb.toString();
   }
 
+  /* private */ static boolean isPalindrome(String s, int prefixLength) {
+    int i = 0;
+    int j = prefixLength - 1;
+    while (i < j) {
+      if (s.charAt(i) != s.charAt(j))
+        return false;
+      i++;
+      j--;
+    }
+    return true;
+  }
+
+  /**
+   * This now beats 75% of the users (runtime)
+   */
+  public String shortestPalindrome(String s) {
+    int n = s.length();
+    if (n <= 1)
+      return s;
+    if (n < 20)
+      return auxShortestPalindrome(s);
+
+    var sb = sStringBuilder;
+
+    // Encode long runs of single characters in a form that is decodeable and is itself a palindrome
+    //
+    {
+      sb.setLength(0);
+      char cp = 0;
+      int count = 0;
+      for (int i = 0; i < n; i++) {
+        var c = s.charAt(i);
+        if (c != cp) {
+          write(cp, count);
+          cp = c;
+          count = 0;
+        }
+        count++;
+      }
+      write(cp, count);
+      s = sb.toString();
+    }
+
+    var s2 = auxShortestPalindrome(s);
+
+    // Decode the run length encoding expressions performed earlier
+    //
+    {
+      sb.setLength(0);
+      int i = 0;
+      while (i < s2.length()) {
+        var c = s2.charAt(i++);
+        if (c >= 'a') {
+          sb.append(c);
+        } else {
+          c ^= 0x20;
+          var count = ((int) (s2.charAt(i) - '0')) //
+              | ((int) (s2.charAt(i + 1) - '0') << 4) //
+              | ((int) (s2.charAt(i + 2) - '0') << 8) //
+              | ((int) (s2.charAt(i + 3) - '0') << 12);
+          i += 8;
+          while (count-- != 0)
+            sb.append(c);
+        }
+      }
+    }
+    return sb.toString();
+  }
+
+  private static void write(char c, int count) {
+    var sb = sStringBuilder;
+    if (count > 9) { // we don't save any space until we write more than 9 chars as 
+                     // Ahhhh{hhhA}  where {hhhA} are redundant chars to make it a palindrome
+      char j = (char) (c - 0x20);
+      sb.append(j);
+      char c0 = (char) ('0' + (count & 0xf));
+      char c1 = (char) ('0' + ((count >> 4) & 0xf));
+      char c2 = (char) ('0' + ((count >> 8) & 0xf));
+      char c3 = (char) ('0' + ((count >> 12) & 0xf));
+      sb.append(c0);
+      sb.append(c1);
+      sb.append(c2);
+      sb.append(c3);
+      sb.append(c2);
+      sb.append(c1);
+      sb.append(c0);
+      sb.append(j);
+    } else {
+      for (int j = 0; j < count; j++)
+        sb.append(c);
+    }
+  }
+
   // This much simpler algorithm is at least as fast as mine, but
   // the call to the system 'hasPrefix' is still expensive (and 
   // the speed is relying on its native implementation probably).
   //
-  public String shortestPalindrome(String s) {
+  private String auxShortestPalindrome(String s) {
     int n = s.length();
     String r0 = reverse(s);
     var r = r0;
-    while (!s.startsWith(r))
+    while (!hasPrefix(s, r))
       r = r.substring(1);
     return r0.substring(0, n - r.length()) + s;
   }
 
-  private static StringBuilder sb = new StringBuilder();
+  private static boolean hasPrefix(String s, String r) {
+    int rn = r.length();
+    int i = 0;
+    int step = 0;
+    while (i < rn) {
+      if (s.charAt(i) != r.charAt(i))
+        return false;
+      step++;
+      i += step;
+    }
+    return s.startsWith(r);
+  }
 
   private static String reverse(String s) {
+    var sb = sStringBuilder;
     sb.setLength(0);
     sb.ensureCapacity(s.length());
     for (int i = s.length() - 1; i >= 0; i--)
       sb.append(s.charAt(i));
     return sb.toString();
   }
+
+  private static final StringBuilder sStringBuilder = new StringBuilder();
 
 }
