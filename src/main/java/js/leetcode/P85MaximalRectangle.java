@@ -123,15 +123,9 @@ public class P85MaximalRectangle {
     int cellInd = start.cellIndex();
     int scanStop = bWidth * (bHeight - 1);
 
-    //    var z = scanStop+3;
     while (cellInd < scanStop) {
-      //      checkState(z-- > 0);
-      // pr("cell:", cellInd, "<", scanStop);
-
-      //for (while (cellInd < int i = 0; i < cells.length; i++) {
       var cLeft = cells[cellInd - 1];
       var cRight = cells[cellInd];
-      // pr(" ", cLeft, cRight);
       if (cLeft == 0 && cRight == 1) {
         // This is a North edge
         polygons.add(extractPoly(cellInd, NORTH, polyColor));
@@ -196,12 +190,18 @@ public class P85MaximalRectangle {
       return y * bWidth + x;
     }
 
+    public Pt offset(int dir) {
+      return new Pt(x + xoff[dir], y + yoff[dir]);
+    }
+    
     Pt move(int dir) {
       return new Pt(x + xmoves[dir], y + ymoves[dir]);
     }
 
     private static int[] xmoves = { 0, 1, 0, -1 };
     private static int[] ymoves = { -1, 0, 1, 0 };
+    private static int[] xoff = { -1,-1,1,1 };
+    private static int[] yoff = { 1,-1,-1,1};
 
     int lookForward(int dir) {
       return sCells[(y + ymoves[dir]) * bWidth + (x + xmoves[dir])];
@@ -272,14 +272,16 @@ public class P85MaximalRectangle {
         }
         // We need to move forward before turning left.
 
-        poly.add(c);
+        poly.add(c.offset(dir));
         c = c.move(dir);
 
         dir = turnLeft(dir);
         if (db)
           pr("...turned left");
       } else {
-        poly.add(c);
+        
+        
+        poly.add(c.offset(dir));
         if (db)
           pr("...added:", c);
         c = c.move(dir);
