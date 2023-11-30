@@ -4,7 +4,9 @@ package js.leetcode;
 import static js.base.Tools.*;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class P85MaximalRectangle {
 
@@ -14,7 +16,18 @@ public class P85MaximalRectangle {
 
   private void run() {
 
-    x(3, 3, "111" //
+    x(3,2,"111010",3);
+    halt();
+    
+    x(3,2,"110111",4);
+    halt();
+    
+    x(3,3,"111111111",9);
+    halt();
+    
+    x(5, 4, "10100101111111110010", 6);
+    halt();
+   x(3, 3, "111" //
         + "101" //
         + "111" //
         , 3);
@@ -25,7 +38,7 @@ public class P85MaximalRectangle {
         + "11111" //
         + "10010", 6);
 
-    x(5, 4, "10100101111111110010", 6);
+  
   }
 
   private void x(int width, int height, String cells, int expected) {
@@ -108,7 +121,6 @@ public class P85MaximalRectangle {
     int polyColor = 2;
     var start = new Pt(1, 1);
     int cellInd = start.cellIndex();
-    //bWidth + 1;
     int scanStop = bWidth * (bHeight - 1);
 
     //    var z = scanStop+3;
@@ -136,9 +148,33 @@ public class P85MaximalRectangle {
       cellInd++;
     }
 
-    polygons = splitAtConcaveVertices(polygons);
+    var newPolygons = splitAtConcaveVertices(polygons);
 
-    return -1;
+    pr("orig poly count :", polygons.size());
+    pr("split poly count:", newPolygons.size());
+
+    int maxArea = 0;
+    for (var p : newPolygons) {
+      pr(VERT_SP,"poly:",p);
+      
+      var f = p.get(0);
+      int xmin = f.x;
+      int xmax = xmin;
+      int ymin = f.y
+          ;int ymax = ymin;
+      for (var pt:p) {
+        xmin = Math.min(xmin,pt.x);
+        xmax= Math.max(xmax,pt.x);
+        ymin = Math.min(ymin,pt.y);
+        ymax= Math.max(ymax,pt.y);
+      }
+      var area = (xmax-xmin )*(ymax-ymin );
+      pr("area:",area);
+      maxArea = Math.max(maxArea,area);
+    }
+
+    // Divide area by the area of the scaling factor (squared)
+    return maxArea / 4;
   }
 
   private static final int NORTH = 0, EAST = 1, SOUTH = 2, WEST = 3;
@@ -265,36 +301,38 @@ public class P85MaximalRectangle {
     var prevPt2 = poly.get(0);
     var prevPt1 = poly.get(1);
     int dir = determineDir(prevPt2, prevPt1);
-//    pr("initial dir,", prevPt2, ">>", prevPt1, ":", dir);
+    //    pr("initial dir,", prevPt2, ">>", prevPt1, ":", dir);
     int i = 2;
     Pt firstAdded = null;
     while (true) {
       var pt = poly.get(i);
       i = (i + 1) % poly.size();
 
-      int newDir = determineDir(prevPt1,pt);
-//      pr("new pt, dir:", prevPt1, ">>", pt, ":", newDir);
+      int newDir = determineDir(prevPt1, pt);
+      //      pr("new pt, dir:", prevPt1, ">>", pt, ":", newDir);
 
       if (newDir != dir) {
-//        pr("dir changed from", dir, "to", newDir, "; firstAdded:", firstAdded, "prevPt:", prevPt1);
+        //        pr("dir changed from", dir, "to", newDir, "; firstAdded:", firstAdded, "prevPt:", prevPt1);
         dir = newDir;
         if (firstAdded == null) {
-          firstAdded = pt;
-        } else if (pt == firstAdded)
+          firstAdded = prevPt1;
+        } else if (prevPt1 == firstAdded)
           break;
-//        checkState(result.size() < poly.size());
-        result.add(pt);
+        //        checkState(result.size() < poly.size());
+        result.add(prevPt1);
       }
       prevPt1 = pt;
     }
-//    pr("merged:", result);
+    pr("merged:", result);
     return result;
   }
 
   private int determineDir(Pt a, Pt b) {
     int dx = b.x - a.x;
     int dy = b.y - a.y;
-    checkState(dx == 0 || dy == 0);
+    if (dx != 0 && dy != 0) {
+      badArg("a:", a, "b:", b);
+    }
     if (dx > 0)
       return EAST;
     else if (dx < 0)
@@ -304,14 +342,195 @@ public class P85MaximalRectangle {
     return NORTH;
   }
 
+  private static <T> T peekLast(List<T> list, int dist) {
+    return list.get(list.size() - 1 - dist);
+  }
+
   private List<List<Pt>> splitAtConcaveVertices(List<List<Pt>> polygons) {
-    var result = new ArrayList<List<Pt>>();
 
-    for (var orig : polygons) {
+    // Determine where polygons must be split
+    Set<Integer> horzSplits = new HashSet<>();
+    Set<Integer> vertSplits = new HashSet<>();
 
+    for (var poly : polygons) {
+      pr("poly:", poly);
+      var prev2 = peekLast(poly, 1);
+      var prev1 = peekLast(poly, 0);
+      pr("prev1:", prev1);
+      var prevDir = determineDir(prev2, prev1);
+      for (var pt : poly) {
+        var newDir = determineDir(prev1, pt);
+        if (((newDir - prevDir) & 3) == 3) {
+          horzSplits.add(pt.y);
+          vertSplits.add(pt.x);
+        }
+        prevDir = newDir;
+        prev1 = pt;
+      }
     }
 
-    return result;
+    if (!horzSplits.isEmpty()) {
+    var result = new ArrayList<List<Pt>>();
+    for (var y : horzSplits) {
+      for (var poly : polygons) {
+        splitPoly(poly, y, result, false);
+      }
+    }
+    
+    polygons = result;
+    }
+    
+    if (!vertSplits.isEmpty()) {
+      
+      var  result = new ArrayList<List<Pt>>();
+    for (var x : vertSplits) {
+      for (var poly : polygons) {
+        splitPoly(poly, x, result, true);
+      }
+    }
+    polygons = result;
+    }
+    
+    return polygons;
+  }
+
+  //  private static void splitPolyHorz(List<Pt> poly, int y, List<List<Pt>> result) {
+  //
+  //    List<Pt> left = new ArrayList<>(poly.size());
+  //    List<Pt> right = new ArrayList<>(poly.size());
+  //
+  //    Pt prevPt = null;
+  //
+  //    int prevNonZeroSign = 0;
+  //
+  //    for (var pt : poly) {
+  //      int newSign = pt.y - y;
+  //      if (newSign != 0) {
+  //        if (prevPt != null && prevNonZeroSign != newSign) {
+  //          var newPt = new Pt(pt.x, y);
+  //          left.add(newPt);
+  //          right.add(newPt);
+  //        }
+  //        prevNonZeroSign = newSign;
+  //      }
+  //      prevPt = pt;
+  //      if (newSign > 0) {
+  //        right.add(pt);
+  //      } else if (newSign < 0) {
+  //        left.add(pt);
+  //      }
+  //    }
+  //
+  //    //    pr("split poly horz at y:", y);
+  //    //    pr("orig:", poly);
+  //    //    pr("left:", left);
+  //    //    pr("right:", right);
+  //    //    halt();
+  //
+  //  }
+
+  private static void splitPoly(List<Pt> poly, int splitCoord, List<List<Pt>> result, boolean vert) {
+
+    pr("split poly:", poly);
+    pr(" at coord:", splitCoord, "vert:", vert);
+
+    List<Pt> left = new ArrayList<>(poly.size());
+    List<Pt> right = new ArrayList<>(poly.size());
+
+    // Start at a vertex strictly to one side
+    int startVertex = 0;
+    int prevNonZeroSign = 0;
+    for (var pt : poly) {
+      if (vert)
+        prevNonZeroSign = pt.x - splitCoord;
+      else
+        prevNonZeroSign = pt.y - splitCoord;
+      if (prevNonZeroSign != 0)
+        break;
+      startVertex++;
+    }
+    checkState(prevNonZeroSign != 0);
+
+    boolean leftValid = false;
+    boolean rightValid = false;
+    Pt prevPt = null;
+    for (int i = 0; i <= poly.size(); i++) {
+      var pt = poly.get((i + startVertex) % poly.size());
+
+      int newSign;
+      if (vert)
+        newSign = pt.x - splitCoord;
+      else
+        newSign = pt.y - splitCoord;
+      if (newSign != 0) {
+        if (prevPt != null && prevNonZeroSign != newSign) {
+          Pt newPt;
+          if (vert)
+            newPt = new Pt(splitCoord, pt.y);
+          else
+            newPt = new Pt(pt.x, splitCoord);
+          left.add(newPt);
+          right.add(newPt);
+        }
+        prevNonZeroSign = newSign;
+      }
+      prevPt = pt;
+      if (newSign >= 0) {
+        pr("...newSign",newSign,"adding point to right:",pt);
+        right.add(pt);
+        if (newSign > 0)
+          rightValid = true;
+      }  
+      if (newSign <= 0) {
+        pr("...newSign",newSign,"adding point to left:",pt);
+         left.add(pt);
+        if (newSign < 0)
+          leftValid = true;
+      }
+    }
+pr("valid, left:",leftValid, "right:",rightValid);
+
+    if (!leftValid)
+      left.clear();
+    if (!rightValid)
+      right.clear();
+    removeDupLastPt(left);
+    removeDupLastPt(right);
+
+    pr("validating left:", left);
+    validate(left);
+    pr("validating right:", right);
+    validate(right);
+
+    if (!left.isEmpty())
+      result.add(left);
+    if (!right.isEmpty())
+      result.add(right);
+
+    //    pr("split poly horz at y:", y);
+    //    pr("orig:", poly);
+    //    pr("left:", left);
+    //    pr("right:", right);
+    //    halt();
+
+  }
+
+  private static void validate(List<Pt> poly) {
+    int s = poly.size();
+    if (s == 0)
+      return;
+    if (s < 4) {
+      badState("bad clipped polygon:", poly);
+    }
+
+  }
+
+  private static void removeDupLastPt(List<Pt> list) {
+    int s = list.size() - 1;
+    if (s <= 0)
+      return;
+    if (list.get(0).is(list.get(s)))
+      list.remove(s);
   }
 
   private static byte[] sCells;
