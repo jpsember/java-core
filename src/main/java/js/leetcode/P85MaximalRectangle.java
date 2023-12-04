@@ -9,7 +9,8 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * I need to figure out how to offset the polygon boundary from the center of the pixel.
+ * I need to figure out how to offset the polygon boundary from the center of
+ * the pixel.
  *
  */
 public class P85MaximalRectangle {
@@ -18,20 +19,24 @@ public class P85MaximalRectangle {
     new P85MaximalRectangle().run();
   }
 
+  public static int[] xturnleft = { -1, 1, 1, -1 };
+
+  public static int[] yturnleft = { -1, -1, 1, 1 };
+
   private void run() {
 
-    x(3,2,"111010",3);
+    x(3, 2, "111010", 3);
     halt();
-    
-    x(3,2,"110111",4);
+
+    x(3, 2, "110111", 4);
     halt();
-    
-    x(3,3,"111111111",9);
+
+    x(3, 3, "111111111", 9);
     halt();
-    
+
     x(5, 4, "10100101111111110010", 6);
     halt();
-   x(3, 3, "111" //
+    x(3, 3, "111" //
         + "101" //
         + "111" //
         , 3);
@@ -42,7 +47,6 @@ public class P85MaximalRectangle {
         + "11111" //
         + "10010", 6);
 
-  
   }
 
   private void x(int width, int height, String cells, int expected) {
@@ -73,8 +77,12 @@ public class P85MaximalRectangle {
     for (var y = 0; y < bHeight; y++) {
       for (var x = 0; x < bWidth; x++) {
         byte c = sCells[y * bWidth + x];
+        sb.append(' ');
         if (cell != null && cell.x == x && cell.y == y) {
-          sb.append('>');
+          if (cell.dir >= 0)
+            sb.append("nesw".charAt(cell.dir));
+          else
+            sb.append('>');
         } else
           sb.append(' ');
         sb.append((char) (c == 0 ? '.' : '0' + c));
@@ -123,8 +131,8 @@ public class P85MaximalRectangle {
     List<List<Pt>> polygons = new ArrayList<>();
 
     int polyColor = 2;
-    var start = new Pt(1, 1);
-    int cellInd = start.cellIndex();
+    //var start = new Pt(1, 1, 0);
+    int cellInd = bWidth + 1; // (1,1)
     int scanStop = bWidth * (bHeight - 1);
 
     while (cellInd < scanStop) {
@@ -132,14 +140,15 @@ public class P85MaximalRectangle {
       var cRight = cells[cellInd];
       if (cLeft == 0 && cRight == 1) {
         // This is a North edge
-        polygons.add(extractPoly(cellInd, NORTH, polyColor));
+
+        polygons.add(extractPoly(indexToCell(cellInd, NORTH), polyColor));
         polyColor++;
         printGrid("after poly extract");
       } else if (cLeft == 1 && cRight == 0) {
-        if (db)
-          printGrid("found south edge", PtWithIndex(cellInd));
+        //        if (db)
+        //          printGrid("found south edge", PtWithIndex(cellInd));
         // This is a South edge
-        polygons.add(extractPoly(cellInd - 1, SOUTH, polyColor));
+        polygons.add(extractPoly(indexToCell(cellInd - 1, SOUTH), polyColor));
         polyColor++;
         printGrid("after poly extract");
       }
@@ -153,22 +162,22 @@ public class P85MaximalRectangle {
 
     int maxArea = 0;
     for (var p : newPolygons) {
-      pr(VERT_SP,"poly:",p);
-      
+      pr(VERT_SP, "poly:", p);
+
       var f = p.get(0);
       int xmin = f.x;
       int xmax = xmin;
-      int ymin = f.y
-          ;int ymax = ymin;
-      for (var pt:p) {
-        xmin = Math.min(xmin,pt.x);
-        xmax= Math.max(xmax,pt.x);
-        ymin = Math.min(ymin,pt.y);
-        ymax= Math.max(ymax,pt.y);
+      int ymin = f.y;
+      int ymax = ymin;
+      for (var pt : p) {
+        xmin = Math.min(xmin, pt.x);
+        xmax = Math.max(xmax, pt.x);
+        ymin = Math.min(ymin, pt.y);
+        ymax = Math.max(ymax, pt.y);
       }
-      var area = (xmax-xmin )*(ymax-ymin );
-      pr("area:",area);
-      maxArea = Math.max(maxArea,area);
+      var area = (xmax - xmin) * (ymax - ymin);
+      pr("area:", area);
+      maxArea = Math.max(maxArea, area);
     }
 
     // Divide area by the area of the scaling factor (squared)
@@ -177,44 +186,76 @@ public class P85MaximalRectangle {
 
   private static final int NORTH = 0, EAST = 1, SOUTH = 2, WEST = 3;
 
-  private static Pt PtWithIndex(int index) {
-    return new Pt(index % bWidth, index / bHeight);
+  private static Pt indexToCell(int index, int dir) {
+    return new Pt(index % bWidth, index / bWidth, dir);
   }
 
   private static class Pt {
     int x;
     int y;
+    int dir;
 
     Pt(int x, int y) {
+      this(x, y, -1);
+    }
+
+    Pt(int x, int y, int dir) {
       this.x = x;
       this.y = y;
+      this.dir = dir;
     }
 
     public int cellIndex() {
       return y * bWidth + x;
     }
+    //
+    //    public Pt offset(int xo, int yo) {
+    //      return new Pt(x + xo, y + yo);
+    //    }
 
-    public Pt offset(int dir) {
-      return new Pt(x + xoff[dir], y + yoff[dir]);
+    //    public Pt offset(int dir) {
+    //      return new Pt(x + xoff[dir], y + yoff[dir]);
+    //    }
+
+    Pt move() {
+      return new Pt(x + xmoves[dir], y + ymoves[dir], dir);
     }
-    
-    Pt move(int dir) {
-      return new Pt(x + xmoves[dir], y + ymoves[dir]);
+
+    Pt turnLeft() {
+      return new Pt(x + xturnleft[dir], y + yturnleft[dir], (dir - 1) & 3);
+      //      pr("turning left from:", this);
+      //      switch (dir) {
+      //      case NORTH:
+      //        return new Pt(x - 1, y - 1, WEST);
+      //      case EAST:
+      //        return new Pt(x + 1, y - 1, NORTH);
+      //      case SOUTH:
+      //        return new Pt(x + 1, y + 1, EAST);
+      //      case WEST:
+      //        return new Pt(x + 1, y + 1, SOUTH);
+      //      default:
+      //        return null;
+      //      }
+    }
+
+    Pt turnRight() {
+      return new Pt(x, y, (dir + 1) & 3);
     }
 
     private static int[] xmoves = { 0, 1, 0, -1 };
     private static int[] ymoves = { -1, 0, 1, 0 };
-    private static int[] xoff = { -1,-1,1,1 };
-    private static int[] yoff = { 1,-1,-1,1};
+    //    private static int[] xoff = { -1, -1, 1, 1 };
+    //    private static int[] yoff = { 1, -1, -1, 1 };
+    private static int[] xedgeoff = { 0, 0, 1, 1 };
+    private static int[] yedgeoff = { 1, 0, 0, 1 };
 
-    int lookForward(int dir) {
+    int lookForward() {
       return sCells[(y + ymoves[dir]) * bWidth + (x + xmoves[dir])];
     }
 
-    int lookForwardLeft(int dir) {
-
-      return sCells[(y + ymoves[dir] + ymoves[turnLeft(dir)]) * bWidth
-          + (x + xmoves[dir] + xmoves[turnLeft(dir)])];
+    int lookForwardLeft() {
+      return sCells[(y + ymoves[dir] + ymoves[sturnLeft(dir)]) * bWidth
+          + (x + xmoves[dir] + xmoves[sturnLeft(dir)])];
     }
 
     public boolean is(Pt p) {
@@ -227,74 +268,96 @@ public class P85MaximalRectangle {
 
     @Override
     public String toString() {
-      return "(" + x + "," + y + ")";
+      if (dir < 0)
+        return "(" + x + "," + y + ")";
+      return "(" + x + "," + y + "," + "NESW".charAt(dir) + ")";
+    }
+
+    public Pt edgeStart() {
+      return new Pt(x + xedgeoff[dir], y + yedgeoff[dir], -1);
     }
 
   }
 
-  private static int turnLeft(int dir) {
+  private static int sturnLeft(int dir) {
     return (dir - 1) & 3;
   }
 
-  private static int turnRight(int dir) {
-    return (dir + 1) & 3;
-  }
+  //  private static int sturnRight(int dir) {
+  //    return (dir + 1) & 3;
+  //  }
+  //
+  //  private Pt edgeVertex(Pt cell, int dir) {
+  //    switch (dir) {
+  //    case NORTH:
+  //      return cell.offset(0, 1);
+  //    case SOUTH:
+  //      return cell.offset(1, 0);
+  //    case EAST:
+  //      return cell;
+  //    default:
+  //      return cell.offset(1, 1);
+  //    }
+  //  }
 
-  private List<Pt> extractPoly(int cellIndex, int dir, int polyColor) {
+  private List<Pt> extractPoly(Pt cell, int polyColor) {
 
-    final boolean db = false;
+    final boolean db = true;
 
     List<Pt> poly = new ArrayList<>();
 
-    var c = PtWithIndex(cellIndex);
-    var cStart = c;
+    pr("extractPoly, cell:", cell, "color:", polyColor);
 
-    pr("extractPoly, cellIndex:", cellIndex, "pt:", c, "color:", polyColor);
+    var cv = cell.edgeStart();
+    poly.add(cv);
 
     var z = 1000;
+    Pt prevCell = null;
+    Pt firstVert = null;
     while (true) {
+      if (prevCell != null) {
+        if (prevCell.x == cell.x && prevCell.y == cell.y && prevCell.dir == cell.dir)
+          badState("no progress");
+      }
+      prevCell = cell;
+      var es = cell.edgeStart();
+      if (firstVert != null) {
+
+        if (es.is(firstVert))
+          break;
+      } else
+        firstVert = es;
+      poly.add(es);
+      printGrid("extract loop, prevVert:" + firstVert, cell);
+      if (poly.size() > 23)
+        halt();
+
       if (db)
         checkState(z-- > 0);
 
-      // Paint this cell with the poly number 
-      c.paint(polyColor);
       if (db) {
-        pr("...look forward, dir", dir, ":", c.lookForward(dir));
-        printGrid("about to look forward", c);
+        pr("...look forward:", cell);
       }
 
-      if (c.lookForward(dir) == 0) {
-        dir = turnRight(dir);
+      if (cell.lookForward() == 0) {
+        cell = cell.turnRight();
         if (db) {
           pr("...turned right");
-          printGrid("after turned right", c);
         }
-      } else if (c.lookForwardLeft(dir) != 0) {
-        if (db) {
-          pr("lookForwardLeft was:", c.lookForwardLeft(dir));
-          printGrid("after look fwd", c);
-        }
-        // We need to move forward before turning left.
+      } else if (cell.lookForwardLeft() != 0) {
 
-        poly.add(c.offset(dir));
-        c = c.move(dir);
+        // Paint this cell with the poly number 
+        cell.paint(polyColor);
 
-        dir = turnLeft(dir);
-        if (db)
-          pr("...turned left");
+        cell = cell.turnLeft();
+        pr("turned left");
       } else {
-        
-        
-        poly.add(c.offset(dir));
-        if (db)
-          pr("...added:", c);
-        c = c.move(dir);
+        // Paint this cell with the poly number 
+        cell.paint(polyColor);
+        cell = cell.move();
         if (db) {
-          pr("...moved to:", c);
-          printGrid("after move", c);
+          pr("...moved");
         }
-        if (c.is(cStart))
-          break;
       }
     }
     return mergeEdges(poly);
@@ -376,27 +439,27 @@ public class P85MaximalRectangle {
     }
 
     if (!horzSplits.isEmpty()) {
-    var result = new ArrayList<List<Pt>>();
-    for (var y : horzSplits) {
-      for (var poly : polygons) {
-        splitPoly(poly, y, result, false);
+      var result = new ArrayList<List<Pt>>();
+      for (var y : horzSplits) {
+        for (var poly : polygons) {
+          splitPoly(poly, y, result, false);
+        }
       }
+
+      polygons = result;
     }
-    
-    polygons = result;
-    }
-    
+
     if (!vertSplits.isEmpty()) {
-      
-      var  result = new ArrayList<List<Pt>>();
-    for (var x : vertSplits) {
-      for (var poly : polygons) {
-        splitPoly(poly, x, result, true);
+
+      var result = new ArrayList<List<Pt>>();
+      for (var x : vertSplits) {
+        for (var poly : polygons) {
+          splitPoly(poly, x, result, true);
+        }
       }
+      polygons = result;
     }
-    polygons = result;
-    }
-    
+
     return polygons;
   }
 
@@ -482,19 +545,19 @@ public class P85MaximalRectangle {
       }
       prevPt = pt;
       if (newSign >= 0) {
-        pr("...newSign",newSign,"adding point to right:",pt);
+        pr("...newSign", newSign, "adding point to right:", pt);
         right.add(pt);
         if (newSign > 0)
           rightValid = true;
-      }  
+      }
       if (newSign <= 0) {
-        pr("...newSign",newSign,"adding point to left:",pt);
-         left.add(pt);
+        pr("...newSign", newSign, "adding point to left:", pt);
+        left.add(pt);
         if (newSign < 0)
           leftValid = true;
       }
     }
-pr("valid, left:",leftValid, "right:",rightValid);
+    pr("valid, left:", leftValid, "right:", rightValid);
 
     if (!leftValid)
       left.clear();
