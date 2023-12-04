@@ -8,6 +8,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * I need to figure out how to offset the polygon boundary from the center of the pixel.
+ *
+ */
 public class P85MaximalRectangle {
 
   public static void main(String[] args) {
