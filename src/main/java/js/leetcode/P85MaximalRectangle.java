@@ -97,8 +97,6 @@ public class P85MaximalRectangle {
 
   public int maximalRectangle(char[][] matrix) {
 
-    final boolean db = false;
-
     // Scale up our grid so each matrix cell occupies 4 grid cells.
     // This is so holes are handled properly.
     int gridWidth = matrix[0].length;
@@ -416,6 +414,7 @@ public class P85MaximalRectangle {
   }
 
   private List<List<Pt>> splitAtConcaveVertices(List<List<Pt>> polygons) {
+    pr("splitAtConcaveVertices");
 
     // Determine where polygons must be split
     Set<Integer> horzSplits = new HashSet<>();
@@ -423,20 +422,27 @@ public class P85MaximalRectangle {
 
     for (var poly : polygons) {
       pr("poly:", poly);
+      //      halt();
       var prev2 = peekLast(poly, 1);
       var prev1 = peekLast(poly, 0);
-      pr("prev1:", prev1);
       var prevDir = determineDir(prev2, prev1);
       for (var pt : poly) {
         var newDir = determineDir(prev1, pt);
         if (((newDir - prevDir) & 3) == 3) {
-          horzSplits.add(pt.y);
-          vertSplits.add(pt.x);
+
+          pr("pt:", pt, "newDir:", newDir, "prev:", prevDir, "adding split at",prev1);
+          horzSplits.add(prev1.y);
+          vertSplits.add(prev1.x);
         }
         prevDir = newDir;
         prev1 = pt;
       }
+
     }
+    //halt();
+
+    pr("horzSplits:", horzSplits);
+    pr("vertSplits:", vertSplits);
 
     if (!horzSplits.isEmpty()) {
       var result = new ArrayList<List<Pt>>();
