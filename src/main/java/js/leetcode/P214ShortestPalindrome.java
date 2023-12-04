@@ -3,9 +3,6 @@ package js.leetcode;
 
 import static js.base.Tools.*;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * <pre>
  * 
@@ -35,6 +32,12 @@ import java.util.List;
  * 
  * I think I am not skipping exploring states that can't lead to a better result
  * than the one already found.
+ * 
+ * This is *not* a problem for dynamic programming, as palindromes do not really
+ * exhibit the 'overlapping subproblems' property. It is true that each
+ * palindrome contains n-1 nested palindromes within them, but for palindromes
+ * that are centered at distinct locations, that is not true.
+ * 
  */
 public class P214ShortestPalindrome {
 
@@ -44,6 +47,11 @@ public class P214ShortestPalindrome {
   }
 
   private void run() {
+
+    xRep("a", 20);
+    if (true)
+      return;
+
     x("a");
 
     x("ababbbabbaba");
@@ -73,160 +81,43 @@ public class P214ShortestPalindrome {
   }
 
   private void x(String s) {
-    var expected = SLOWshortestPalindrome(s);
+    var expected = auxShortestPalindrome(s);
+    pr(VERT_SP,"calculating result, s:",s);
     var result = shortestPalindrome(s);
     if (s.length() < 40)
       pr(s, "=>", result);
     checkState(result.equals(expected), "expected:", expected);
   }
 
-  private static class State {
-    int h;
-    int x;
-  }
-
-  private List<State> mStateBin = new ArrayList<>();
-
-  private State newState(int h, int x) {
-    int slot = mStateBin.size() - 1;
-    State s = null;
-    if (slot < 0) {
-      s = new State();
-    } else {
-      s = mStateBin.remove(slot);
-    }
-    s.h = h;
-    s.x = x;
+  public String shortestPalindrome(String s) {
+    if (s.length() < 20)
+      return auxShortestPalindrome(s);
+    s = compressString(s);
+    s = auxShortestPalindrome(s);
+    s = decodeString(s);
     return s;
   }
 
-  public String SLOWshortestPalindrome(String s) {
-
-    final var n = s.length();
-    if (n == 0)
-      return s;
-
-    // Define a state T(h, x) to mean that a palindrome of length h exists in s starting at character x.
-
-    // Determine which values of x might be useful.  x must be <= this value.  Note, special care is
-    // taken to make sure this is correct for both even- and odd-length strings.
-    var xUseful = n / 2;
-
-    var stack0 = new ArrayList<State>();
-    var stack1 = new ArrayList<State>();
-
-    for (int i = xUseful; i >= 0; i--) {
-      // if (  (n & 1) == 0) {
-      stack0.add(newState(0, i));
-      stack0.add(newState(1, i));
-      //        } else {
-      //          stack0.add(newState(1, i));
-      //          stack0.add(newState(0, i));
-      //        }
-    }
-
-    int longestPrefixLength = 1;
-
-    while (!stack0.isEmpty()) {
-
-      for (var st : stack0) {
-        var x = st.x;
-        var h = st.h;
-
-        // If best possible result from this state won't improve things, skip
-        if (h + (x << 1) <= longestPrefixLength)
-          continue;
-
-        int scanLeft = x;
-        int scanRight = x + h - 1;
-        while (scanLeft > 0 && scanRight + 1 < n && s.charAt(scanLeft - 1) == s.charAt(scanRight + 1)) {
-          scanLeft--;
-          scanRight++;
-        }
-
-        if (scanLeft == 0)
-          longestPrefixLength = scanRight + 1;
-      }
-
-      var tmp = stack0;
-      stack0 = stack1;
-      stack1 = tmp;
-      stack1.clear();
-    }
-
-    var sb = new StringBuilder(2 * n - longestPrefixLength);
-    for (int j = n - 1; j >= longestPrefixLength; j--)
-      sb.append(s.charAt(j));
-    sb.append(s);
-    return sb.toString();
-  }
-
-  /* private */ static boolean isPalindrome(String s, int prefixLength) {
-    int i = 0;
-    int j = prefixLength - 1;
-    while (i < j) {
-      if (s.charAt(i) != s.charAt(j))
-        return false;
-      i++;
-      j--;
-    }
-    return true;
-  }
-
   /**
-   * This now beats 75% of the users (runtime)
+   * Encode long runs of single characters in a form that is decodeable and is
+   * itself a palindrome
    */
-  public String shortestPalindrome(String s) {
-    int n = s.length();
-    if (n <= 1)
-      return s;
-    if (n < 20)
-      return auxShortestPalindrome(s);
-
+  private String compressString(String s) {
+    var n = s.length();
     var sb = sStringBuilder;
-
-    // Encode long runs of single characters in a form that is decodeable and is itself a palindrome
-    //
-    {
-      sb.setLength(0);
-      char cp = 0;
-      int count = 0;
-      for (int i = 0; i < n; i++) {
-        var c = s.charAt(i);
-        if (c != cp) {
-          write(cp, count);
-          cp = c;
-          count = 0;
-        }
-        count++;
+    sb.setLength(0);
+    char cp = 0;
+    int count = 0;
+    for (int i = 0; i < n; i++) {
+      var c = s.charAt(i);
+      if (c != cp) {
+        write(cp, count);
+        cp = c;
+        count = 0;
       }
-      write(cp, count);
-      s = sb.toString();
+      count++;
     }
-
-    var s2 = auxShortestPalindrome(s);
-
-    // Decode the run length encoding expressions performed earlier
-    //
-    {
-      sb.setLength(0);
-      int i = 0;
-      while (i < s2.length()) {
-        var c = s2.charAt(i++);
-        if (c >= 'a') {
-          sb.append(c);
-        } else {
-          c ^= 0x20;
-          var count = ((int) (s2.charAt(i) - '0')) //
-              | ((int) (s2.charAt(i + 1) - '0') << 4) //
-              | ((int) (s2.charAt(i + 2) - '0') << 8) //
-              | ((int) (s2.charAt(i + 3) - '0') << 12);
-          i += 8;
-          while (count-- != 0)
-            sb.append(c);
-        }
-      }
-    }
+    write(cp, count);
     return sb.toString();
   }
 
@@ -254,30 +145,42 @@ public class P214ShortestPalindrome {
     }
   }
 
-  // This much simpler algorithm is at least as fast as mine, but
-  // the call to the system 'hasPrefix' is still expensive (and 
-  // the speed is relying on its native implementation probably).
-  //
-  private String auxShortestPalindrome(String s) {
-    int n = s.length();
-    String r0 = reverse(s);
-    var r = r0;
-    while (!hasPrefix(s, r))
-      r = r.substring(1);
-    return r0.substring(0, n - r.length()) + s;
+  private String decodeString(String s2) {
+    var sb = sStringBuilder;
+    sb.setLength(0);
+    int i = 0;
+    while (i < s2.length()) {
+      var c = s2.charAt(i++);
+      if (c >= 'a') {
+        sb.append(c);
+      } else {
+        c ^= 0x20;
+        var count = ((int) (s2.charAt(i) - '0')) //
+            | ((int) (s2.charAt(i + 1) - '0') << 4) //
+            | ((int) (s2.charAt(i + 2) - '0') << 8) //
+            | ((int) (s2.charAt(i + 3) - '0') << 12);
+        i += 8;
+        while (count-- != 0)
+          sb.append(c);
+      }
+    }
+    return sb.toString();
   }
 
-  private static boolean hasPrefix(String s, String r) {
-    int rn = r.length();
-    int i = 0;
-    int step = 0;
-    while (i < rn) {
-      if (s.charAt(i) != r.charAt(i))
-        return false;
-      step++;
-      i += step;
+  private String auxShortestPalindrome(String s) {
+    int prefixLength = s.length();
+    while (true) {
+      int a = 0;
+      int b = prefixLength - 1;
+      while (a < b && s.charAt(a) == s.charAt(b)) {
+        a++;
+        b--;
+      }
+      if (a >= b)
+        break;
+      prefixLength--;
     }
-    return s.startsWith(r);
+    return reverse(s.substring(prefixLength)) + s;
   }
 
   private static String reverse(String s) {
