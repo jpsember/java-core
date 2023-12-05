@@ -25,6 +25,14 @@ public class P85MaximalRectangle {
 
   private void run() {
 
+    for (int y = 1; y < 20; y++) {
+      for (int x = 1; x < 5; x++) {
+        y(x, y);
+      }
+    }
+
+    y(2, 16);
+
     x(4, 3, "110111011111", 6);
 
     x(3, 2, "001111", 3);
@@ -32,13 +40,10 @@ public class P85MaximalRectangle {
     x(1, 1, "1", 1);
 
     x(3, 2, "111010", 3);
-    //halt();
 
     x(3, 2, "110111", 4);
-    //  halt();
 
     x(3, 3, "111111111", 9);
-    // halt();
 
     x(5, 4, "10100101111111110010", 6);
     x(3, 3, "111" //
@@ -52,6 +57,17 @@ public class P85MaximalRectangle {
         + "11111" //
         + "10010", 6);
 
+  }
+
+  private void y(int w, int h) {
+    x(w, h, dup("1", w * h), w * h);
+  }
+
+  private static String dup(String s, int count) {
+    var sb = new StringBuilder();
+    for (int i = 0; i < count; i++)
+      sb.append(s);
+    return sb.toString();
   }
 
   private void x(int width, int height, String cells, int expected) {
@@ -70,8 +86,7 @@ public class P85MaximalRectangle {
     checkState(expected == result, "expected:", expected);
   }
 
-  private void showBoard(int x0, int x1, int y0, int y1, Object... messages) {
-    //var m = map();
+  /* private */ void showBoard(int x0, int x1, int y0, int y1, Object... messages) {
     pr(VERT_SP, BasePrinter.toString(messages), "x,y", x0, y1, CR,
         "--------------------------------------------");
     for (var y = y0; y < y1; y++) {
@@ -90,56 +105,49 @@ public class P85MaximalRectangle {
   // ------------------------------------------------------------------
 
   public int maximalRectangle(char[][] matrix) {
-    unique.clear();
+    sScannedSubrectsSet.clear();
     int gridWidth = matrix[0].length;
     int gridHeight = matrix.length;
-    bWidth = gridWidth + 2;
-    bHeight = gridHeight + 2;
+
+    //    alert("turning on padding produces wrong answers");
+    final boolean pad = false;
+    if (pad) {
+      bWidth = gridWidth + 2;
+      bHeight = gridHeight + 2;
+    } else {
+      bWidth = gridWidth;
+      bHeight = gridHeight;
+    }
     byte[] cells = new byte[bWidth * bHeight];
     sCells = cells;
-    int cc = bWidth + 1;
+    int ci = 0;
+    if (pad)
+      ci = bWidth + 1;
     for (var row : matrix) {
       for (var c : row) {
-        if (c == '1') {
-          cells[cc] = 1;
-        }
-        cc++;
+        if (c == '1')
+          cells[ci] = 1;
+        ci++;
       }
-      cc += 2;
+      if (pad)
+        ci += 2;
     }
-
-    var s = map();
-    for (var y = 0; y < bHeight; y++) {
-      var sb = new StringBuilder();
-      for (var x = 0; x < bWidth; x++) {
-        sb.append((cells[x + y * bWidth] == 0 ? " ::" : " XX"));
-      }
-      s.putNumbered(sb.toString());
-    }
-    pr("grid:", INDENT, s);
-
-    showBoard(0, bWidth, 0, bHeight, "grid");
-    // Scan for concave vertices
-
     return subscan(0, bWidth, 0, bHeight, 0);
   }
 
-  int depth = 0;
-
-  private Set<Integer> unique = new HashSet<>();
-
   private int subscan(int x0, int x1, int y0, int y1, int maxArea) {
+    //showBoard(x0, x1, y0, y1, "subscan", x0, y0, "area:", maxArea);
+
     var area = (x1 - x0) * (y1 - y0);
     if (area <= maxArea) {
-     // pr("...skipping subscan with suboptimal area", area);
       return maxArea;
     }
 
+    // If we've already scanned (or are currently scanning) this particular subrect,
+    // exit
     var key = x0 | (x1 << 8) | (y0 << 16) | (y1 << 24);
-    if (!unique.add(key))
+    if (!sScannedSubrectsSet.add(key))
       return maxArea;
-
-   // showBoard(x0, x1, y0, y1, "subscan, max area", maxArea);
 
     var xmid = (x1 + x0) >> 1;
     var ymid = (y1 + y0) >> 1;
@@ -151,7 +159,7 @@ public class P85MaximalRectangle {
     int bestx = 0;
     int besty = 0;
 
-    var minDist = area;
+    var minDist = 100000;
 
     boolean empty = true;
     boolean full = true;
@@ -170,29 +178,19 @@ public class P85MaximalRectangle {
           minDist = dist;
           bestx = x;
           besty = y;
-        //  pr("minDist now", minDist, "at", x, y);
         }
       }
     }
-    if (full) {
-     // pr("....full; area:", area);
+    if (full)
       return Math.max(area, maxArea);
-    }
-
     if (empty)
       return maxArea;
 
-   // pr("bestx:", bestx, "besty:", besty, "x0:", x0, "y0:", y0);
+    maxArea = subscan(x0, bestx, y0, y1, maxArea);
+    maxArea = subscan(bestx + 1, x1, y0, y1, maxArea);
 
-    maxArea = subscan(x0, bestx, //
-        y0, y1, maxArea);
-    maxArea = subscan(bestx + 1, x1, //
-        y0, y1, maxArea);
-
-    maxArea = subscan(x0, x1, //
-        besty + 1, y1, maxArea);
-    maxArea = subscan(x0, x1, //
-        y0, besty, maxArea);
+    maxArea = subscan(x0, x1, besty + 1, y1, maxArea);
+    maxArea = subscan(x0, x1, y0, besty, maxArea);
 
     return maxArea;
   }
@@ -200,4 +198,5 @@ public class P85MaximalRectangle {
   private static byte[] sCells;
   private static int bWidth;
   private static int bHeight;
+  private static Set<Integer> sScannedSubrectsSet = new HashSet<>();
 }
