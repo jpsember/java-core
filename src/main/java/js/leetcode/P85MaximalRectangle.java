@@ -3,6 +3,7 @@ package js.leetcode;
 
 import static js.base.Tools.*;
 
+import js.base.BasePrinter;
 import js.json.JSList;
 
 /**
@@ -67,6 +68,23 @@ public class P85MaximalRectangle {
     checkState(expected == result, "expected:", expected);
   }
 
+  private void showBoard(int x0, int x1, int y0, int y1, Object... messages) {
+    //var m = map();
+    pr(VERT_SP, BasePrinter.toString(messages), "x,y", x0, y1, CR,
+        "--------------------------------------------");
+    for (var y = y0; y < y1; y++) {
+      var sb = new StringBuilder();
+      for (var x = x0; x < x1; x++) {
+        var c = sCells[y * bWidth + x];
+        if (x != x0)
+          sb.append(' ');
+        sb.append(c == 0 ? "." : "X");
+      }
+      pr(sb);
+    }
+    pr("--------------------------------------------");
+  }
+
   // ------------------------------------------------------------------
 
   public int maximalRectangle(char[][] matrix) {
@@ -97,6 +115,7 @@ public class P85MaximalRectangle {
     }
     pr("grid:", INDENT, s);
 
+    showBoard(0, bWidth, 0, bHeight, "grid");
     // Scan for concave vertices
 
     return subscan(0, bWidth, 0, bHeight, 0);
@@ -105,91 +124,65 @@ public class P85MaximalRectangle {
   int depth = 0;
 
   private int subscan(int x0, int x1, int y0, int y1, int maxArea) {
-    depth += 2;
-    var x = subscan0(x0, x1, y0, y1, maxArea);
-    depth -= 2;
-    return x;
-  }
-
-  private int subscan0(int x0, int x1, int y0, int y1, int maxArea) {
-    pr(spaces(depth), "subscan x", x0, "...", x1, " y", y0, "...", y1, "max area:", maxArea);
-    if (x0 >= x1 || y0 >= y1)
+    var area = (x1 - x0) * (y1 - y0);
+    if (area <= maxArea) {
+     pr("...skipping subscan with suboptimal area",area);
       return maxArea;
+    }
+    
+    showBoard(x0, x1, y0, y1, "subscan, max area", maxArea);
+   
+    checkState(x0 < x1 && y0 < y1);
+
+    var xmid = (x1 + x0) >> 1;
+    var ymid = (y1 + y0) >> 1;
 
     var cells = sCells;
     var bRow = bWidth;
     int cellInd = bRow * y0;
-    int minx = x1;
-    int miny = y1;
-    int maxx = x0 - 1;
-    int maxy = y0 - 1;
+
+    int bestx = 0;
+    int besty = 0;
+
+    var minDist = area;
+
+    boolean empty = true;
+    boolean full = true;
 
     for (int y = y0; y < y1; y++, cellInd += bRow) {
       for (int x = x0; x < x1; x++) {
         int c = cellInd + x;
         var cCurr = cells[c];
-        if (cCurr != 1) {
+        if (cCurr == 1) {
+          empty = false;
           continue;
         }
-        if (minx > x)
-          minx = x;
-        if (maxx < x)
-          maxx = x;
-        if (miny > y)
-          miny = y;
-        if (maxy < y)
-          maxy = y;
-        if (x > x0) {
-          var nbr = c - 1;
-          if (cells[nbr] == 0) {
-            if (y > y0 && cells[nbr - bRow] == 1) {
-              pr(spaces(depth), "found conc at", x, y, x - 1, y - 1);
-              maxArea = subscan(x0, x1, y0, y, maxArea);
-              maxArea = subscan(x0, x1, y, y1, maxArea);
-              maxArea = subscan(x0, x, y0, y1, maxArea);
-              maxArea = subscan(x, x1, y0, y1, maxArea);
-              return maxArea;
-            } else if (y + 1 < y1 && cells[nbr + bRow] == 1) {
-              pr(spaces(depth), "found conc at", x, y, x - 1, y + 1);
-              maxArea = subscan(x0, x1, y0, y + 1, maxArea);
-              maxArea = subscan(x0, x1, y + 1, y1, maxArea);
-              maxArea = subscan(x0, x, y0, y1, maxArea);
-              maxArea = subscan(x, x1, y0, y1, maxArea);
-              return maxArea;
-            }
-          }
-        }
-        if (x + 1 < x1) {
-          var nbr = c + 1;
-          if (cells[nbr] == 0) {
-            if (y > y0 && cells[nbr - bRow] == 1) {
-              pr(spaces(depth), "found conc at", x, y, x + 1, y - 1);
-              maxArea = subscan(x0, x1, y0, y, maxArea);
-              maxArea = subscan(x0, x1, y, y1, maxArea);
-              maxArea = subscan(x0, x + 1, y0, y1, maxArea);
-              maxArea = subscan(x + 1, x1, y0, y1, maxArea);
-              return maxArea;
-            } else if (y + 1 < y1 && cells[nbr + bRow] == 1) {
-              pr(spaces(depth), "found conc at", x, y, x + 1, y + 1);
-              maxArea = subscan(x0, x1, y0, y + 1, maxArea);
-              maxArea = subscan(x0, x1, y + 1, y1, maxArea);
-              maxArea = subscan(x0, x + 1, y0, y1, maxArea);
-              maxArea = subscan(x + 1, x1, y0, y1, maxArea);
-              return maxArea;
-            }
-          }
+        full = false;
+        var dist = (x - xmid) * (x - xmid) + (y - ymid) * (y - ymid);
+        pr("x:",x,"y:",y,"dist:",dist);
+        if (dist < minDist) {
+          minDist = dist;
+          bestx = x;
+          besty = y;
+          pr("minDist now",minDist,"at",x,y);
         }
       }
     }
-    pr(spaces(depth), "minx:", minx, "maxx:", maxx, "miny:", miny, "maxy:", maxy);
-    // We didn't find any concave vertices; the 1's form a rectangle
-    if (minx <= maxx) {
-      var area = (maxx + 1 - minx) * (maxy + 1 - miny);
-      pr(spaces(depth), "this rect area is", area);
-      if (maxArea < area) {
-        maxArea = area;
-      }
+//halt();
+    if (full) {
+      pr("....full; area:", area);
+      return Math.max(area, maxArea);
     }
+
+    if (empty)
+      return maxArea;
+    // Scan part NOT containing empty cell to improve odds of getting best result quicker
+    if (bestx > x0)
+      maxArea = subscan(bestx, x1, y0, y1, maxArea);
+    if (besty > y0)
+      maxArea = subscan(x0, x1, besty, y1, maxArea);
+    maxArea = subscan(x0, bestx, y0, y1, maxArea);
+    maxArea = subscan(x0, x1, y0, besty, maxArea);
     return maxArea;
   }
 
