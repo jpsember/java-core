@@ -122,7 +122,7 @@ public class P85MaximalRectangle {
 
     // Construct polygons
 
-    List<List<Pt>> polygons = new ArrayList<>();
+    List<Poly> polygons = new ArrayList<>();
 
     int polyColor = 2;
     //var start = new Pt(1, 1, 0);
@@ -135,22 +135,19 @@ public class P85MaximalRectangle {
       if (cLeft == 0 && cRight == 1) {
         polygons.add(extractPoly(indexToCell(cellInd, NORTH), polyColor));
         polyColor++;
-        printGrid("after poly extract");
       } else if (cLeft == 1 && cRight == 0) {
         polygons.add(extractPoly(indexToCell(cellInd - 1, SOUTH), polyColor));
         polyColor++;
-        printGrid("after poly extract");
       }
       cellInd++;
     }
 
-    List<List<Pt>> res = new ArrayList<>();
+    List<Poly> res = new ArrayList<>();
     for (var poly : polygons) {
       res.addAll(splitAtConcaveVert(poly));
     }
 
     var newPolygons = res;
-    //    var newPolygons = splitAtConcaveVertices(polygons);
 
     pr("orig poly count :", polygons.size());
     pr("split poly count:", newPolygons.size());
@@ -158,19 +155,7 @@ public class P85MaximalRectangle {
     int maxArea = 0;
     for (var p : newPolygons) {
       pr(VERT_SP, "poly:", p);
-
-      var f = p.get(0);
-      int xmin = f.x;
-      int xmax = xmin;
-      int ymin = f.y;
-      int ymax = ymin;
-      for (var pt : p) {
-        xmin = Math.min(xmin, pt.x);
-        xmax = Math.max(xmax, pt.x);
-        ymin = Math.min(ymin, pt.y);
-        ymax = Math.max(ymax, pt.y);
-      }
-      var area = (xmax - xmin) * (ymax - ymin);
+      int area = p.area();
       pr("area:", area);
       maxArea = Math.max(maxArea, area);
     }
@@ -185,8 +170,110 @@ public class P85MaximalRectangle {
     return new Pt(index % bWidth, index / bWidth, dir);
   }
 
-  private static class Poly {
+  /* private */ static class Poly {
     List<Pt> points = new ArrayList<>();
+
+    boolean filter = true;
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder();
+      sb.append("[ ");
+      for (var p : points) {
+        sb.append(p);
+        sb.append(' ');
+      }
+      sb.append(']');
+      return sb.toString();
+    }
+
+    public void add(Pt pt) {
+      var i = points.size() - 1;
+      if (i >= 0 && points.get(i).is(pt))
+        return;
+
+      if (filter) {
+        if (points.size() > 0 && pt.is(points.get(points.size() - 1)))
+          badArg("attempt to add duplicate point:", pt, "to:", INDENT, this);
+      }
+      points.add(pt);
+    }
+
+    public Pt getMod(int index) {
+      if (index < 0)
+        index += points.size();
+      checkState(index >= 0);
+      return points.get(index % points.size());
+    }
+
+    private int area = -1;
+    private Pt boundsMin, boundsMax;
+
+    Pt boundsMin() {
+      area();
+      return boundsMin;
+    }
+
+    Pt boundsMax() {
+      area();
+      return boundsMax;
+    }
+
+    public int area() {
+      if (area < 0) {
+        var f = points.get(0);
+        int xmin = f.x;
+        int xmax = xmin;
+        int ymin = f.y;
+        int ymax = ymin;
+        for (var pt : points) {
+          xmin = Math.min(xmin, pt.x);
+          xmax = Math.max(xmax, pt.x);
+          ymin = Math.min(ymin, pt.y);
+          ymax = Math.max(ymax, pt.y);
+        }
+        area = (xmax - xmin) * (ymax - ymin);
+        boundsMin = new Pt(xmin, ymin);
+        boundsMax = new Pt(xmax, ymax);
+      }
+      return area;
+    }
+
+    public List<Pt> vertices() {
+      return points;
+    }
+
+    public int size() {
+      return points.size();
+    }
+
+    public void removeDupLastPt() {
+      int s = size() - 1;
+      if (s <= 0)
+        return;
+      if (points.get(0).is(points.get(s))) {
+        points.remove(s);
+      }
+    }
+
+    public void validate() {
+      int s = size();
+      if (s == 0)
+        return;
+      if (s < 4) {
+        badState("bad clipped polygon:", INDENT, this);
+      }
+      for (int i = 0; i < s - 1; i++) {
+        if (points.get(i).is(points.get(i + 1))) {
+          badState("duplicated vertex at", i, ",", i + 1, ":", INDENT, this);
+        }
+      }
+    }
+
+    public boolean isEmpty() {
+      return size() == 0;
+    }
+
   }
 
   private static class Pt {
@@ -259,13 +346,14 @@ public class P85MaximalRectangle {
     return (dir - 1) & 3;
   }
 
-  private List<Pt> extractPoly(Pt cell, int polyColor) {
+  private Poly extractPoly(Pt cell, int polyColor) {
 
-    final boolean db = true;
+    final boolean db = false;
 
-    List<Pt> poly = new ArrayList<>();
-
-    pr("extractPoly, cell:", cell, "color:", polyColor);
+    var poly = new Poly();
+    poly.filter = false;
+    if (db)
+      pr("extractPoly, cell:", cell, "color:", polyColor);
 
     var cv = cell.edgeStart();
     poly.add(cv);
@@ -286,10 +374,10 @@ public class P85MaximalRectangle {
       } else
         firstVert = es;
       poly.add(es);
-      printGrid("extract loop, prevVert:" + firstVert, cell);
-      pr("added point:", es, "now:", poly);
-      //      if (poly.size() > 23)
-      //        halt();
+      if (db) {
+        printGrid("extract loop, prevVert:" + firstVert, cell);
+        pr("added point:", es, "now:", poly);
+      }
 
       if (db)
         checkState(z-- > 0);
@@ -309,7 +397,8 @@ public class P85MaximalRectangle {
         cell.paint(polyColor);
 
         cell = cell.turnLeft();
-        pr("turned left, now", cell);
+        if (db)
+          pr("turned left, now", cell);
       } else {
         // Paint this cell with the poly number 
         cell.paint(polyColor);
@@ -319,21 +408,24 @@ public class P85MaximalRectangle {
         }
       }
     }
-    return mergeEdges(poly);
+    printGrid("extracted polygon", cell);
+    var result = mergeEdges(poly);
+    pr("merged edges:", INDENT, result);
+    return result;
   }
 
-  private List<Pt> mergeEdges(List<Pt> poly) {
+  private Poly mergeEdges(Poly poly) {
     pr("merging edges:", poly);
 
-    var result = new ArrayList<Pt>();
-    var prevPt2 = poly.get(0);
-    var prevPt1 = poly.get(1);
+    var result = new Poly();
+    var prevPt2 = poly.getMod(0);
+    var prevPt1 = poly.getMod(1);
     int dir = determineDir(prevPt2, prevPt1);
     int i = 2;
     Pt firstAdded = null;
     while (true) {
-      var pt = poly.get(i);
-      i = (i + 1) % poly.size();
+      var pt = poly.getMod(i);
+      i++;
 
       int newDir = determineDir(prevPt1, pt);
       if (newDir != dir) {
@@ -365,26 +457,20 @@ public class P85MaximalRectangle {
     return NORTH;
   }
 
-  private static <T> T peekLast(List<T> list, int dist) {
-    return list.get(list.size() - 1 - dist);
-  }
-
   private int inf;
 
-  private List<List<Pt>> splitAtConcaveVert(List<Pt> poly) {
-    pr("splitAtConcaveVertices");
-
+  private List<Poly> splitAtConcaveVert(Poly poly) {
     final boolean db = false;
 
-    List<List<Pt>> result = new ArrayList<>();
+    List<Poly> result = new ArrayList<>();
     Pt splitVert = null;
 
     if (db)
       pr("poly:", poly);
-    var prev2 = peekLast(poly, 1);
-    var prev1 = peekLast(poly, 0);
+    var prev2 = poly.getMod(-2);
+    var prev1 = poly.getMod(-1);
     var prevDir = determineDir(prev2, prev1);
-    for (var pt : poly) {
+    for (var pt : poly.vertices()) {
       var newDir = determineDir(prev1, pt);
       if (((newDir - prevDir) & 3) == 3) {
         if (db)
@@ -400,103 +486,21 @@ public class P85MaximalRectangle {
     if (splitVert == null) {
       result.add(poly);
     } else {
-      var res = new ArrayList<List<Pt>>();
+      var res = new ArrayList<Poly>();
       splitPoly(poly, splitVert.y, res, false);
       splitPoly(poly, splitVert.x, res, true);
+
+      pr("split poly at vert:", splitVert, INDENT, poly, CR, "result:", INDENT, res);
 
       for (var subpoly : res) {
         result.addAll(splitAtConcaveVert(subpoly));
       }
     }
-    return result;
-    //
-    //    //halt("after horz splits:",polygons);
-    //
-    //    if (!vertSplits.isEmpty()) {
-    //      var result = new ArrayList<List<Pt>>();
-    //      for (var x : vertSplits) {
-    //        for (var poly : polygons) {
-    //          splitPoly(poly, x, result, true);
-    //        }
-    //      }
-    //      polygons = result;
-    //    }
-    //
-    //    pr("performed splits:", VERT_SP, polygons);
-    //    //halt("after all splits:",polygons);
-    //
-    //    return polygons;
-  }
 
-  //  private List<List<Pt>> splitAtConcaveVertices(List<List<Pt>> polygons) {
-  //    pr("splitAtConcaveVertices");
-  //
-  //    final boolean db = false;
-  //
-  //    // Determine where polygons must be split
-  //    Set<Integer> horzSplits = new HashSet<>();
-  //    Set<Integer> vertSplits = new HashSet<>();
-  //
-  //    List<Pt> splitVerts = new ArrayList<>();
-  //
-  //    for (var poly : polygons) {
-  //      if (db)
-  //        pr("poly:", poly);
-  //      var prev2 = peekLast(poly, 1);
-  //      var prev1 = peekLast(poly, 0);
-  //      var prevDir = determineDir(prev2, prev1);
-  //      for (var pt : poly) {
-  //        var newDir = determineDir(prev1, pt);
-  //        if (((newDir - prevDir) & 3) == 3) {
-  //          if (db)
-  //            pr("pt:", pt, "newDir:", newDir, "prev:", prevDir, "adding split at", prev1);
-  //          splitVerts.add(prev1);
-  //          //          horzSplits.add(prev1.y);
-  //          //          vertSplits.add(prev1.x);
-  //        }
-  //        prevDir = newDir;
-  //        prev1 = pt;
-  //      }
-  //
-  //    }
-  //
-  //    pr("split verts:", splitVerts);
-  //    //    pr("horzSplits:", horzSplits);
-  //    //    pr("vertSplits:", vertSplits);
-  //
-  //    var result = new ArrayList<List<Pt>>();
-  //
-  //    for (var sv : splitVerts) {
-  //
-  //    }
-  //
-  //    if (!horzSplits.isEmpty()) {
-  //      var result = new ArrayList<List<Pt>>();
-  //      for (var y : horzSplits) {
-  //        for (var poly : polygons) {
-  //          splitPoly(poly, y, result, false);
-  //        }
-  //      }
-  //      polygons = result;
-  //    }
-  //
-  //    //halt("after horz splits:",polygons);
-  //
-  //    if (!vertSplits.isEmpty()) {
-  //      var result = new ArrayList<List<Pt>>();
-  //      for (var x : vertSplits) {
-  //        for (var poly : polygons) {
-  //          splitPoly(poly, x, result, true);
-  //        }
-  //      }
-  //      polygons = result;
-  //    }
-  //
-  //    pr("performed splits:", VERT_SP, polygons);
-  //    //halt("after all splits:",polygons);
-  //
-  //    return polygons;
-  //  }
+    pr("splitAtConcaveVert:", INDENT, poly, CR, result);
+
+    return result;
+  }
 
   private static final int LEFT = 1;
   private static final int NONE = 0;
@@ -514,27 +518,25 @@ public class P85MaximalRectangle {
 
   static int z;
 
-  private static void splitPoly(List<Pt> poly, int splitCoord, List<List<Pt>> result, boolean verticalLine) {
+  private static void splitPoly(Poly poly, int splitCoord, List<Poly> result, boolean verticalLine) {
 
-    pr(VERT_SP, "split poly:", poly);
-    pr("at ", verticalLine ? "vertical " : "horizontal ", "line", splitCoord);
+    final boolean db = false;
+    if (db) {
+      pr(VERT_SP, "split poly:", poly);
+      pr("at ", verticalLine ? "vertical " : "horizontal ", "line", splitCoord);
+    }
 
-    List<Pt> left = new ArrayList<>(poly.size());
-    List<Pt> right = new ArrayList<>(poly.size());
+    Poly left = new Poly();
+    Poly right = new Poly();
 
     // Start at a vertex on an edge that is strictly to one side
     int currentSide = NONE;
 
-    //    var lastVert = peekLast(poly, 0);
-    //    var lastSide = signum(verticalLine ? lastVert.x - splitCoord : lastVert.y - splitCoord);
     int startVertex;
     for (startVertex = 0; startVertex < poly.size(); startVertex++) {
-      var pt = poly.get(startVertex);
-      var pt2 = poly.get((startVertex + 1) % poly.size());
+      var pt = poly.getMod(startVertex);
+      var pt2 = poly.getMod(startVertex + 1);
 
-      //    for (var pt : poly) {
-
-      //prevSide = signum(verticalLine ? pt.x - splitCoord : pt.y - splitCoord);
       var newCurrentSide = signum(verticalLine ? pt.x - splitCoord : pt.y - splitCoord);
       if (newCurrentSide != NONE) {
         var nextSide = signum(verticalLine ? pt2.x - splitCoord : pt2.y - splitCoord);
@@ -545,29 +547,35 @@ public class P85MaximalRectangle {
       }
     }
     checkState(currentSide != NONE);
-    pr("starting current side:", Side(currentSide));
+    if (db)
+      pr("starting current side:", Side(currentSide));
 
     for (int q = 0; q <= poly.size(); q++) {
-      int vi = (q + startVertex) % poly.size();
-      var polyPt = poly.get(vi);
+      int vi = (q + startVertex);
+      var polyPt = poly.getMod(vi);
 
-      pr(VERT_SP, "vi:", vi, "of length", poly.size(), "polyPt:", polyPt);
+      if (db)
+        pr(VERT_SP, "vi:", vi, "of length", poly.size(), "polyPt:", polyPt);
 
       int newSide = signum(verticalLine ? polyPt.x - splitCoord : polyPt.y - splitCoord);
       Pt crossPt = null;
       if (newSide != currentSide) {
         if (verticalLine) {
           crossPt = new Pt(splitCoord, polyPt.y);
-          pr("vert line, cross point at split coord:", splitCoord);
+          if (db)
+            pr("vert line, cross point at split coord:", splitCoord);
         } else {
           crossPt = new Pt(polyPt.x, splitCoord);
-          pr("horz line, cross point at split coord:", splitCoord);
+          if (db)
+            pr("horz line, cross point at split coord:", splitCoord);
         }
       }
-      pr("...left :", left);
-      pr("...right:", right, VERT_SP);
-      pr("...vi:", vi, "pt:", polyPt, "current side:", Side(currentSide), "new side:", Side(newSide),
-          "cross:", crossPt);
+      if (db) {
+        pr("...left :", left);
+        pr("...right:", right, VERT_SP);
+        pr("...vi:", vi, "pt:", polyPt, "current side:", Side(currentSide), "new side:", Side(newSide),
+            "cross:", crossPt);
+      }
 
       switch (newSide) {
       case NONE:
@@ -601,53 +609,37 @@ public class P85MaximalRectangle {
         }
         break;
       }
-      pr("after processing vert:");
-      pr("...left :", left);
-      pr("...right:", right, VERT_SP);
+      if (db) {
+        pr("after processing vert:");
+        pr("...left :", left);
+        pr("...right:", right, VERT_SP);
+      }
 
       currentSide = newSide;
     }
-    pr("after clipping:");
-    pr("...left :", left);
-    pr("...right:", right, VERT_SP);
+    if (db) {
+      pr("after clipping:");
+      pr("...left :", left);
+      pr("...right:", right, VERT_SP);
+    }
 
-    removeDupLastPt(left);
-    removeDupLastPt(right);
+    left.removeDupLastPt();
+    right.removeDupLastPt();
 
-    pr("validating left:", left);
-    validate(left);
-    pr("validating right:", right);
-    validate(right);
+    if (db)
+      pr("validating left:", left);
+    left.validate();
+    if (db)
+      pr("validating right:", right);
+    right.validate();
 
-    pr("**** just split poly:", poly);
-
-    //    if (true && ++z == 4)
-    //      halt();
+    if (db)
+      pr("**** just split poly:", poly);
 
     if (!left.isEmpty())
       result.add(left);
     if (!right.isEmpty())
       result.add(right);
-  }
-
-  private static void validate(List<Pt> poly) {
-    int s = poly.size();
-    if (s == 0)
-      return;
-    if (s < 4) {
-      badState("bad clipped polygon:", poly);
-    }
-
-  }
-
-  private static void removeDupLastPt(List<Pt> list) {
-    int s = list.size() - 1;
-    if (s <= 0)
-      return;
-    if (list.get(0).is(list.get(s))) {
-      // halt("unexpected:",list);
-      list.remove(list.size() - 1);
-    }
   }
 
   private static byte[] sCells;
