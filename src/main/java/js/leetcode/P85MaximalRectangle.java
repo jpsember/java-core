@@ -419,13 +419,19 @@ public class P85MaximalRectangle {
   private static final int RIGHT = -1;
 
   private static int signum(int amt) {
-    return amt < 0 ? RIGHT : (amt > 0 ? LEFT : NONE);
+    return amt < 0 ? RIGHT : ((amt > 0) ? LEFT : NONE);
   }
 
-  private static void splitPoly(List<Pt> poly, int splitCoord, List<List<Pt>> result, boolean vert) {
+  private static String Side(int side) {
+    return sides[side - RIGHT];
+  }
+
+  private static final String[] sides = { "RIGHT", "NONE ", "LEFT " };
+
+  private static void splitPoly(List<Pt> poly, int splitCoord, List<List<Pt>> result, boolean verticalLine) {
 
     pr("split poly:", poly);
-    pr(" at coord:", splitCoord, "vert:", vert);
+    pr("at ", verticalLine ? "vertical " : "horizontal ", "line", splitCoord);
 
     List<Pt> left = new ArrayList<>(poly.size());
     List<Pt> right = new ArrayList<>(poly.size());
@@ -435,25 +441,35 @@ public class P85MaximalRectangle {
     int currentSide = NONE;
 
     for (var pt : poly) {
-      currentSide = signum(vert ? pt.x - splitCoord : pt.y - splitCoord);
+      currentSide = signum(verticalLine ? pt.x - splitCoord : pt.y - splitCoord);
       if (currentSide != NONE)
         break;
       startVertex++;
     }
     checkState(currentSide != NONE);
+    pr("starting current side:", Side(currentSide));
 
-    Pt prevPt = null;
     for (int i = 0; i <= poly.size(); i++) {
-      var polyPt = poly.get((i + startVertex) % poly.size());
+      int vi = (i + startVertex) % poly.size();
+      var polyPt = poly.get(vi);
 
-      int newSide = signum(vert ? polyPt.x - splitCoord : polyPt.y - splitCoord);
+      pr(VERT_SP, "vi:", vi, "of length", poly.size(), "polyPt:", polyPt);
+
+      int newSide = signum(verticalLine ? polyPt.x - splitCoord : polyPt.y - splitCoord);
       Pt crossPt = null;
       if (newSide != currentSide) {
-        if (vert)
+        if (verticalLine) {
           crossPt = new Pt(splitCoord, polyPt.y);
-        else
+          pr("vert line, cross point at split coord:", splitCoord);
+        } else {
           crossPt = new Pt(polyPt.x, splitCoord);
+          pr("horz line, cross point at split coord:", splitCoord);
+        }
       }
+      pr("...left :", left);
+      pr("...right:", right, VERT_SP);
+      pr("...i:", i, "pt:", polyPt, "current side:", Side(currentSide), "new side:", Side(newSide), "cross:",
+          crossPt);
 
       if (newSide == NONE) {
         if (currentSide == LEFT)
@@ -478,18 +494,23 @@ public class P85MaximalRectangle {
         } else if (currentSide == RIGHT) {
           right.add(polyPt);
         } else {
-          right.add(crossPt);
           left.add(crossPt);
-          left.add(polyPt);
+          right.add(crossPt);
+          right.add(polyPt);
         }
       }
       currentSide = newSide;
     }
+    pr("after clipping:");
+    pr("...left :", left);
+    pr("...right:", right, VERT_SP);
 
-    if (currentSide == LEFT)
-      removeDupLastPt(left);
-    else if (currentSide == RIGHT)
-      removeDupLastPt(right);
+    if (true) {
+      if (currentSide == LEFT)
+        removeDupLastPt(left);
+      else if (currentSide == RIGHT)
+        removeDupLastPt(right);
+    }
 
     pr("validating left:", left);
     validate(left);
@@ -513,11 +534,13 @@ public class P85MaximalRectangle {
   }
 
   private static void removeDupLastPt(List<Pt> list) {
-    //    int s = list.size() - 1;
-    //    if (s <= 0)
-    //      return;
-    //    if (list.get(0).is(list.get(s)))
-    list.remove(list.size() - 1);
+    int s = list.size() - 1;
+    if (s <= 0)
+      return;
+    if (list.get(0).is(list.get(s))) {
+      // halt("unexpected:",list);
+      list.remove(list.size() - 1);
+    }
   }
 
   private static byte[] sCells;
