@@ -3,8 +3,10 @@ package js.leetcode;
 
 import static js.base.Tools.*;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import js.base.BasePrinter;
-import js.json.JSList;
 
 /**
  * I need to figure out how to offset the polygon boundary from the center of
@@ -88,6 +90,7 @@ public class P85MaximalRectangle {
   // ------------------------------------------------------------------
 
   public int maximalRectangle(char[][] matrix) {
+    unique.clear();
     int gridWidth = matrix[0].length;
     int gridHeight = matrix.length;
     bWidth = gridWidth + 2;
@@ -123,16 +126,20 @@ public class P85MaximalRectangle {
 
   int depth = 0;
 
+  private Set<Integer> unique = new HashSet<>();
+
   private int subscan(int x0, int x1, int y0, int y1, int maxArea) {
     var area = (x1 - x0) * (y1 - y0);
     if (area <= maxArea) {
-     pr("...skipping subscan with suboptimal area",area);
+     // pr("...skipping subscan with suboptimal area", area);
       return maxArea;
     }
-    
-    showBoard(x0, x1, y0, y1, "subscan, max area", maxArea);
-   
-    checkState(x0 < x1 && y0 < y1);
+
+    var key = x0 | (x1 << 8) | (y0 << 16) | (y1 << 24);
+    if (!unique.add(key))
+      return maxArea;
+
+   // showBoard(x0, x1, y0, y1, "subscan, max area", maxArea);
 
     var xmid = (x1 + x0) >> 1;
     var ymid = (y1 + y0) >> 1;
@@ -159,30 +166,34 @@ public class P85MaximalRectangle {
         }
         full = false;
         var dist = (x - xmid) * (x - xmid) + (y - ymid) * (y - ymid);
-        pr("x:",x,"y:",y,"dist:",dist);
         if (dist < minDist) {
           minDist = dist;
           bestx = x;
           besty = y;
-          pr("minDist now",minDist,"at",x,y);
+        //  pr("minDist now", minDist, "at", x, y);
         }
       }
     }
-//halt();
     if (full) {
-      pr("....full; area:", area);
+     // pr("....full; area:", area);
       return Math.max(area, maxArea);
     }
 
     if (empty)
       return maxArea;
-    // Scan part NOT containing empty cell to improve odds of getting best result quicker
-    if (bestx > x0)
-      maxArea = subscan(bestx, x1, y0, y1, maxArea);
-    if (besty > y0)
-      maxArea = subscan(x0, x1, besty, y1, maxArea);
-    maxArea = subscan(x0, bestx, y0, y1, maxArea);
-    maxArea = subscan(x0, x1, y0, besty, maxArea);
+
+   // pr("bestx:", bestx, "besty:", besty, "x0:", x0, "y0:", y0);
+
+    maxArea = subscan(x0, bestx, //
+        y0, y1, maxArea);
+    maxArea = subscan(bestx + 1, x1, //
+        y0, y1, maxArea);
+
+    maxArea = subscan(x0, x1, //
+        besty + 1, y1, maxArea);
+    maxArea = subscan(x0, x1, //
+        y0, besty, maxArea);
+
     return maxArea;
   }
 
