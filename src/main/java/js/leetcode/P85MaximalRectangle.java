@@ -22,6 +22,12 @@ public class P85MaximalRectangle {
 
   private void run() {
 
+    x(4, 3, "110111011111", 6);
+
+    x(3, 2, "001111", 3);
+
+    x(1, 1, "1", 1);
+
     x(3, 2, "111010", 3);
     //halt();
 
@@ -61,8 +67,9 @@ public class P85MaximalRectangle {
     checkState(expected == result, "expected:", expected);
   }
 
-  public int maximalRectangle(char[][] matrix) {
+  // ------------------------------------------------------------------
 
+  public int maximalRectangle(char[][] matrix) {
     int gridWidth = matrix[0].length;
     int gridHeight = matrix.length;
     bWidth = gridWidth + 2;
@@ -87,19 +94,28 @@ public class P85MaximalRectangle {
         sb.append((cells[x + y * bWidth] == 0 ? " ::" : " XX"));
       }
       s.putNumbered(sb.toString());
-
     }
     pr("grid:", INDENT, s);
 
     // Scan for concave vertices
 
-    return subscan(1, bWidth - 1, 1, bHeight - 1, 0);
+    return subscan(0, bWidth, 0, bHeight, 0);
   }
 
+  int depth = 0;
+
   private int subscan(int x0, int x1, int y0, int y1, int maxArea) {
-    pr("subscan x", x0, "...", x1, " y", y0, "...", y1, "max area:", maxArea);
+    depth += 2;
+    var x = subscan0(x0, x1, y0, y1, maxArea);
+    depth -= 2;
+    return x;
+  }
+
+  private int subscan0(int x0, int x1, int y0, int y1, int maxArea) {
+    pr(spaces(depth), "subscan x", x0, "...", x1, " y", y0, "...", y1, "max area:", maxArea);
     if (x0 >= x1 || y0 >= y1)
       return maxArea;
+
     var cells = sCells;
     var bRow = bWidth;
     int cellInd = bRow * y0;
@@ -107,12 +123,14 @@ public class P85MaximalRectangle {
     int miny = y1;
     int maxx = x0 - 1;
     int maxy = y0 - 1;
+
     for (int y = y0; y < y1; y++, cellInd += bRow) {
       for (int x = x0; x < x1; x++) {
         int c = cellInd + x;
         var cCurr = cells[c];
-        if (cCurr != 1)
+        if (cCurr != 1) {
           continue;
+        }
         if (minx > x)
           minx = x;
         if (maxx < x)
@@ -125,16 +143,16 @@ public class P85MaximalRectangle {
           var nbr = c - 1;
           if (cells[nbr] == 0) {
             if (y > y0 && cells[nbr - bRow] == 1) {
-              pr("found conc at", x,y, x - 1, y - 1);
+              pr(spaces(depth), "found conc at", x, y, x - 1, y - 1);
               maxArea = subscan(x0, x1, y0, y, maxArea);
               maxArea = subscan(x0, x1, y, y1, maxArea);
               maxArea = subscan(x0, x, y0, y1, maxArea);
               maxArea = subscan(x, x1, y0, y1, maxArea);
               return maxArea;
             } else if (y + 1 < y1 && cells[nbr + bRow] == 1) {
-              pr("found conc at", x,y, x - 1, y + 1);
+              pr(spaces(depth), "found conc at", x, y, x - 1, y + 1);
               maxArea = subscan(x0, x1, y0, y + 1, maxArea);
-              maxArea = subscan(x0, x1, y + 2, y1, maxArea);
+              maxArea = subscan(x0, x1, y + 1, y1, maxArea);
               maxArea = subscan(x0, x, y0, y1, maxArea);
               maxArea = subscan(x, x1, y0, y1, maxArea);
               return maxArea;
@@ -145,16 +163,16 @@ public class P85MaximalRectangle {
           var nbr = c + 1;
           if (cells[nbr] == 0) {
             if (y > y0 && cells[nbr - bRow] == 1) {
-              pr("found conc at", x,y,x + 1, y - 1);
+              pr(spaces(depth), "found conc at", x, y, x + 1, y - 1);
               maxArea = subscan(x0, x1, y0, y, maxArea);
               maxArea = subscan(x0, x1, y, y1, maxArea);
               maxArea = subscan(x0, x + 1, y0, y1, maxArea);
-              maxArea = subscan(x + 2, x1, y0, y1, maxArea);
+              maxArea = subscan(x + 1, x1, y0, y1, maxArea);
               return maxArea;
             } else if (y + 1 < y1 && cells[nbr + bRow] == 1) {
-              pr("found conc at", x,y, x + 1, y + 1);
+              pr(spaces(depth), "found conc at", x, y, x + 1, y + 1);
               maxArea = subscan(x0, x1, y0, y + 1, maxArea);
-              maxArea = subscan(x0, x1, y + 2, y1, maxArea);
+              maxArea = subscan(x0, x1, y + 1, y1, maxArea);
               maxArea = subscan(x0, x + 1, y0, y1, maxArea);
               maxArea = subscan(x + 1, x1, y0, y1, maxArea);
               return maxArea;
@@ -163,16 +181,17 @@ public class P85MaximalRectangle {
         }
       }
     }
+    pr(spaces(depth), "minx:", minx, "maxx:", maxx, "miny:", miny, "maxy:", maxy);
     // We didn't find any concave vertices; the 1's form a rectangle
-    if (minx < maxx) {
+    if (minx <= maxx) {
       var area = (maxx + 1 - minx) * (maxy + 1 - miny);
-      if (maxArea < area)
+      pr(spaces(depth), "this rect area is", area);
+      if (maxArea < area) {
         maxArea = area;
+      }
     }
     return maxArea;
   }
-
-  static int depth = 0;
 
   private static byte[] sCells;
   private static int bWidth;
