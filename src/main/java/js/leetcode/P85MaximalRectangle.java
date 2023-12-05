@@ -4,9 +4,7 @@ package js.leetcode;
 import static js.base.Tools.*;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * I need to figure out how to offset the polygon boundary from the center of
@@ -28,11 +26,9 @@ public class P85MaximalRectangle {
     //  x(3, 2, "111010", 3);
     //halt();
 
-    x(3, 2, "110111", 4);
-    halt();
-
-    x(3, 3, "111111111", 9);
-    halt();
+    //    x(3, 2, "110111", 4);
+    //
+    //    x(3, 3, "111111111", 9);
 
     x(5, 4, "10100101111111110010", 6);
     halt();
@@ -148,7 +144,13 @@ public class P85MaximalRectangle {
       cellInd++;
     }
 
-    var newPolygons = splitAtConcaveVertices(polygons);
+    List<List<Pt>> res = new ArrayList<>();
+    for (var poly : polygons) {
+      res.addAll(splitAtConcaveVert(poly));
+    }
+
+    var newPolygons = res;
+    //    var newPolygons = splitAtConcaveVertices(polygons);
 
     pr("orig poly count :", polygons.size());
     pr("split poly count:", newPolygons.size());
@@ -181,6 +183,10 @@ public class P85MaximalRectangle {
 
   private static Pt indexToCell(int index, int dir) {
     return new Pt(index % bWidth, index / bWidth, dir);
+  }
+
+  private static class Poly {
+    List<Pt> points = new ArrayList<>();
   }
 
   private static class Pt {
@@ -282,8 +288,8 @@ public class P85MaximalRectangle {
       poly.add(es);
       printGrid("extract loop, prevVert:" + firstVert, cell);
       pr("added point:", es, "now:", poly);
-      if (poly.size() > 23)
-        halt();
+      //      if (poly.size() > 23)
+      //        halt();
 
       if (db)
         checkState(z-- > 0);
@@ -363,58 +369,134 @@ public class P85MaximalRectangle {
     return list.get(list.size() - 1 - dist);
   }
 
-  private List<List<Pt>> splitAtConcaveVertices(List<List<Pt>> polygons) {
+  private int inf;
+
+  private List<List<Pt>> splitAtConcaveVert(List<Pt> poly) {
     pr("splitAtConcaveVertices");
 
-    // Determine where polygons must be split
-    Set<Integer> horzSplits = new HashSet<>();
-    Set<Integer> vertSplits = new HashSet<>();
+    final boolean db = false;
 
-    for (var poly : polygons) {
+    List<List<Pt>> result = new ArrayList<>();
+    Pt splitVert = null;
+
+    if (db)
       pr("poly:", poly);
-      var prev2 = peekLast(poly, 1);
-      var prev1 = peekLast(poly, 0);
-      var prevDir = determineDir(prev2, prev1);
-      for (var pt : poly) {
-        var newDir = determineDir(prev1, pt);
-        if (((newDir - prevDir) & 3) == 3) {
+    var prev2 = peekLast(poly, 1);
+    var prev1 = peekLast(poly, 0);
+    var prevDir = determineDir(prev2, prev1);
+    for (var pt : poly) {
+      var newDir = determineDir(prev1, pt);
+      if (((newDir - prevDir) & 3) == 3) {
+        if (db)
           pr("pt:", pt, "newDir:", newDir, "prev:", prevDir, "adding split at", prev1);
-          horzSplits.add(prev1.y);
-          vertSplits.add(prev1.x);
-        }
-        prevDir = newDir;
-        prev1 = pt;
+        splitVert = prev1;
+        break;
       }
-
+      prevDir = newDir;
+      prev1 = pt;
     }
+    checkState(++inf < 100);
 
-    pr("horzSplits:", horzSplits);
-    pr("vertSplits:", vertSplits);
+    if (splitVert == null) {
+      result.add(poly);
+    } else {
+      var res = new ArrayList<List<Pt>>();
+      splitPoly(poly, splitVert.y, res, false);
+      splitPoly(poly, splitVert.x, res, true);
 
-    if (!horzSplits.isEmpty()) {
-      var result = new ArrayList<List<Pt>>();
-      for (var y : horzSplits) {
-        for (var poly : polygons) {
-          splitPoly(poly, y, result, false);
-        }
+      for (var subpoly : res) {
+        result.addAll(splitAtConcaveVert(subpoly));
       }
-      polygons = result;
     }
-
-    halt("after horz splits:",polygons);
-    
-    if (!vertSplits.isEmpty()) {
-      var result = new ArrayList<List<Pt>>();
-      for (var x : vertSplits) {
-        for (var poly : polygons) {
-          splitPoly(poly, x, result, true);
-        }
-      }
-      polygons = result;
-    }
-
-    return polygons;
+    return result;
+    //
+    //    //halt("after horz splits:",polygons);
+    //
+    //    if (!vertSplits.isEmpty()) {
+    //      var result = new ArrayList<List<Pt>>();
+    //      for (var x : vertSplits) {
+    //        for (var poly : polygons) {
+    //          splitPoly(poly, x, result, true);
+    //        }
+    //      }
+    //      polygons = result;
+    //    }
+    //
+    //    pr("performed splits:", VERT_SP, polygons);
+    //    //halt("after all splits:",polygons);
+    //
+    //    return polygons;
   }
+
+  //  private List<List<Pt>> splitAtConcaveVertices(List<List<Pt>> polygons) {
+  //    pr("splitAtConcaveVertices");
+  //
+  //    final boolean db = false;
+  //
+  //    // Determine where polygons must be split
+  //    Set<Integer> horzSplits = new HashSet<>();
+  //    Set<Integer> vertSplits = new HashSet<>();
+  //
+  //    List<Pt> splitVerts = new ArrayList<>();
+  //
+  //    for (var poly : polygons) {
+  //      if (db)
+  //        pr("poly:", poly);
+  //      var prev2 = peekLast(poly, 1);
+  //      var prev1 = peekLast(poly, 0);
+  //      var prevDir = determineDir(prev2, prev1);
+  //      for (var pt : poly) {
+  //        var newDir = determineDir(prev1, pt);
+  //        if (((newDir - prevDir) & 3) == 3) {
+  //          if (db)
+  //            pr("pt:", pt, "newDir:", newDir, "prev:", prevDir, "adding split at", prev1);
+  //          splitVerts.add(prev1);
+  //          //          horzSplits.add(prev1.y);
+  //          //          vertSplits.add(prev1.x);
+  //        }
+  //        prevDir = newDir;
+  //        prev1 = pt;
+  //      }
+  //
+  //    }
+  //
+  //    pr("split verts:", splitVerts);
+  //    //    pr("horzSplits:", horzSplits);
+  //    //    pr("vertSplits:", vertSplits);
+  //
+  //    var result = new ArrayList<List<Pt>>();
+  //
+  //    for (var sv : splitVerts) {
+  //
+  //    }
+  //
+  //    if (!horzSplits.isEmpty()) {
+  //      var result = new ArrayList<List<Pt>>();
+  //      for (var y : horzSplits) {
+  //        for (var poly : polygons) {
+  //          splitPoly(poly, y, result, false);
+  //        }
+  //      }
+  //      polygons = result;
+  //    }
+  //
+  //    //halt("after horz splits:",polygons);
+  //
+  //    if (!vertSplits.isEmpty()) {
+  //      var result = new ArrayList<List<Pt>>();
+  //      for (var x : vertSplits) {
+  //        for (var poly : polygons) {
+  //          splitPoly(poly, x, result, true);
+  //        }
+  //      }
+  //      polygons = result;
+  //    }
+  //
+  //    pr("performed splits:", VERT_SP, polygons);
+  //    //halt("after all splits:",polygons);
+  //
+  //    return polygons;
+  //  }
 
   private static final int LEFT = 1;
   private static final int NONE = 0;
@@ -539,8 +621,8 @@ public class P85MaximalRectangle {
 
     pr("**** just split poly:", poly);
 
-    if (true && ++z == 4)
-      halt();
+    //    if (true && ++z == 4)
+    //      halt();
 
     if (!left.isEmpty())
       result.add(left);
