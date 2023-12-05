@@ -5,6 +5,8 @@ import static js.base.Tools.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * I need to figure out how to offset the polygon boundary from the center of
@@ -247,14 +249,14 @@ public class P85MaximalRectangle {
       return points.size();
     }
 
-    public void removeDupLastPt() {
-      int s = size() - 1;
-      if (s <= 0)
-        return;
-      if (points.get(0).is(points.get(s))) {
-        points.remove(s);
-      }
-    }
+    //    public void removeDupLastPt() {
+    //      int s = size() - 1;
+    //      if (s <= 0)
+    //        return;
+    //      if (points.get(0).is(points.get(s))) {
+    //        points.remove(s);
+    //      }
+    //    }
 
     public void validate() {
       int s = size();
@@ -272,6 +274,30 @@ public class P85MaximalRectangle {
 
     public boolean isEmpty() {
       return size() == 0;
+    }
+
+    public Pt findConcaveVertex() {
+
+      var prev2 = getMod(-2);
+      var prev1 = getMod(-1);
+      var prevDir = determineDir(prev2, prev1);
+      for (var pt : vertices()) {
+        var newDir = determineDir(prev1, pt);
+        if (((newDir - prevDir) & 3) == 3) {
+          return prev1;
+        }
+        prevDir = newDir;
+        prev1 = pt;
+      }
+      return null;
+    }
+
+    public void checkDoesntHave(Pt vfind) {
+      for (var v : points) {
+        todo("I think I need to produce nondegenerate polygons on split");
+        if (v.is(vfind))
+          badState("polygon has unexpected vertex:", vfind, INDENT, this);
+      }
     }
 
   }
@@ -442,7 +468,7 @@ public class P85MaximalRectangle {
     return result;
   }
 
-  private int determineDir(Pt a, Pt b) {
+  public static int determineDir(Pt a, Pt b) {
     int dx = b.x - a.x;
     int dy = b.y - a.y;
     if (dx != 0 && dy != 0) {
@@ -457,31 +483,29 @@ public class P85MaximalRectangle {
     return NORTH;
   }
 
-  private int inf;
-
   private List<Poly> splitAtConcaveVert(Poly poly) {
     final boolean db = false;
 
     List<Poly> result = new ArrayList<>();
-    Pt splitVert = null;
 
     if (db)
       pr("poly:", poly);
-    var prev2 = poly.getMod(-2);
-    var prev1 = poly.getMod(-1);
-    var prevDir = determineDir(prev2, prev1);
-    for (var pt : poly.vertices()) {
-      var newDir = determineDir(prev1, pt);
-      if (((newDir - prevDir) & 3) == 3) {
-        if (db)
-          pr("pt:", pt, "newDir:", newDir, "prev:", prevDir, "adding split at", prev1);
-        splitVert = prev1;
-        break;
-      }
-      prevDir = newDir;
-      prev1 = pt;
-    }
-    checkState(++inf < 100);
+    var splitVert = poly.findConcaveVertex();
+    //    var prev2 = poly.getMod(-2);
+    //    var prev1 = poly.getMod(-1);
+    //    var prevDir = determineDir(prev2, prev1);
+    //    for (var pt : poly.vertices()) {
+    //      var newDir = determineDir(prev1, pt);
+    //      if (((newDir - prevDir) & 3) == 3) {
+    //        if (db)
+    //          pr("pt:", pt, "newDir:", newDir, "prev:", prevDir, "adding split at", prev1);
+    //        splitVert = prev1;
+    //        break;
+    //      }
+    //      prevDir = newDir;
+    //      prev1 = pt;
+    //    }
+    //    checkState(++inf < 100);
 
     if (splitVert == null) {
       result.add(poly);
@@ -489,6 +513,10 @@ public class P85MaximalRectangle {
       var res = new ArrayList<Poly>();
       splitPoly(poly, splitVert.y, res, false);
       splitPoly(poly, splitVert.x, res, true);
+
+      for (var r : res) {
+        r.checkDoesntHave(splitVert);
+      }
 
       pr("split poly at vert:", splitVert, INDENT, poly, CR, "result:", INDENT, res);
 
@@ -516,13 +544,11 @@ public class P85MaximalRectangle {
 
   private static final String[] sides = { "RIGHT", "NONE ", "LEFT " };
 
-  static int z;
-
   private static void splitPoly(Poly poly, int splitCoord, List<Poly> result, boolean verticalLine) {
 
-    final boolean db = false;
+    final boolean db = true;
     if (db) {
-      pr(VERT_SP, "split poly:", poly);
+      pr(VERT_SP, "=============================split poly:", poly);
       pr("at ", verticalLine ? "vertical " : "horizontal ", "line", splitCoord);
     }
 
@@ -617,14 +643,20 @@ public class P85MaximalRectangle {
 
       currentSide = newSide;
     }
+
+    // Split polygons that intersect the clipping line into disjoint polygons
+
     if (db) {
       pr("after clipping:");
       pr("...left :", left);
       pr("...right:", right, VERT_SP);
     }
 
-    left.removeDupLastPt();
-    right.removeDupLastPt();
+    addDisjointPolys(left, result, splitCoord, verticalLine);
+    addDisjointPolys(right, result, splitCoord, verticalLine);
+
+    //    left.removeDupLastPt();
+    //    right.removeDupLastPt();
 
     if (db)
       pr("validating left:", left);
@@ -640,6 +672,95 @@ public class P85MaximalRectangle {
       result.add(left);
     if (!right.isEmpty())
       result.add(right);
+  }
+
+  private void addDisjointPolys(Poly poly, List<Poly> result, int splitCoord, boolean verticalLine) {
+    if (poly.isEmpty())
+      return;
+
+    // Build sorted list of vertices lying on split line
+    
+    Map<Integer, Integer> crossings = new TreeMap<>();
+  int ind = -1;
+  for (var pt : poly.points) {
+    ind++;
+    Integer cand = null;
+    if (verticalLine) {
+    if (pt.x == splitCoord)
+      cand = pt.y;
+  } else {
+    if (pt.y == splitCoord)
+      cand = pt.y;
+  }
+    if (cand != null) {
+      crossings.put(cand, ind);
+    }
+    if (crossings.isEmpty()) {
+      result.add(poly);
+      return;
+    }
+    for (var ent : crossings.entrySet()) {
+      var vertNumber = ent.getValue();
+      if (vertNumber < 0) continue; // Already used
+      var x = new Poly();
+      x.add(poly.getMod(vertNumber));
+      var vi = vertNumber;
+      while (true) {
+        vi++;
+        var nextPt = poly.getMod(vi);
+        
+        Integer nextPos = null;
+        
+        if (verticalLine) {
+          if (nextPt.x == splitCoord) 
+            nextPos = nextPt.y;
+        } else {
+          if (nextPt.y == splitCoord)
+            nextPos = nextPt.x;
+        }
+        
+        if (nextPos != null) {
+          
+          x.add(nextPt);
+          var 
+        }
+      }
+      
+    }
+    
+//  if (lowInd < 0) {
+//  result.add(poly);
+//  return;
+//}
+
+//    // find index of lowest vertex lying on split line
+//    int lowInd = -1;
+//    int lowValue = 0;
+//    int ind = -1;
+//    for (var pt : poly.points) {
+//      ind++;
+//      Integer cand = null;
+//      if (verticalLine) {
+//        if (pt.x == splitCoord)
+//          cand = pt.y;
+//      } else {
+//        if (pt.y == splitCoord)
+//          cand = pt.x;
+//      }
+//      if (cand != null) {
+//        if (lowInd < 0 || cand < lowValue) {
+//          lowInd = ind;
+//          lowValue = cand;
+//        }
+//      }
+//    }
+//
+//    if (lowInd < 0) {
+//      result.add(poly);
+//      return;
+//    }
+
+    
   }
 
   private static byte[] sCells;
