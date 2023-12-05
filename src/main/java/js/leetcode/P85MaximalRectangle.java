@@ -401,6 +401,8 @@ public class P85MaximalRectangle {
       polygons = result;
     }
 
+    halt("after horz splits:",polygons);
+    
     if (!vertSplits.isEmpty()) {
       var result = new ArrayList<List<Pt>>();
       for (var x : vertSplits) {
@@ -432,7 +434,7 @@ public class P85MaximalRectangle {
 
   private static void splitPoly(List<Pt> poly, int splitCoord, List<List<Pt>> result, boolean verticalLine) {
 
-    pr("split poly:", poly);
+    pr(VERT_SP, "split poly:", poly);
     pr("at ", verticalLine ? "vertical " : "horizontal ", "line", splitCoord);
 
     List<Pt> left = new ArrayList<>(poly.size());
@@ -499,9 +501,9 @@ public class P85MaximalRectangle {
         } else if (currentSide == LEFT) {
           left.add(polyPt);
         } else {
-          left.add(crossPt);
           right.add(crossPt);
-          right.add(polyPt);
+          left.add(crossPt);
+          left.add(polyPt);
         }
         break;
       default: /* RIGHT */
@@ -535,7 +537,9 @@ public class P85MaximalRectangle {
     pr("validating right:", right);
     validate(right);
 
-    if (++z == 2)
+    pr("**** just split poly:", poly);
+
+    if (true && ++z == 4)
       halt();
 
     if (!left.isEmpty())
