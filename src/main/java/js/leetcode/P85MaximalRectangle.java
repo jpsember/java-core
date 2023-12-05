@@ -148,30 +148,36 @@ public class P85MaximalRectangle {
       cellInd++;
     }
 
-    var newPolygons = splitAtConcaveVertices(polygons);
-
-    pr("orig poly count :", polygons.size());
-    pr("split poly count:", newPolygons.size());
-
     int maxArea = 0;
-    for (var p : newPolygons) {
-      pr(VERT_SP, "poly:", p);
-
-      var f = p.get(0);
-      int xmin = f.x;
-      int xmax = xmin;
-      int ymin = f.y;
-      int ymax = ymin;
-      for (var pt : p) {
-        xmin = Math.min(xmin, pt.x);
-        xmax = Math.max(xmax, pt.x);
-        ymin = Math.min(ymin, pt.y);
-        ymax = Math.max(ymax, pt.y);
-      }
-      var area = (xmax - xmin) * (ymax - ymin);
-      pr("area:", area);
-      maxArea = Math.max(maxArea, area);
+    for (var poly : polygons) {
+      maxArea = findBestRect(poly, maxArea);
     }
+
+    //    
+    //    var newPolygons = splitAtConcaveVertices(polygons);
+    //
+    //    pr("orig poly count :", polygons.size());
+    //    pr("split poly count:", newPolygons.size());
+    //
+    //    int maxArea = 0;
+    //    for (var p : newPolygons) {
+    //      pr(VERT_SP, "poly:", p);
+    //
+    //      var f = p.get(0);
+    //      int xmin = f.x;
+    //      int xmax = xmin;
+    //      int ymin = f.y;
+    //      int ymax = ymin;
+    //      for (var pt : p) {
+    //        xmin = Math.min(xmin, pt.x);
+    //        xmax = Math.max(xmax, pt.x);
+    //        ymin = Math.min(ymin, pt.y);
+    //        ymax = Math.max(ymax, pt.y);
+    //      }
+    //      var area = (xmax - xmin) * (ymax - ymin);
+    //      pr("area:", area);
+    //      maxArea = Math.max(maxArea, area);
+    //    }
 
     // Divide area by the area of the scaling factor (squared)
     return maxArea / 4;
@@ -401,8 +407,8 @@ public class P85MaximalRectangle {
       polygons = result;
     }
 
-    halt("after horz splits:",polygons);
-    
+    halt("after horz splits:", polygons);
+
     if (!vertSplits.isEmpty()) {
       var result = new ArrayList<List<Pt>>();
       for (var x : vertSplits) {
@@ -434,8 +440,11 @@ public class P85MaximalRectangle {
 
   private static void splitPoly(List<Pt> poly, int splitCoord, List<List<Pt>> result, boolean verticalLine) {
 
-    pr(VERT_SP, "split poly:", poly);
-    pr("at ", verticalLine ? "vertical " : "horizontal ", "line", splitCoord);
+    final boolean db = true;
+    if (db) {
+      pr(VERT_SP, "split poly:", poly);
+      pr("at ", verticalLine ? "vertical " : "horizontal ", "line", splitCoord);
+    }
 
     List<Pt> left = new ArrayList<>(poly.size());
     List<Pt> right = new ArrayList<>(poly.size());
@@ -463,29 +472,35 @@ public class P85MaximalRectangle {
       }
     }
     checkState(currentSide != NONE);
-    pr("starting current side:", Side(currentSide));
+    if (db)
+      pr("starting current side:", Side(currentSide));
 
     for (int q = 0; q <= poly.size(); q++) {
       int vi = (q + startVertex) % poly.size();
       var polyPt = poly.get(vi);
 
-      pr(VERT_SP, "vi:", vi, "of length", poly.size(), "polyPt:", polyPt);
+      if (db)
+        pr(VERT_SP, "vi:", vi, "of length", poly.size(), "polyPt:", polyPt);
 
       int newSide = signum(verticalLine ? polyPt.x - splitCoord : polyPt.y - splitCoord);
       Pt crossPt = null;
       if (newSide != currentSide) {
         if (verticalLine) {
           crossPt = new Pt(splitCoord, polyPt.y);
-          pr("vert line, cross point at split coord:", splitCoord);
+          if (db)
+            pr("vert line, cross point at split coord:", splitCoord);
         } else {
           crossPt = new Pt(polyPt.x, splitCoord);
-          pr("horz line, cross point at split coord:", splitCoord);
+          if (db)
+            pr("horz line, cross point at split coord:", splitCoord);
         }
       }
-      pr("...left :", left);
-      pr("...right:", right, VERT_SP);
-      pr("...vi:", vi, "pt:", polyPt, "current side:", Side(currentSide), "new side:", Side(newSide),
-          "cross:", crossPt);
+      if (db) {
+        pr("...left :", left);
+        pr("...right:", right, VERT_SP);
+        pr("...vi:", vi, "pt:", polyPt, "current side:", Side(currentSide), "new side:", Side(newSide),
+            "cross:", crossPt);
+      }
 
       switch (newSide) {
       case NONE:
@@ -519,33 +534,47 @@ public class P85MaximalRectangle {
         }
         break;
       }
-      pr("after processing vert:");
-      pr("...left :", left);
-      pr("...right:", right, VERT_SP);
-
+      if (db) {
+        pr("after processing vert:");
+        pr("...left :", left);
+        pr("...right:", right, VERT_SP);
+      }
       currentSide = newSide;
     }
-    pr("after clipping:");
-    pr("...left :", left);
-    pr("...right:", right, VERT_SP);
-
+    if (db) {
+      pr("after clipping:");
+      pr("...left :", left);
+      pr("...right:", right, VERT_SP);
+    }
     removeDupLastPt(left);
     removeDupLastPt(right);
 
-    pr("validating left:", left);
+    if (db) {
+      pr("validating left:", left);
+    }
     validate(left);
-    pr("validating right:", right);
+    if (db) {
+      pr("validating right:", right);
+    }
     validate(right);
 
-    pr("**** just split poly:", poly);
+    if (db)
+      pr("**** just split poly:", poly);
+    //
+    //    if (true && ++z == 4)
+    //      halt();
 
-    if (true && ++z == 4)
-      halt();
-
-    if (!left.isEmpty())
+    if (!left.isEmpty()) {
       result.add(left);
-    if (!right.isEmpty())
+      pr("added result:", left);
+    }
+    
+    
+    if (!right.isEmpty()) {
+      pr("added result:", right);
       result.add(right);
+    }
+    
   }
 
   private static void validate(List<Pt> poly) {
@@ -566,6 +595,67 @@ public class P85MaximalRectangle {
       // halt("unexpected:",list);
       list.remove(list.size() - 1);
     }
+  }
+
+  static int depth = 0;
+
+  private int findBestRect(List<Pt> poly, int maxArea) {
+    depth += 2;
+    pr(spaces(depth), "poly:", poly, "depth:", depth);
+    checkState(depth < 5);
+    int result = 0;
+
+    if (poly.size() == 4) {
+      var area = boundingBoxArea(poly);
+      result = Math.max(maxArea, area);
+    } else {
+
+      // Find a convex vertex
+
+      var prev2 = peekLast(poly, 1);
+      var prev1 = peekLast(poly, 0);
+      var prevDir = determineDir(prev2, prev1);
+      for (var pt : poly) {
+        var newDir = determineDir(prev1, pt);
+        if (((newDir - prevDir) & 3) == 3) {
+//          pr("splitting poly at vertex:", prev1);
+          List<List<Pt>> rs = new ArrayList<>();
+          splitPoly(poly, prev1.x, rs, true);
+          splitPoly(poly, prev1.y, rs, false);
+//          pr("results:", rs);
+//          halt();
+          for (var poly2 : rs) {
+            maxArea = findBestRect(poly2, maxArea);
+          }
+          result = maxArea;
+          break;
+        }
+        prevDir = newDir;
+        prev1 = pt;
+      }
+    }
+    pr(spaces(depth), "returning result:", result);
+    depth--;
+    return result;
+  }
+
+  private int boundingBoxArea(List<Pt> p) {
+    //  int maxArea = 0;
+    //  for (var p : newPolygons) {
+    //    pr(VERT_SP, "poly:", p);
+    //
+    var f = p.get(0);
+    int xmin = f.x;
+    int xmax = xmin;
+    int ymin = f.y;
+    int ymax = ymin;
+    for (var pt : p) {
+      xmin = Math.min(xmin, pt.x);
+      xmax = Math.max(xmax, pt.x);
+      ymin = Math.min(ymin, pt.y);
+      ymax = Math.max(ymax, pt.y);
+    }
+    return (xmax - xmin) * (ymax - ymin);
   }
 
   private static byte[] sCells;
