@@ -180,8 +180,6 @@ public final class Tools {
     }
 
     info.key = key.substring(cursor);
-    
-    pr("key:",key,quote(info.key),info.skipCount, info.maxPerSession);
     return info;
   }
 

@@ -4,7 +4,10 @@ package js.leetcode;
 import static js.base.Tools.*;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 import js.base.BasePrinter;
 
@@ -15,6 +18,11 @@ public class P85MaximalRectangle {
   }
 
   private void run() {
+
+    x(3, 3, "111" //
+        + "101" //
+        + "111" //
+        , 3);
 
     x(5, 4, "10100101111111110010", 6);
 
@@ -38,11 +46,6 @@ public class P85MaximalRectangle {
     x(3, 2, "110111", 4);
 
     x(3, 3, "111111111", 9);
-
-    x(3, 3, "111" //
-        + "101" //
-        + "111" //
-        , 3);
 
     x(5, 5, "10100" //
         + "10111" //
@@ -95,7 +98,38 @@ public class P85MaximalRectangle {
     pr("--------------------------------------------");
   }
 
+  /* private */ void showGapList(int[] gaps, Object... messages) {
+    pr(VERT_SP, "Gap list:", BasePrinter.toString(messages));
+    var sb = new StringBuilder();
+    int c = 0;
+    while (true) {
+      int gStart = gaps[c];
+      int gEnd = gaps[c + 1];
+      c += 2;
+      if (gStart == GAP_STOP)
+        break;
+      sb.append(spaces(gStart * 5 - sb.length()));
+      sb.append('[');
+      sb.append(gStart);
+      if (gEnd - 1 > gStart) {
+        sb.append("..");
+        sb.append(gEnd - 1);
+      }
+      sb.append(']');
+    }
+    pr(sb);
+  }
   // ------------------------------------------------------------------
+
+  private static final int GAP_STOP = 10000;
+
+  private static class GapList {
+    GapList(int maxGaps) {
+      gaps = new int[(maxGaps + 1) * 2];
+    }
+
+    int[] gaps;
+  }
 
   public int maximalRectangle(char[][] matrix) {
     prepareGrid(matrix);
@@ -105,74 +139,212 @@ public class P85MaximalRectangle {
     showBoard(0, bw, 0, bh, "initial");
 
     int maxArea = 0;
-    List<Rect> activeList = new ArrayList<>(50);
-    List<Rect> newActive = new ArrayList<>(50);
-    byte[] workRow = new byte[bw];
+    bActiveList.clear();
+
+    int[] boardRowGaps = new int[bw * 2 + 1];
+    int[] activeRectGaps = new int[bw * 2 + 1];
+
+    var newRects = new ArrayList<Rect>();
+    var removeRects = new ArrayList<Rect>();
+
     int cellIndex = 0;
     for (var y = 0; y < bh; y++, cellIndex += bw) {
       pr(VERT_SP, "sweep:", y);
 
-      // Copy sweep row into work buffer
-      for (var x = 0; x < bw; x++)
-        workRow[x] = sc[cellIndex + x];
-
-      for (var r : activeList) {
-        boolean retain = true;
-        var prevBlocker = r.x - 1;
-        for (var x = r.x; x < r.xe; x++) {
-          if (workRow[x] == 0) {
-            // we've encountered an obstacle above this rect.
-            retain = false;
-            // use a vertical slice of this rect as a new rect
-            addNewRect(y, newActive, prevBlocker + 1, x, r.y);
-            prevBlocker = x;
+      // Build compact list of empty pixels
+      {
+        int cursor = 0;
+        var emptyCount = 0;
+        var emptyStart = 0;
+        for (var x = 0; x < bw; x++) {
+          if (sc[cellIndex + x] != 0) {
+            if (emptyCount == 0) {
+              emptyStart = x;
+              emptyCount = 0;
+            }
+            emptyCount++;
+          } else {
+            if (emptyCount != 0) {
+              boardRowGaps[cursor] = emptyStart;
+              boardRowGaps[cursor + 1] = emptyStart + emptyCount;
+              cursor += 2;
+            }
           }
         }
+        // Mark end of list with a gap that is way off screen
+        boardRowGaps[cursor] = GAP_STOP;
+        boardRowGaps[cursor + 1] = GAP_STOP;
+      }
+
+      newRects.clear();
+      removeRects.clear();
+
+      pr("activeList:", bActiveList);
+
+      //      var inf = 0;
+      for (var r : bActiveList) {
+        boolean retain = true;
+        checkInf();
+
+        todo("we can maintain a pointer into the empty list since the rects are sorted by x");
+        var j = posWithinEmptyList(r.x, boardRowGaps);
+        var j2 = j;
+        var xlast = r.xe - 1;
+        if (xlast != r.x)
+          j2 = posWithinEmptyList(r.xe - 1, boardRowGaps);
+        if (!(j == j2 && r.x >= boardRowGaps[j])) {
+          // The rectangle does not fit within a single gap
+          retain = false;
+
+          // Spawn slices where the rectangle intersects these gaps
+
+          var x = r.x;
+          while (x < r.xe) {
+            checkInf();
+            // do we overlap the current gap?
+            if (x >= boardRowGaps[j]) {
+              var xe = Math.min(boardRowGaps[j + 1], r.xe);
+              addNewRect(y, newRects, x, xe, r.y, "vert slice");
+              j += 2;
+              x = boardRowGaps[j];
+              pr("...advanced x to:", x);
+            } else {
+              break;
+            }
+          }
+          //          
+          //          var prevBlocker = r.x - 1;
+          //
+          //          for (var x = r.x; x < r.xe; x++) {
+          //            if (workRow[x] == 0) {
+          //              // we've encountered an obstacle above this rect.
+          //              retain = false;
+          //              // use a vertical slice of this rect as a new rect
+          //              addNewRect(y, newRects, prevBlocker + 1, x, r.y, "vert slice");
+          //              prevBlocker = x;
+          //            }
+          //          }
+          //
+          //          if (!retain) {
+          //            // add rightmost vertical slice of blocked rect
+          //            if (workRow[r.xe - 1] != 0) {
+          //              addNewRect(y, newRects, prevBlocker + 1, r.xe, r.y, "rightmost vert slice");
+          //            }
+          //            var area = r.area();
+          //            if (area > maxArea)
+          //              maxArea = area;
+          //          }
+        }
         if (!retain) {
-          // add rightmost vertical slice of blocked rect
-          if (workRow[r.xe - 1] != 0)
-            addNewRect(y, newActive, prevBlocker + 1, r.xe, r.y);
           var area = r.area();
           if (area > maxArea)
             maxArea = area;
         }
-        if (retain) {
-          r.ye++;
-          newActive.add(r);
-          // paint this rectangle into the work row so we don't spawn new ones
-          for (var x = r.x; x < r.xe; x++) {
-            workRow[x] = 2;
+        removeRects.add(r);
+        //      if (retain) {
+        //        r.ye++;
+        //        newRects.add(r);
+        //        // paint this rectangle into the work row so we don't spawn new ones
+        //        for (var x = r.x; x < r.xe; x++) {
+        //          workRow[x] = 2;
+        //        }
+        //      }
+      }
+
+      bActiveList.removeAll(removeRects);
+
+      // While there are gaps that are not occupied by rects in the active list, generate new rects to fill them
+
+      // Build a second gap list from the active list
+      {
+        var el = activeRectGaps;
+        int cursor = 0;
+        var gapStart = -1;
+        var gapStop = 0;
+        for (var r : bActiveList) {
+          if (gapStart < 0) {
+            gapStart = r.x;
+            gapStop = r.xe;
+          }
+          if (gapStop < r.x) {
+            el[cursor] = gapStart;
+            el[cursor + 1] = gapStop;
+            cursor += 2;
+
+            gapStart = r.x;
+            gapStop = r.xe;
+          } else {
+            if (gapStop < r.xe)
+              gapStop = r.xe;
           }
         }
+        // Mark end of list with a gap that is way off screen
+        el[cursor] = GAP_STOP;
+        el[cursor + 1] = GAP_STOP;
       }
 
-      // The leftmost pixel is always zero
-      for (var x = 1; x < bw; x++) {
-        if (workRow[x] == 1) {
-          // spawn a new rectangle of maximal width at this row
-          var xe = x + 1;
-          while (workRow[xe] != 0)
-            xe++;
-          while (workRow[x - 1] != 0)
-            x--;
-          addNewRect(y, newActive, x, xe, y);
-          while (x < xe)
-            workRow[x++] = 2;
+      // Where the active list's gap list is "less" than the board's, generate new (maximal) rectangles 
+
+      pr("spawning new rects to fill gaps:");
+      showGapList(boardRowGaps, "board");
+      showGapList(activeRectGaps, "rects");
+      {
+        var activeGaps = activeRectGaps;
+        var boardGaps = boardRowGaps;
+        int c1 = 0;
+        int c2 = 0;
+
+        while (boardGaps[c1] < GAP_STOP) {
+          if (activeGaps[c2] > boardGaps[c1]) {
+            checkInf();
+
+            int x = boardGaps[c1];
+            int xe = Math.min(boardGaps[c1 + 1], activeGaps[c2 + 1]);
+            addNewRect(y, newRects, x, xe, y, "spawned new occupying unused pixel(s)", x);
+            c2 += 2;
+            continue;
+          }
+          c1 += 2;
+          c2 += 2;
         }
       }
 
-      var tmp = activeList;
-      activeList = newActive;
-      newActive = tmp;
-      newActive.clear();
+      bActiveList.addAll(newRects);
     }
     return maxArea;
+
   }
 
-  private void addNewRect(int sweepY, List<Rect> destination, int x, int xe, int y) {
+  int inf;
+
+  void checkInf() {
+    checkState(inf++ < 1000);
+  }
+
+  /**
+   * Determine the index of the gap that contains x, or if x is not in a gap,
+   * the first gap beyond x (or the pointer to the end of the list is there is
+   * no next gap)
+   */
+  private int posWithinEmptyList(int x, int[] empList) {
+    todo("binary search");
+    int cursor = 0;
+    while (true) {
+      checkInf();
+      int empStop = empList[cursor + 1];
+      pr("empStop:", empStop, "x:", x, "cursor:", cursor);
+      if (x < empStop)
+        break;
+      cursor += 2;
+    }
+    return cursor;
+  }
+
+  private void addNewRect(int sweepY, List<Rect> destination, int x, int xe, int y, Object... messages) {
     if (x >= xe)
       return;
     var r = new Rect(x, xe, y, 1 + sweepY);
+    pr("...add new rect (", BasePrinter.toString(messages), ");", r);
     destination.add(r);
   }
 
@@ -196,9 +368,22 @@ public class P85MaximalRectangle {
     }
   }
 
+  private static final Comparator<Rect> RECT_COMPARATOR = new Comparator<>() {
+    @Override
+    public int compare(Rect o1, Rect o2) {
+      if (o1 == o2)
+        return 0;
+      int diff = o1.x - o2.x;
+      if (diff == 0)
+        diff = o1.xe - o2.xe;
+      return diff;
+    }
+  };
+
   private static byte[] sCells;
   private static int bWidth;
   private static int bHeight;
+  private static Set<Rect> bActiveList = new TreeSet<Rect>(RECT_COMPARATOR);
 
   private static class Rect {
     int x, y, xe, ye;
@@ -212,6 +397,11 @@ public class P85MaximalRectangle {
       this.xe = xe;
       this.y = y;
       this.ye = ye;
+    }
+
+    @Override
+    public String toString() {
+      return "[x:" + x + " y:" + y + " w:" + (xe - x) + " h:" + (ye - y) + "]";
     }
   }
 
