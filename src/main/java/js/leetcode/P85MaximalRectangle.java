@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import js.base.BasePrinter;
-import js.json.JSList;
 
 public class P85MaximalRectangle {
 
@@ -105,7 +104,6 @@ public class P85MaximalRectangle {
     final var sc = sCells;
     showBoard(0, bw, 0, bh, "initial");
 
-    rectsGenerated = 0;
     int maxArea = 0;
     List<Rect> activeList = new ArrayList<>(50);
     List<Rect> newActive = new ArrayList<>(50);
@@ -126,14 +124,14 @@ public class P85MaximalRectangle {
             // we've encountered an obstacle above this rect.
             retain = false;
             // use a vertical slice of this rect as a new rect
-            addNewRect(y, newActive, prevBlocker + 1, x, r.y, "slice of blocked rect", r);
+            addNewRect(y, newActive, prevBlocker + 1, x, r.y);
             prevBlocker = x;
           }
         }
         if (!retain) {
           // add rightmost vertical slice of blocked rect
           if (workRow[r.xe - 1] != 0)
-            addNewRect(y, newActive, prevBlocker + 1, r.xe, r.y, "rightmost slice of blocked rect", r);
+            addNewRect(y, newActive, prevBlocker + 1, r.xe, r.y);
           var area = r.area();
           if (area > maxArea)
             maxArea = area;
@@ -148,8 +146,6 @@ public class P85MaximalRectangle {
         }
       }
 
-      pr("...workRow:", JSList.with(workRow));
-
       // The leftmost pixel is always zero
       for (var x = 1; x < bw; x++) {
         if (workRow[x] == 1) {
@@ -159,7 +155,7 @@ public class P85MaximalRectangle {
             xe++;
           while (workRow[x - 1] != 0)
             x--;
-          addNewRect(y, newActive, x, xe, y, "unused cell to right of wall");
+          addNewRect(y, newActive, x, xe, y);
           while (x < xe)
             workRow[x++] = 2;
         }
@@ -170,19 +166,14 @@ public class P85MaximalRectangle {
       newActive = tmp;
       newActive.clear();
     }
-    checkState(newActive.isEmpty());
     return maxArea;
   }
 
-  private int rectsGenerated;
-
-  private void addNewRect(int sweepY, List<Rect> destination, int x, int xe, int y, Object... messages) {
-    checkState(rectsGenerated++ < 1000);
+  private void addNewRect(int sweepY, List<Rect> destination, int x, int xe, int y) {
     if (x >= xe)
       return;
     var r = new Rect(x, xe, y, 1 + sweepY);
     destination.add(r);
-    pr("...add new rect #" + rectsGenerated + " (" + BasePrinter.toString(messages) + ");", r);
   }
 
   private void prepareGrid(char[][] matrix) {
@@ -222,12 +213,6 @@ public class P85MaximalRectangle {
       this.y = y;
       this.ye = ye;
     }
-
-    @Override
-    public String toString() {
-      return "[x:" + x + " y:" + y + " w:" + (xe - x) + " h:" + (ye - y) + "]";
-    }
-
   }
 
 }
