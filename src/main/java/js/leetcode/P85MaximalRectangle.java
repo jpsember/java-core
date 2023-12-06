@@ -3,10 +3,11 @@ package js.leetcode;
 
 import static js.base.Tools.*;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 import js.base.BasePrinter;
+import js.json.JSList;
 
 /**
  * I need to figure out how to offset the polygon boundary from the center of
@@ -25,6 +26,8 @@ public class P85MaximalRectangle {
 
   private void run() {
 
+    x(5, 4, "10100101111111110010", 6);
+    
     x(4, 3, "110111011111", 6);
 
     x(1, 1, "0", 0);
@@ -46,8 +49,7 @@ public class P85MaximalRectangle {
 
     x(3, 3, "111111111", 9);
 
-    x(5, 4, "10100101111111110010", 6);
-    x(3, 3, "111" //
+     x(3, 3, "111" //
         + "101" //
         + "111" //
         , 3);
@@ -107,7 +109,81 @@ public class P85MaximalRectangle {
 
   public int maximalRectangle(char[][] matrix) {
     prepareGrid(matrix);
-    showBoard(0, bWidth, 0, bHeight, "initial");
+    final var bw = bWidth;
+    final var bh = bHeight;
+    final var sc = sCells;
+    showBoard(0, bw, 0, bh, "initial");
+
+    int maxArea = 0;
+    List<Rect> activeList = new ArrayList<>(50);
+    List<Rect> newActive = new ArrayList<>(50);
+    byte[] workRow = new byte[bw];
+    int cellIndex = 0;
+    for (var y = 0; y < bh; y++, cellIndex += bw) {
+      pr(VERT_SP, "sweep:", y);
+
+      // Copy sweep row into work buffer
+      for (var x = 0; x < bw; x++)
+        workRow[x] = sc[cellIndex + x];
+
+      for (var r : activeList) {
+        boolean retain = true;
+        var prevBlocker = r.x - 1;
+        for (var x = r.x; x < r.xe; x++) {
+          if (workRow[x] == 0) {
+            // we've encountered an obstacle above this rect.
+            retain = false;
+            // use a vertical slice of this rect as a new rect
+            addNewRect(y, newActive, prevBlocker + 1, x, r.y, "slice of blocked rect", r);
+            prevBlocker = x;
+          }
+        }
+        if (!retain) {
+          // add rightmost vertical slice of blocked rect
+          if (workRow[r.xe - 1] != 0)
+            addNewRect(y, newActive, prevBlocker + 1, r.xe, r.y, "rightmost slice of blocked rect", r);
+          var area = r.area();
+          if (area > maxArea)
+            maxArea = area;
+        }
+        if (retain) {
+          r.ye++;
+          newActive.add(r);
+          // paint this rectangle into the work row so we don't spawn new ones
+          for (var x = r.x; x < r.xe; x++) {
+            workRow[x] = 2;
+          }
+        }
+      }
+
+      pr("...workRow:", JSList.with(workRow));
+
+      // The leftmost pixel is always zero
+      for (var x = 1; x < bw; x++) {
+        if (workRow[x] == 1 && workRow[x - 1] == 0) {
+          // spawn a new rectangle of maximal width at this row
+          var xe = x + 1;
+          while (workRow[xe] != 0)
+            xe++;
+          addNewRect(y, newActive, x, xe, y, "unused cell to right of wall");
+        }
+      }
+
+      var tmp = activeList;
+      activeList = newActive;
+      newActive = tmp;
+      newActive.clear();
+    }
+    checkState(newActive.isEmpty());
+    return maxArea;
+  }
+
+  private void addNewRect(int sweepY, List<Rect> destination, int x, int xe, int y, Object... messages) {
+    if (x >= xe)
+      return;
+    var r = new Rect(x, xe, y, 1 + sweepY);
+    destination.add(r);
+    pr("...add new rect (" + BasePrinter.toString(messages) + ");", r);
   }
 
   private void prepareGrid(char[][] matrix) {
@@ -115,7 +191,7 @@ public class P85MaximalRectangle {
     int gridHeight = matrix.length;
 
     bWidth = gridWidth + 2;
-    bHeight = gridHeight;
+    bHeight = gridHeight + 1;
 
     byte[] cells = new byte[bWidth * bHeight];
     sCells = cells;
@@ -133,4 +209,26 @@ public class P85MaximalRectangle {
   private static byte[] sCells;
   private static int bWidth;
   private static int bHeight;
+
+  private static class Rect {
+    int x, y, xe, ye;
+
+    public int area() {
+      return (ye - y) * (xe - x);
+    }
+
+    public Rect(int x, int xe, int y, int ye) {
+      this.x = x;
+      this.xe = xe;
+      this.y = y;
+      this.ye = ye;
+    }
+
+    @Override
+    public String toString() {
+      return "[x:" + x + " y:" + y + " w:" + (xe - x) + " h:" + (ye - y) + "]";
+    }
+
+  }
+
 }
