@@ -27,7 +27,7 @@ public class P85MaximalRectangle {
   private void run() {
 
     x(5, 4, "10100101111111110010", 6);
-    
+
     x(4, 3, "110111011111", 6);
 
     x(1, 1, "0", 0);
@@ -49,7 +49,7 @@ public class P85MaximalRectangle {
 
     x(3, 3, "111111111", 9);
 
-     x(3, 3, "111" //
+    x(3, 3, "111" //
         + "101" //
         + "111" //
         , 3);
@@ -107,6 +107,8 @@ public class P85MaximalRectangle {
 
   // ------------------------------------------------------------------
 
+  int inf;
+  
   public int maximalRectangle(char[][] matrix) {
     prepareGrid(matrix);
     final var bw = bWidth;
@@ -160,11 +162,13 @@ public class P85MaximalRectangle {
 
       // The leftmost pixel is always zero
       for (var x = 1; x < bw; x++) {
-        if (workRow[x] == 1 && workRow[x - 1] == 0) {
+        if (workRow[x] == 1) {
           // spawn a new rectangle of maximal width at this row
           var xe = x + 1;
           while (workRow[xe] != 0)
             xe++;
+          while (workRow[x - 1] != 0)
+            x--;
           addNewRect(y, newActive, x, xe, y, "unused cell to right of wall");
         }
       }
@@ -179,7 +183,8 @@ public class P85MaximalRectangle {
   }
 
   private void addNewRect(int sweepY, List<Rect> destination, int x, int xe, int y, Object... messages) {
-    if (x >= xe)
+  checkState(inf++ < 100);
+  if (x >= xe)
       return;
     var r = new Rect(x, xe, y, 1 + sweepY);
     destination.add(r);
