@@ -9,20 +9,11 @@ import java.util.List;
 import js.base.BasePrinter;
 import js.json.JSList;
 
-/**
- * I need to figure out how to offset the polygon boundary from the center of
- * the pixel.
- *
- */
 public class P85MaximalRectangle {
 
   public static void main(String[] args) {
     new P85MaximalRectangle().run();
   }
-
-  public static int[] xturnleft = { -1, 1, 1, -1 };
-
-  public static int[] yturnleft = { -1, -1, 1, 1 };
 
   private void run() {
 
@@ -107,8 +98,6 @@ public class P85MaximalRectangle {
 
   // ------------------------------------------------------------------
 
-  int inf;
-  
   public int maximalRectangle(char[][] matrix) {
     prepareGrid(matrix);
     final var bw = bWidth;
@@ -116,6 +105,7 @@ public class P85MaximalRectangle {
     final var sc = sCells;
     showBoard(0, bw, 0, bh, "initial");
 
+    rectsGenerated = 0;
     int maxArea = 0;
     List<Rect> activeList = new ArrayList<>(50);
     List<Rect> newActive = new ArrayList<>(50);
@@ -170,6 +160,8 @@ public class P85MaximalRectangle {
           while (workRow[x - 1] != 0)
             x--;
           addNewRect(y, newActive, x, xe, y, "unused cell to right of wall");
+          while (x < xe)
+            workRow[x++] = 2;
         }
       }
 
@@ -182,13 +174,15 @@ public class P85MaximalRectangle {
     return maxArea;
   }
 
+  private int rectsGenerated;
+
   private void addNewRect(int sweepY, List<Rect> destination, int x, int xe, int y, Object... messages) {
-  checkState(inf++ < 100);
-  if (x >= xe)
+    checkState(rectsGenerated++ < 1000);
+    if (x >= xe)
       return;
     var r = new Rect(x, xe, y, 1 + sweepY);
     destination.add(r);
-    pr("...add new rect (" + BasePrinter.toString(messages) + ");", r);
+    pr("...add new rect #" + rectsGenerated + " (" + BasePrinter.toString(messages) + ");", r);
   }
 
   private void prepareGrid(char[][] matrix) {
