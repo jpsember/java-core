@@ -157,20 +157,21 @@ public class P85MaximalRectangle {
      * contain x
      */
     public int find(int x) {
-      todo("binary search");
-      int index = 0;
-      while (true) {
-        if (index == mSize)
-          return -1 - index;
-        var cursor = intervalOffset(index);
-        int empStart = intervals[cursor];
-        if (x < empStart)
-          return -1 - index;
-        int empStop = intervals[cursor + 1];
-        if (x < empStop)
-          return index;
-        index++;
+      int min = 0;
+      int max = mSize;
+      while (min < max) {
+        int peek = (min + max) / 2;
+        var cursor = intervalOffset(peek);
+        int start = intervals[cursor];
+        int stop = intervals[cursor + 1];
+        if (x >= start && x < stop)
+          return peek;
+        if (x < start)
+          max = peek;
+        else
+          min = peek + 1;
       }
+      return -1 - max;
     }
 
     private static int intervalOffset(int intervalNumber) {
@@ -182,7 +183,7 @@ public class P85MaximalRectangle {
       if (removeCount <= 0)
         return;
       shiftIntervals(stop, mSize, start);
-            mSize -= removeCount;
+      mSize -= removeCount;
     }
 
     private void shiftIntervals(int source, int sourceStop, int target) {
