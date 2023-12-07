@@ -297,89 +297,63 @@ public class P85MaximalRectangle {
     var rowSpaceIntervals = new IntervalList(bw);
     var rectIntervals = new IntervalList(bw);
 
+    // A list for building the next row's active list
     List<Rect> updatedRects = new ArrayList<>();
 
     for (var y = 0; y <= bh; y++) {
       pr(VERT_SP, "sweep:", y);
 
       // bActiveList.sort(RECT_COMPARATOR);
-      pr("...constructing board spaces");
-      {
-        var g = rowSpaceIntervals;
-        g.clear();
-        // If we're processing the row past the original matrix, treat as if that row existed and was empty
-        if (y < bh) {
-          var matrixRow = matrix[y];
-          for (var x = 0; x < bw; x++) {
-            // If there is space here, add it to the interval
-            if (matrixRow[x] != '0') {
-              //pr("...adding x to space interval:", x);
-              g.add(x);
-            }
-          }
+
+      // Construct an interval list representing the free columns in the row
+
+      rowSpaceIntervals.clear();
+      // If we're processing the row past the original matrix, treat as if that row existed and was empty;
+      // we do this by just leaving the interval list empty
+      if (y < bh) {
+        var matrixRow = matrix[y];
+        for (var x = 0; x < bw; x++) {
+          // If there is space here, add it to the interval
+          if (matrixRow[x] != '0')
+            rowSpaceIntervals.add(x);
         }
       }
-      pr("...board spaces:", rowSpaceIntervals);
-      updatedRects.clear();
 
       pr("...activeList:", bActiveList);
 
       for (var r : bActiveList) {
-        boolean retain = true;
-
-        pr(VERT_SP, "examining active rect", r);
+        // Find intervals that would contain the start and stop column for this rectangle
         var aInt = rowSpaceIntervals.find(r.x);
-        pr("...index of interval containing r.x", r.x, aInt);
-        if (aInt < 0) {
+        var bInt = rowSpaceIntervals.find(r.xe - 1);
+        boolean retain = true;
+        if (aInt < 0 || bInt < 0 || aInt != bInt) {
           retain = false;
           aInt = normalize(aInt);
+          bInt = normalize(bInt);
         }
 
-        {
-          var bInt = rowSpaceIntervals.find(r.xe - 1);
-          if (bInt < 0) {
-            retain = false;
-            bInt = normalize(bInt);
-          }
-
-          pr("normalized:", aInt, bInt);
-
-          if (bInt < aInt) {
-            pr("interval:", rowSpaceIntervals, CR, "unexpected finding r.xe-1:", r.xe - 1, "=>",
-                rowSpaceIntervals.find(r.xe - 1), " bInt:", bInt);
-            checkState(bInt >= aInt);
-          }
-          if (aInt != bInt)
-            retain = false;
-
-          if (!retain) {
-            // The rectangle does not fit within a single gap
-            // Spawn slices where the rectangle intersects these gaps
-            for (var j = aInt; j <= bInt; j++) {
-              var g0 = rowSpaceIntervals.start(j);
-              var g1 = rowSpaceIntervals.stop(j);
-              var effx0 = Math.max(r.x, g0);
-              var effx1 = Math.min(r.xe, g1);
-              if (effx0 < effx1) {
-                addNewRect(y, updatedRects, effx0, effx1, r.y, "vert slice");
-              }
-            }
-          }
-        }
-        if (!retain) {
-          var area = r.area();
-          if (area > maxArea)
-            maxArea = area;
-          pr("...removing rect:", r);
-        } else {
+        if (retain) {
+          // Increment height of this rectangle, as it has survived this new row
           r.ye++;
           updatedRects.add(r);
+          continue;
         }
+
+        // The rectangle does not fit within a single gap
+        // Spawn slices where the rectangle intersects these gaps
+        for (var j = aInt; j <= bInt; j++) {
+          var g0 = rowSpaceIntervals.start(j);
+          var g1 = rowSpaceIntervals.stop(j);
+          addNewRect(y, updatedRects, Math.max(r.x, g0), Math.min(r.xe, g1), r.y, "vert slice");
+        }
+        maxArea = Math.max(maxArea, r.area());
+        pr("...removing rect:", r);
       }
 
       var tmp = bActiveList;
       bActiveList = updatedRects;
       updatedRects = tmp;
+      updatedRects.clear();
 
       // While there are gaps that are not occupied by rects in the active list, generate new rects to fill them
 
