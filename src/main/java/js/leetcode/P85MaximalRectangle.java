@@ -4,11 +4,16 @@ package js.leetcode;
 import static js.base.Tools.*;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 import js.base.BasePrinter;
 
+/**
+ * Reworked the algorithm to use a plane sweep.
+ * 
+ * Using interval lists to optimize things. Doesn't seem to help with the test
+ * cases, but I think it would help with large problem instances.
+ */
 public class P85MaximalRectangle {
 
   public static void main(String[] args) {
@@ -105,138 +110,6 @@ public class P85MaximalRectangle {
     pr("--------------------------------------------");
   }
 
-  /**
-   * A data structure that maintains a sorted list of integer intervals, in the
-   * form of pairs:
-   * 
-   * [start0, end0, start1, end1 ...]
-   * 
-   * where each interval includes startx and endx-1 (i.e., endx is exclusive),
-   * and endx < start(x+1)
-   *
-   */
-  private static class IntervalList {
-
-    private void validate() {
-      String prob;
-      outer: do {
-        prob = "negative size";
-        if (mSize < 0)
-          break;
-
-        prob = "interval has zero or negative size";
-        int vt = intervalOffset(mSize);
-        for (int i = 0; i < vt; i += 2) {
-          if (intervals[i] >= intervals[i + 1]) {
-            prob = "interval has zero or negative size";
-            break outer;
-          }
-          if (i > 0 && intervals[i] < intervals[i - 1]) {
-            prob = "interval is not strictly ahead of previous";
-            break outer;
-          }
-        }
-        prob = "";
-      } while (false);
-      if (!prob.isEmpty())
-        badArg("Problem with IntervalList:", prob, INDENT, this);
-    }
-
-    IntervalList(int maxIntervals) {
-      intervals = new int[intervalOffset(maxIntervals + 1)];
-    }
-
-    public void clear() {
-      mSize = 0;
-    }
-
-    public void add(int x) {
-      addInterval(x, x + 1);
-    }
-
-    /**
-     * Determine the index of the interval that contains x, or if x is not in an
-     * interval, -1 minus the insertion position of a new interval that would
-     * contain x
-     */
-    public int find(int x) {
-      int min = 0;
-      int max = mSize;
-      while (min < max) {
-        int peek = (min + max) / 2;
-        var cursor = intervalOffset(peek);
-        int start = intervals[cursor];
-        int stop = intervals[cursor + 1];
-        if (x >= start && x < stop)
-          return peek;
-        if (x < start)
-          max = peek;
-        else
-          min = peek + 1;
-      }
-      return -1 - max;
-    }
-
-    private static int intervalOffset(int intervalNumber) {
-      return intervalNumber << 1;
-    }
-
-    public void addInterval(int x, int xe) {
-      pr("interval list, add:", x, "..", xe);
-      checkArgument(x >= 0 && xe > x);
-      int c = intervalOffset(mSize);
-      if (c == 0 || x > intervals[c - 1]) {
-        intervals[c] = x;
-        intervals[c + 1] = xe;
-        mSize++;
-      } else {
-        checkArgument(c != 0 && x == intervals[c - 1]);
-        intervals[c - 1] = xe;
-      }
-      pr("...after add:", this);
-      validate();
-    }
-
-    @Override
-    public String toString() {
-      StringBuilder sb = new StringBuilder("GapList{ ");
-      var k = sb.length();
-      for (int i = 0; i < mSize; i++) {
-        var c = intervalOffset(i);
-        int gStart = intervals[c];
-        int gEnd = intervals[c + 1];
-        sb.append(spaces(gStart * 5 - (sb.length() - k)));
-        sb.append('[');
-        sb.append(gStart);
-        if (gEnd - 1 > gStart) {
-          sb.append("..");
-          sb.append(gEnd - 1);
-        }
-        sb.append(']');
-      }
-      sb.append('}');
-      return sb.toString();
-    }
-
-    public int start(int i) {
-      checkArgument(i < mSize);
-      return intervals[intervalOffset(i)];
-    }
-
-    public int stop(int i) {
-      checkArgument(i < mSize);
-      return intervals[intervalOffset(i) + 1];
-    }
-
-    public int size() {
-      return mSize;
-    }
-
-    private final int[] intervals;
-    private int mSize;
-
-  }
-
   public int maximalRectangle(char[][] matrix) {
     final var bw = matrix[0].length;
     final var bh = matrix.length;
@@ -251,7 +124,7 @@ public class P85MaximalRectangle {
     List<Rect> updatedRects = new ArrayList<>();
 
     for (var y = 0; y <= bh; y++) {
-      pr(VERT_SP, "sweep:", y, "of bh:", bh);
+      //pr(VERT_SP, "sweep:", y, "of bh:", bh);
 
       // Construct an interval list representing the free columns in the row
 
@@ -267,8 +140,6 @@ public class P85MaximalRectangle {
         }
       }
 
-      pr("...activeList:", activeList);
-
       for (var r : activeList) {
         // Find intervals that would contain the start and stop column for this rectangle
         var aInt = boardIntv.find(r.x);
@@ -278,8 +149,7 @@ public class P85MaximalRectangle {
           retain = false;
 
         if (retain) {
-          // Increment height of this rectangle, as it has survived this new row
-          r.ye++;
+          //todo("can we avoid carrying around the height, and instead assign it when removing from the list?");
           updatedRects.add(r);
           continue;
         }
@@ -299,7 +169,7 @@ public class P85MaximalRectangle {
             addNewRect(y, updatedRects, Math.max(r.x, g0), Math.min(r.xe, g1), r.y);
           }
         }
-        maxArea = Math.max(maxArea, r.area());
+        maxArea = Math.max(maxArea, r.area(y));
       }
 
       var tmp = activeList;
@@ -313,11 +183,8 @@ public class P85MaximalRectangle {
       // Build a second gap list from the active list. If we sort the active list by each rect's starting column,
       // this can be done efficiently.
 
-      todo("optimization: avoid sorting active list when there have not been additions?");
-      todo("why do we not seem to need to sort the active list?");
-
-      // activeList.sort(RECT_COMPARATOR);
-      pr("activeList (sorted):", INDENT, activeList);
+      //todo("optimization: avoid sorting active list when there have not been additions?");
+      //todo("why do we not seem to need to sort the active list?");
 
       {
         final int INTERVAL_NONE = -10000;
@@ -342,24 +209,10 @@ public class P85MaximalRectangle {
         }
         if (intervalEnd != INTERVAL_NONE)
           rectIntv.addInterval(intervalStart, intervalEnd);
-        pr("...built rect interval list:", rectIntv);
       }
 
       // Where the active rect intervals disagree with the board's, generate new (maximal) rectangles based on board list.
       // Each interval in the active list *should* be contained by some interval from the board list.
-
-      if (alert("verifying above assertion")) {
-        var r = rectIntv;
-        var b = boardIntv;
-
-        for (int j = 0; j < r.size(); j++) {
-          int x = r.start(j);
-          int xe = r.stop(j);
-          var s = b.find(x);
-          var se = b.find(xe - 1);
-          checkState(s >= 0 && se == s);
-        }
-      }
 
       {
         int rc = 0;
@@ -405,38 +258,122 @@ public class P85MaximalRectangle {
   private void addNewRect(int sweepY, List<Rect> destination, int x, int xe, int y) {
     if (x >= xe)
       return;
-    var r = new Rect(x, xe, y, 1 + sweepY);
+    var r = new Rect(x, xe, y);
     destination.add(r);
   }
 
-  /**
-   * Sorts rectangles by starting column
-   */
-  private static final Comparator<Rect> RECT_COMPARATOR = new Comparator<>() {
-    @Override
-    public int compare(Rect o1, Rect o2) {
-      return o1.x - o2.x;
-    }
-  };
-
   private static class Rect {
-    int x, y, xe, ye;
+    int x, y, xe;
 
-    public int area() {
+    public int area(int ye) {
       return (ye - y) * (xe - x);
     }
 
-    public Rect(int x, int xe, int y, int ye) {
+    public Rect(int x, int xe, int y) {
       this.x = x;
       this.xe = xe;
       this.y = y;
-      this.ye = ye;
     }
 
     @Override
     public String toString() {
-      return "[" + (xe - x) + " x " + (ye - y) + " at " + x + " " + y + "]";
+      return "[w " + (xe - x) + " pos " + x + " " + y + "]";
     }
+  }
+
+  /**
+   * A data structure that maintains a sorted list of integer intervals, in the
+   * form of pairs:
+   * 
+   * [start0, end0, start1, end1 ...]
+   * 
+   * where each interval includes startx and endx-1 (i.e., endx is exclusive),
+   * and endx < start(x+1)
+   *
+   */
+  private static class IntervalList {
+
+    IntervalList(int maxIntervals) {
+      intervals = new int[(maxIntervals + 1) << 1];
+    }
+
+    public void clear() {
+      mSize = 0;
+    }
+
+    public void add(int x) {
+      addInterval(x, x + 1);
+    }
+
+    /**
+     * Determine the index of the interval that contains x, or if x is not in an
+     * interval, -1 minus the insertion position of a new interval that would
+     * contain x
+     */
+    public int find(int x) {
+      int min = 0;
+      int max = mSize;
+      while (min < max) {
+        int peek = (min + max) / 2;
+        var cursor = peek << 1;
+        int start = intervals[cursor];
+        int stop = intervals[cursor + 1];
+        if (x >= start && x < stop)
+          return peek;
+        if (x < start)
+          max = peek;
+        else
+          min = peek + 1;
+      }
+      return -1 - max;
+    }
+
+    public void addInterval(int x, int xe) {
+      int c = mSize << 1;
+      if (c == 0 || x > intervals[c - 1]) {
+        intervals[c] = x;
+        intervals[c + 1] = xe;
+        mSize++;
+      } else {
+        intervals[c - 1] = xe;
+      }
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("Intervals{ ");
+      var k = sb.length();
+      for (int i = 0; i < mSize; i++) {
+        var c = i << 1;
+        int gStart = intervals[c];
+        int gEnd = intervals[c + 1];
+        sb.append(spaces(gStart * 5 - (sb.length() - k)));
+        sb.append('[');
+        sb.append(gStart);
+        if (gEnd - 1 > gStart) {
+          sb.append("..");
+          sb.append(gEnd - 1);
+        }
+        sb.append(']');
+      }
+      sb.append('}');
+      return sb.toString();
+    }
+
+    public int start(int i) {
+      return intervals[i << 1];
+    }
+
+    public int stop(int i) {
+      return intervals[(i << 1) + 1];
+    }
+
+    public int size() {
+      return mSize;
+    }
+
+    private final int[] intervals;
+    private int mSize;
   }
 
 }
