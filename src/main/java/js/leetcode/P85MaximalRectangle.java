@@ -37,7 +37,6 @@ public class P85MaximalRectangle {
         + "111" //
         , 3);
 
-   
     for (int y = 1; y < 20; y++) {
       for (int x = 1; x < 5; x++) {
         y(x, y);
@@ -305,8 +304,7 @@ public class P85MaximalRectangle {
     for (var y = 0; y < bh; y++, cellIndex += bw) {
       pr(VERT_SP, "sweep:", y);
 
-     // bActiveList.sort(RECT_COMPARATOR);
-      todo("do we still need padding?");
+      // bActiveList.sort(RECT_COMPARATOR);
       pr("...constructing board spaces");
       {
         var g = rowSpaceIntervals;
@@ -324,7 +322,6 @@ public class P85MaximalRectangle {
 
       pr("...activeList:", bActiveList);
 
-      todo("should we keep the active list sorted?");
       for (var r : bActiveList) {
         boolean retain = true;
 
@@ -335,14 +332,14 @@ public class P85MaximalRectangle {
           retain = false;
           aInt = normalize(aInt);
         }
-         
+
         {
           var bInt = rowSpaceIntervals.find(r.xe - 1);
           if (bInt < 0) {
             retain = false;
             bInt = normalize(bInt);
           }
-           
+
           pr("normalized:", aInt, bInt);
 
           if (bInt < aInt) {
@@ -462,15 +459,6 @@ public class P85MaximalRectangle {
             //            boardCursor++;
             continue;
           }
-          //
-          //          // Case 3: R overlaps B, and starts after B.
-          //          if (r0 < b1) {
-          //            addNewRect(y, newRects, b0, r0, y,
-          //                "spawned new rect filling board space before overlapping rect");
-          //            newRectX = r0;
-          //            boardCursor++;
-          //            continue;
-          //          }
 
           // Case 4: R doesn't exist or is strictly to the right of B.
           // Add a rect to fill B
@@ -500,22 +488,26 @@ public class P85MaximalRectangle {
   }
 
   private void prepareGrid(char[][] matrix) {
+
+    final int PAD_LEFTRIGHT = 0;
+    final int PAD_BOTTOM = 1;
+
     int gridWidth = matrix[0].length;
     int gridHeight = matrix.length;
 
-    bWidth = gridWidth + 2;
-    bHeight = gridHeight + 1;
+    bWidth = gridWidth + PAD_LEFTRIGHT * 2;
+    bHeight = gridHeight + PAD_BOTTOM;
 
     byte[] cells = new byte[bWidth * bHeight];
     sCells = cells;
-    int ci = 1;
+    int ci = PAD_LEFTRIGHT;
     for (var row : matrix) {
       for (var c : row) {
         if (c == '1')
           cells[ci] = 1;
         ci++;
       }
-      ci += 2;
+      ci += PAD_LEFTRIGHT * 2;
     }
   }
 
