@@ -19,12 +19,12 @@ public class P85MaximalRectangle {
 
   private void run() {
 
+    x(5, 4, "10100101111111110010", 6);
+
     x(3, 3, "111" //
         + "101" //
         + "111" //
         , 3);
-
-    x(5, 4, "10100101111111110010", 6);
 
     x(4, 3, "110111011111", 6);
 
@@ -98,27 +98,28 @@ public class P85MaximalRectangle {
     pr("--------------------------------------------");
   }
 
-  /* private */ void showGapList(int[] gaps, Object... messages) {
-    pr(VERT_SP, "Gap list:", BasePrinter.toString(messages));
-    var sb = new StringBuilder();
-    int c = 0;
-    while (true) {
-      int gStart = gaps[c];
-      int gEnd = gaps[c + 1];
-      c += 2;
-      if (gStart == GAP_STOP)
-        break;
-      sb.append(spaces(gStart * 5 - sb.length()));
-      sb.append('[');
-      sb.append(gStart);
-      if (gEnd - 1 > gStart) {
-        sb.append("..");
-        sb.append(gEnd - 1);
-      }
-      sb.append(']');
-    }
-    pr(sb);
-  }
+  //  /* private */ void showGapList(GapList gapList, Object... messages) {
+  //    pr(VERT_SP, "Gap list:", BasePrinter.toString(messages));
+  //    var sb = new StringBuilder();
+  //    int c = 0;
+  //    var gaps = gapList.gaps;
+  //    while (true) {
+  //      int gStart = gaps[c];
+  //      int gEnd = gaps[c + 1];
+  //      c += 2;
+  //      if (gStart == GAP_STOP)
+  //        break;
+  //      sb.append(spaces(gStart * 5 - sb.length()));
+  //      sb.append('[');
+  //      sb.append(gStart);
+  //      if (gEnd - 1 > gStart) {
+  //        sb.append("..");
+  //        sb.append(gEnd - 1);
+  //      }
+  //      sb.append(']');
+  //    }
+  //    pr(sb);
+  //  }
   // ------------------------------------------------------------------
 
   private static final int GAP_STOP = 10000;
@@ -129,6 +130,109 @@ public class P85MaximalRectangle {
     }
 
     int[] gaps;
+
+    public void clear() {
+      gapStart = -1;
+      cursor = 0;
+    }
+
+    private int gapStart;
+    private int gapStop;
+
+    private int cursor;
+
+    public void add(int x) {
+      if (gapStart < 0) {
+        gapStart = x;
+        gapStop = x;
+      }
+      checkState(x >= gapStop);
+      if (x == gapStop) {
+        gapStop++;
+      } else {
+        addEntry(gapStart, gapStop);
+        gapStart = x;
+        gapStop = x + 1;
+      }
+    }
+
+    private void addEntry(int start, int stop) {
+      gaps[cursor] = start;
+      gaps[cursor + 1] = stop;
+      cursor += 2;
+    }
+
+    public void done() {
+      if (gapStart >= 0) {
+        addEntry(gapStart, gapStop);
+      }
+      addEntry(GAP_STOP, GAP_STOP + 2);
+    }
+
+    /**
+     * Determine the index of the gap that contains x, or if x is not in a gap,
+     * the first gap beyond x (or the pointer to the end of the list is there is
+     * no next gap)
+     */
+    public int posWithinEmptyList(int x) {
+      todo("binary search");
+      int cursor = 0;
+      while (true) {
+        int empStop = gaps[cursor + 1];
+        if (x < empStop)
+          break;
+        cursor += 2;
+      }
+      return cursor;
+    }
+
+    public int value(int j) {
+      return gaps[j];
+    }
+
+    public void addInterval(int x, int xe) {
+      pr("gap list, add interval:", x, "..", xe);
+      checkArgument(x >= 0 && xe > x);
+      if (gapStart < 0) {
+        gapStart = x;
+        gapStop = xe;
+      } else {
+        checkArgument(x >= gapStop);
+        if (x == gapStop) {
+          gapStop = xe;
+        } else {
+          addEntry(gapStart, gapStop);
+          gapStart = x;
+          gapStop = xe;
+        }
+      }
+      pr("...after add:", this);
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("GapList< ");
+      var k = sb.length();
+      int c = 0;
+      while (true) {
+        int gStart = gaps[c];
+        int gEnd = gaps[c + 1];
+        c += 2;
+        if (gStart == GAP_STOP)
+          break;
+        sb.append(spaces(gStart * 5 - (sb.length() - k)));
+        sb.append('[');
+        sb.append(gStart);
+        if (gEnd - 1 > gStart) {
+          sb.append("..");
+          sb.append(gEnd - 1);
+        }
+        sb.append(']');
+      }
+      sb.append('>');
+      return sb.toString();
+    }
+
   }
 
   public int maximalRectangle(char[][] matrix) {
@@ -141,8 +245,8 @@ public class P85MaximalRectangle {
     int maxArea = 0;
     bActiveList.clear();
 
-    int[] boardRowGaps = new int[bw * 2 + 1];
-    int[] activeRectGaps = new int[bw * 2 + 1];
+    var boardRowGaps = new GapList(bw);
+    var activeRectGaps = new GapList(bw);
 
     var newRects = new ArrayList<Rect>();
     var removeRects = new ArrayList<Rect>();
@@ -152,28 +256,35 @@ public class P85MaximalRectangle {
       pr(VERT_SP, "sweep:", y);
 
       // Build compact list of empty pixels
+
       {
-        int cursor = 0;
-        var emptyCount = 0;
-        var emptyStart = 0;
+        var g = boardRowGaps;
+        g.clear();
+
+        //        int cursor = 0;
+        //        var emptyCount = 0;
+        //        var emptyStart = 0;
         for (var x = 0; x < bw; x++) {
           if (sc[cellIndex + x] != 0) {
-            if (emptyCount == 0) {
-              emptyStart = x;
-              emptyCount = 0;
-            }
-            emptyCount++;
-          } else {
-            if (emptyCount != 0) {
-              boardRowGaps[cursor] = emptyStart;
-              boardRowGaps[cursor + 1] = emptyStart + emptyCount;
-              cursor += 2;
-            }
+            g.add(x);
+            //            if (emptyCount == 0) {
+            //              emptyStart = x;
+            //              emptyCount = 0;
+            //            }
+            //            emptyCount++;
+            //          } else {
+            //            if (emptyCount != 0) {
+            //              boardRowGaps[cursor] = emptyStart;
+            //              boardRowGaps[cursor + 1] = emptyStart + emptyCount;
+            //              cursor += 2;
+            //            }
+            //          }
           }
         }
-        // Mark end of list with a gap that is way off screen
-        boardRowGaps[cursor] = GAP_STOP;
-        boardRowGaps[cursor + 1] = GAP_STOP;
+        g.done();
+        //        // Mark end of list with a gap that is way off screen
+        //        boardRowGaps[cursor] = GAP_STOP;
+        //        boardRowGaps[cursor + 1] = GAP_STOP;
       }
 
       newRects.clear();
@@ -181,18 +292,20 @@ public class P85MaximalRectangle {
 
       pr("activeList:", bActiveList);
 
-      //      var inf = 0;
       for (var r : bActiveList) {
         boolean retain = true;
         checkInf();
 
         todo("we can maintain a pointer into the empty list since the rects are sorted by x");
-        var j = posWithinEmptyList(r.x, boardRowGaps);
+        var j = boardRowGaps.posWithinEmptyList(r.x);
+        pr("board gaps position within empty?list, r.x:", r.x, "is:", j);
         var j2 = j;
         var xlast = r.xe - 1;
         if (xlast != r.x)
-          j2 = posWithinEmptyList(r.xe - 1, boardRowGaps);
-        if (!(j == j2 && r.x >= boardRowGaps[j])) {
+          j2 = boardRowGaps.posWithinEmptyList(r.xe - 1);
+        pr("j2:",j2);
+        
+        if (!(j == j2 && r.x >= boardRowGaps.value(j))) {
           // The rectangle does not fit within a single gap
           retain = false;
 
@@ -202,11 +315,11 @@ public class P85MaximalRectangle {
           while (x < r.xe) {
             checkInf();
             // do we overlap the current gap?
-            if (x >= boardRowGaps[j]) {
-              var xe = Math.min(boardRowGaps[j + 1], r.xe);
+            if (x >= boardRowGaps.value(j)) {
+              var xe = Math.min(boardRowGaps.value(j + 1), r.xe);
               addNewRect(y, newRects, x, xe, r.y, "vert slice");
               j += 2;
-              x = boardRowGaps[j];
+              x = boardRowGaps.value(j);
               pr("...advanced x to:", x);
             } else {
               break;
@@ -241,6 +354,7 @@ public class P85MaximalRectangle {
             maxArea = area;
         }
         removeRects.add(r);
+        pr("...removing rect:", r);
         //      if (retain) {
         //        r.ye++;
         //        newRects.add(r);
@@ -258,48 +372,48 @@ public class P85MaximalRectangle {
       // Build a second gap list from the active list
       {
         var el = activeRectGaps;
-        int cursor = 0;
-        var gapStart = -1;
-        var gapStop = 0;
+        el.clear();
+        //        var gapStart = -1;
+        //        var gapStop = 0;
         for (var r : bActiveList) {
-          if (gapStart < 0) {
-            gapStart = r.x;
-            gapStop = r.xe;
-          }
-          if (gapStop < r.x) {
-            el[cursor] = gapStart;
-            el[cursor + 1] = gapStop;
-            cursor += 2;
-
-            gapStart = r.x;
-            gapStop = r.xe;
-          } else {
-            if (gapStop < r.xe)
-              gapStop = r.xe;
-          }
+          el.addInterval(r.x, r.xe);
+          //          if (gapStart < 0) {
+          //            gapStart = r.x;
+          //            gapStop = r.xe;
+          //          }
+          //          if (gapStop < r.x) {
+          //            el[cursor] = gapStart;
+          //            el[cursor + 1] = gapStop;
+          //            cursor += 2;
+          //
+          //            gapStart = r.x;
+          //            gapStop = r.xe;
+          //          } else {
+          //            if (gapStop < r.xe)
+          //              gapStop = r.xe;
+          //          }
         }
-        // Mark end of list with a gap that is way off screen
-        el[cursor] = GAP_STOP;
-        el[cursor + 1] = GAP_STOP;
+        el.done();
       }
+      pr("built active list gaps from", bActiveList.size(), "rects:", activeRectGaps);
 
       // Where the active list's gap list is "less" than the board's, generate new (maximal) rectangles 
 
       pr("spawning new rects to fill gaps:");
-      showGapList(boardRowGaps, "board");
-      showGapList(activeRectGaps, "rects");
+      pr("board:", boardRowGaps);
+      pr("rects:", activeRectGaps);
       {
         var activeGaps = activeRectGaps;
         var boardGaps = boardRowGaps;
         int c1 = 0;
         int c2 = 0;
 
-        while (boardGaps[c1] < GAP_STOP) {
-          if (activeGaps[c2] > boardGaps[c1]) {
+        while (boardGaps.value(c1) < GAP_STOP) {
+          if (activeGaps.value(c2) > boardGaps.value(c1)) {
             checkInf();
 
-            int x = boardGaps[c1];
-            int xe = Math.min(boardGaps[c1 + 1], activeGaps[c2 + 1]);
+            int x = boardGaps.value(c1);
+            int xe = Math.min(boardGaps.value(c1 + 1), activeGaps.value(c2 + 1));
             addNewRect(y, newRects, x, xe, y, "spawned new occupying unused pixel(s)", x);
             c2 += 2;
             continue;
@@ -321,24 +435,24 @@ public class P85MaximalRectangle {
     checkState(inf++ < 1000);
   }
 
-  /**
-   * Determine the index of the gap that contains x, or if x is not in a gap,
-   * the first gap beyond x (or the pointer to the end of the list is there is
-   * no next gap)
-   */
-  private int posWithinEmptyList(int x, int[] empList) {
-    todo("binary search");
-    int cursor = 0;
-    while (true) {
-      checkInf();
-      int empStop = empList[cursor + 1];
-      pr("empStop:", empStop, "x:", x, "cursor:", cursor);
-      if (x < empStop)
-        break;
-      cursor += 2;
-    }
-    return cursor;
-  }
+  //  /**
+  //   * Determine the index of the gap that contains x, or if x is not in a gap,
+  //   * the first gap beyond x (or the pointer to the end of the list is there is
+  //   * no next gap)
+  //   */
+  //  private int posWithinEmptyList(int x, int[] empList) {
+  //    todo("binary search");
+  //    int cursor = 0;
+  //    while (true) {
+  //      checkInf();
+  //      int empStop = empList[cursor + 1];
+  //      pr("empStop:", empStop, "x:", x, "cursor:", cursor);
+  //      if (x < empStop)
+  //        break;
+  //      cursor += 2;
+  //    }
+  //    return cursor;
+  //  }
 
   private void addNewRect(int sweepY, List<Rect> destination, int x, int xe, int y, Object... messages) {
     if (x >= xe)
@@ -401,7 +515,7 @@ public class P85MaximalRectangle {
 
     @Override
     public String toString() {
-      return "[x:" + x + " y:" + y + " w:" + (xe - x) + " h:" + (ye - y) + "]";
+      return "[" + (xe - x) + " x " + (ye - y) + " at " + x + " " + y + "]";
     }
   }
 
