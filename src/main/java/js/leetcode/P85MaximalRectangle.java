@@ -18,19 +18,21 @@ public class P85MaximalRectangle {
   }
 
   private void run() {
-
-    x(1, 1, "1", 1);
-    if (true)
-      return;
-
-    x(5, 4, "10100101111111110010", 6);
+    x(4, 3, "1101" + //
+        "1101" + //
+        "1111", //
+        6);
+    
 
     x(3, 3, "111" //
         + "101" //
         + "111" //
         , 3);
+    
 
-    x(4, 3, "110111011111", 6);
+    x(1, 1, "1", 1);
+
+    x(5, 4, "10100101111111110010", 6);
 
     for (int y = 1; y < 20; y++) {
       for (int x = 1; x < 5; x++) {
@@ -133,35 +135,12 @@ public class P85MaximalRectangle {
     }
 
     public void clear() {
-      //mCurrentStart = -1;
-      cursor = 0;
+      mSize = 0;
     }
 
     public void add(int x) {
       addInterval(x, x + 1);
-      //      int c = (mSize - 1) << 1;
-      //      if (mSize == 0 || intervals[c + 1] < x) {
-      //        intervals[c + 2] = x;
-      //        intervals[c + 3] = x + 1;
-      //        mSize++;
-      //      } else {
-      //        var end = intervals[c + 1];
-      //        checkArgument(x == intervals[c + 1]);
-      //        if (x == end) {
-      //          intervals[c + 1] = x + 1;
-      //        } else {
-      //          intervals[c + 2] = x;
-      //          intervals[c + 3] = x + 1;
-      //          mSize++;
-      //        }
-      //      }
     }
-    //
-    //    private void addEntry(int start, int stop) {
-    //      intervals[cursor] = start;
-    //      intervals[cursor + 1] = stop;
-    //      cursor += 2;
-    //    }
 
     /**
      * Determine the index of the interval that contains x, or if x is not in an
@@ -186,23 +165,19 @@ public class P85MaximalRectangle {
       }
     }
 
-    //    public int value(int j) {
-    //      return intervals[j];
-    //    }
-
     public void addInterval(int x, int xe) {
-      pr("interval list, add:", x, "..", xe);
+        pr("interval list, add:", x, "..", xe);
       checkArgument(x >= 0 && xe > x);
       int c = (mSize << 1);
-      if (c == 0 || x > intervals[c + 1]) {
+      if (c == 0 || x > intervals[c - 1]) {
         intervals[c] = x;
         intervals[c + 1] = xe;
         mSize++;
       } else {
-        checkArgument(c != 0 && x == intervals[c + 1]);
-        intervals[c + 1] = xe;
+        checkArgument(c != 0 && x == intervals[c - 1]);
+        intervals[c - 1] = xe;
       }
-      pr("...after add:", this);
+       pr("...after add:", this);
     }
 
     @Override
@@ -226,12 +201,6 @@ public class P85MaximalRectangle {
       return sb.toString();
     }
 
-    private final int[] intervals;
-    //    private int mCurrentStart;
-    //    private int mCurrentStop;
-    private int cursor;
-    private int mSize;
-
     public int start(int i) {
       return intervals[i << 1];
     }
@@ -241,8 +210,12 @@ public class P85MaximalRectangle {
     }
 
     public int size() {
-      return cursor >> 1;
+      return mSize;
     }
+
+    private final int[] intervals;
+    private int mSize;
+
   }
 
   public int maximalRectangle(char[][] matrix) {
@@ -256,7 +229,7 @@ public class P85MaximalRectangle {
     bActiveList.clear();
 
     var rowSpaceIntervals = new IntervalList(bw);
-    var activeRectGaps = new IntervalList(bw);
+    var rectIntervals = new IntervalList(bw);
 
     var newRects = new ArrayList<Rect>();
     var removeRects = new ArrayList<Rect>();
@@ -265,32 +238,33 @@ public class P85MaximalRectangle {
     for (var y = 0; y < bh; y++, cellIndex += bw) {
       pr(VERT_SP, "sweep:", y);
 
+      pr("...constructing board spaces");
       {
         var g = rowSpaceIntervals;
         g.clear();
         for (var x = 0; x < bw; x++) {
           // If there is space here, add it to the interval
           if (sc[cellIndex + x] != 0) {
-            pr("...adding x to space interval:", x);
+            //pr("...adding x to space interval:", x);
             g.add(x);
           }
         }
       }
-      pr("rowSpaceIntervals:", rowSpaceIntervals);
+      pr("...board spaces:", rowSpaceIntervals);
       newRects.clear();
       removeRects.clear();
 
-      pr("activeList:", bActiveList);
+      pr("...activeList:", bActiveList);
 
       for (var r : bActiveList) {
         boolean retain = true;
         checkInf();
 
-        pr("examining active rect", r);
-        pr("boardRowGaps:", rowSpaceIntervals);
+         pr(VERT_SP, "examining active rect", r);
+        // pr("boardRowGaps:", rowSpaceIntervals);
         todo("we can maintain a pointer into the empty list since the rects are sorted by x");
         var aInt = rowSpaceIntervals.findz(r.x);
-        pr("...index of interval containing r.x", r.x, aInt);
+         pr("...index of interval containing r.x", r.x, aInt);
         if (aInt < 0) {
           retain = false;
           aInt = -aInt - 1;
@@ -299,12 +273,12 @@ public class P85MaximalRectangle {
           retain = false;
         } else {
           var bInt = rowSpaceIntervals.findz(r.xe - 1);
-          pr("...index of interval containing r.xe-1", r.xe - 1, bInt);
+           pr("...index of interval containing r.xe-1", r.xe - 1, bInt);
           if (bInt < 0) {
             retain = false;
             bInt = -bInt - 2; // Move back to previous gap
           }
-          pr("normalized:", aInt, bInt);
+             pr("normalized:", aInt, bInt);
 
           checkState(bInt >= aInt);
           if (aInt != bInt)
@@ -323,58 +297,16 @@ public class P85MaximalRectangle {
               }
             }
           }
-          //          var x = r.x;
-          //          while (x < r.xe) {
-          //            checkInf();
-          //            // do we overlap the current gap?
-          //            if (x >= boardRowGaps.value(j)) {
-          //              var xe = Math.min(boardRowGaps.value(j + 1), r.xe);
-          //              addNewRect(y, newRects, x, xe, r.y, "vert slice");
-          //              j += 2;
-          //              x = boardRowGaps.value(j);
-          //              pr("...advanced x to:", x);
-          //            } else {
-          //              break;
-          //            }
-          //          }
-          //          
-          //          var prevBlocker = r.x - 1;
-          //
-          //          for (var x = r.x; x < r.xe; x++) {
-          //            if (workRow[x] == 0) {
-          //              // we've encountered an obstacle above this rect.
-          //              retain = false;
-          //              // use a vertical slice of this rect as a new rect
-          //              addNewRect(y, newRects, prevBlocker + 1, x, r.y, "vert slice");
-          //              prevBlocker = x;
-          //            }
-          //          }
-          //
-          //          if (!retain) {
-          //            // add rightmost vertical slice of blocked rect
-          //            if (workRow[r.xe - 1] != 0) {
-          //              addNewRect(y, newRects, prevBlocker + 1, r.xe, r.y, "rightmost vert slice");
-          //            }
-          //            var area = r.area();
-          //            if (area > maxArea)
-          //              maxArea = area;
-          //          }
         }
         if (!retain) {
           var area = r.area();
           if (area > maxArea)
             maxArea = area;
+          removeRects.add(r);
+          pr("...removing rect:", r);
+        } else {
+          r.ye++;
         }
-        removeRects.add(r);
-        pr("...removing rect:", r);
-        //      if (retain) {
-        //        r.ye++;
-        //        newRects.add(r);
-        //        // paint this rectangle into the work row so we don't spawn new ones
-        //        for (var x = r.x; x < r.xe; x++) {
-        //          workRow[x] = 2;
-        //        }
-        //      }
       }
 
       bActiveList.removeAll(removeRects);
@@ -383,45 +315,46 @@ public class P85MaximalRectangle {
 
       // Build a second gap list from the active list
 
-      activeRectGaps.clear();
+      // The active list rectangles may overlap, but they are sorted by start coordinate...
+      rectIntervals.clear();
       for (var r : bActiveList)
-        activeRectGaps.addInterval(r.x, r.xe);
-      pr("built active list gaps from", bActiveList.size(), "rects:", activeRectGaps);
+        rectIntervals.addInterval(r.x, r.xe);
+      pr("...built rect interval list:", rectIntervals);
 
       // Where the active list's gap list is "less" than the board's, generate new (maximal) rectangles 
 
-      pr("spawning new rects to fill space in current row:");
-      pr("board:", rowSpaceIntervals);
-      pr("rects:", activeRectGaps);
+      pr("...spawning new rects to fill space in current row");
+      //      pr("board:", rowSpaceIntervals);
+      //      pr("rects:", rectIntervals);
       {
         int boardCursor = 0;
         int rectCursor = 0;
-        int newRectX = 0;
+        // int newRectX = 0;
 
         // Loop until we've consumed all the board intervals.
         while (boardCursor < rowSpaceIntervals.size()) {
 
-          pr("boardCursor:",boardCursor);
-          pr("rectCursor:",rectCursor);
-          pr("newRectX:",newRectX);
-          
-          // Let B be the current board interval (or unfilled remainder of it),
+          pr("......boardCursor:", boardCursor);
+          pr("......rectCursor:", rectCursor);
+          //  pr("newRectX:",newRectX);
+
+          // Let B be the current board interval,
           // and R the current rectangle interval.
 
-          int b1 = rowSpaceIntervals.stop(boardCursor);
-          if (b1 <= newRectX) {
-            boardCursor++;
-            continue;
-          }
           int b0 = rowSpaceIntervals.start(boardCursor);
-          if (b0 < newRectX)
-            b0 = newRectX;
+          int b1 = rowSpaceIntervals.stop(boardCursor);
+          //          if (b1 <= newRectX) {
+          //            boardCursor++;
+          //            continue;
+          //          }
+          //          if (b0 < newRectX)
+          //            b0 = newRectX;
 
           int r0 = 10000;
           int r1 = r0 + 1;
-          if (rectCursor < activeRectGaps.size()) {
-            r0 = activeRectGaps.start(rectCursor);
-            r1 = activeRectGaps.stop(rectCursor);
+          if (rectCursor < rectIntervals.size()) {
+            r0 = rectIntervals.start(rectCursor);
+            r1 = rectIntervals.stop(rectCursor);
           }
 
           // Case 1: R is to the left of B, with no overlap.
@@ -430,25 +363,36 @@ public class P85MaximalRectangle {
             continue;
           }
 
-          // Case 2: R overlaps B, and starts at or before B.
-          if (r0 <= b0) {
-            newRectX = r1;
+          // Case 2: R has the same width as B; no new rects need to be added for this B
+          if (r0 == b0 && r1 == b1) {
+            boardCursor++;
+            rectCursor++;
             continue;
           }
 
-          // Case 3: R overlaps B, and starts after B.
+          // Case 3: R overlaps B in some way
           if (r0 < b1) {
-            addNewRect(y, newRects, b0, r0, y,
-                "spawned new rect filling board space before overlapping rect");
-            newRectX = r0;
-            boardCursor++;
+            rectCursor++;
+            //            addNewRect(y, newRects, b0, b1, y,
+            //                "spawned new rect filling board space that overlaps some rect");
+            //            boardCursor++;
             continue;
           }
+          //
+          //          // Case 3: R overlaps B, and starts after B.
+          //          if (r0 < b1) {
+          //            addNewRect(y, newRects, b0, r0, y,
+          //                "spawned new rect filling board space before overlapping rect");
+          //            newRectX = r0;
+          //            boardCursor++;
+          //            continue;
+          //          }
 
           // Case 4: R doesn't exist or is strictly to the right of B.
           // Add a rect to fill B
           addNewRect(y, newRects, b0, b1, y, "spawned new rect filling board space strictly to left of rect");
-          newRectX = b1;
+          boardCursor++;
+          //newRectX = b1;
         }
       }
 
