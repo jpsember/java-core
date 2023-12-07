@@ -84,16 +84,17 @@ public class P85MaximalRectangle {
     checkState(expected == result, "expected:", expected);
   }
 
-  /* private */ void showBoard(int x0, int x1, int y0, int y1, Object... messages) {
+  /* private */ void showBoard(char[][] sMatrix, int x0, int x1, int y0, int y1, Object... messages) {
     pr(VERT_SP, BasePrinter.toString(messages), "x,y", x0, y1, CR,
         "--------------------------------------------");
     for (var y = y0; y < y1; y++) {
       var sb = new StringBuilder();
+      var row = sMatrix[y];
       for (var x = x0; x < x1; x++) {
-        var c = sCells[y * bWidth + x];
+        var c = row[x];
         if (x != x0)
           sb.append(' ');
-        sb.append(c == 0 ? "." : "X");
+        sb.append(c == '0' ? "." : "X");
       }
       pr(sb);
     }
@@ -286,11 +287,9 @@ public class P85MaximalRectangle {
   }
 
   public int maximalRectangle(char[][] matrix) {
-    prepareGrid(matrix);
-    final var bw = bWidth;
-    final var bh = bHeight;
-    final var sc = sCells;
-    showBoard(0, bw, 0, bh, "initial");
+    final var bw = matrix[0].length;
+    final var bh = matrix.length;
+    showBoard(matrix, 0, bw, 0, bh, "initial");
 
     int maxArea = 0;
     bActiveList.clear();
@@ -300,8 +299,7 @@ public class P85MaximalRectangle {
 
     List<Rect> updatedRects = new ArrayList<>();
 
-    int cellIndex = 0;
-    for (var y = 0; y < bh; y++, cellIndex += bw) {
+    for (var y = 0; y <= bh; y++) {
       pr(VERT_SP, "sweep:", y);
 
       // bActiveList.sort(RECT_COMPARATOR);
@@ -309,11 +307,15 @@ public class P85MaximalRectangle {
       {
         var g = rowSpaceIntervals;
         g.clear();
-        for (var x = 0; x < bw; x++) {
-          // If there is space here, add it to the interval
-          if (sc[cellIndex + x] != 0) {
-            //pr("...adding x to space interval:", x);
-            g.add(x);
+        // If we're processing the row past the original matrix, treat as if that row existed and was empty
+        if (y < bh) {
+          var matrixRow = matrix[y];
+          for (var x = 0; x < bw; x++) {
+            // If there is space here, add it to the interval
+            if (matrixRow[x] != '0') {
+              //pr("...adding x to space interval:", x);
+              g.add(x);
+            }
           }
         }
       }
@@ -487,30 +489,6 @@ public class P85MaximalRectangle {
     destination.add(r);
   }
 
-  private void prepareGrid(char[][] matrix) {
-
-    final int PAD_LEFTRIGHT = 0;
-    final int PAD_BOTTOM = 1;
-
-    int gridWidth = matrix[0].length;
-    int gridHeight = matrix.length;
-
-    bWidth = gridWidth + PAD_LEFTRIGHT * 2;
-    bHeight = gridHeight + PAD_BOTTOM;
-
-    byte[] cells = new byte[bWidth * bHeight];
-    sCells = cells;
-    int ci = PAD_LEFTRIGHT;
-    for (var row : matrix) {
-      for (var c : row) {
-        if (c == '1')
-          cells[ci] = 1;
-        ci++;
-      }
-      ci += PAD_LEFTRIGHT * 2;
-    }
-  }
-
   private static final Comparator<Rect> RECT_COMPARATOR = new Comparator<>() {
     @Override
     public int compare(Rect o1, Rect o2) {
@@ -523,9 +501,6 @@ public class P85MaximalRectangle {
     }
   };
 
-  private static byte[] sCells;
-  private static int bWidth;
-  private static int bHeight;
   private static List<Rect> bActiveList = new ArrayList<>();
 
   private static class Rect {
