@@ -18,21 +18,26 @@ public class P85MaximalRectangle {
   }
 
   private void run() {
+
+    x(5, 5, "10100" //
+        + "10111" //
+        + "11101" //
+        + "11111" //
+        + "10010", 6);
+
+    x(5, 4, "10100101111111110010", 6);
+
     x(4, 3, "1101" + //
         "1101" + //
         "1111", //
         6);
-    
 
     x(3, 3, "111" //
         + "101" //
         + "111" //
         , 3);
-    
 
     x(1, 1, "1", 1);
-
-    x(5, 4, "10100101111111110010", 6);
 
     for (int y = 1; y < 20; y++) {
       for (int x = 1; x < 5; x++) {
@@ -51,12 +56,6 @@ public class P85MaximalRectangle {
     x(3, 2, "110111", 4);
 
     x(3, 3, "111111111", 9);
-
-    x(5, 5, "10100" //
-        + "10111" //
-        + "11101" //
-        + "11111" //
-        + "10010", 6);
 
   }
 
@@ -127,11 +126,9 @@ public class P85MaximalRectangle {
   //  }
   // ------------------------------------------------------------------
 
-  //  private static final int GAP_STOP = 10000;
-
   private static class IntervalList {
     IntervalList(int maxIntervals) {
-      intervals = new int[(maxIntervals + 1) * 2];
+      intervals = new int[intervalOffset(maxIntervals + 1)];
     }
 
     public void clear() {
@@ -147,14 +144,13 @@ public class P85MaximalRectangle {
      * interval, -1 minus the insertion position of a new interval that would
      * contain x
      */
-    public int findz(int x) {
+    public int find(int x) {
       todo("binary search");
-      //      checkState(x >= 0  );
       int index = 0;
       while (true) {
         if (index == mSize)
           return -1 - index;
-        var cursor = index << 1;
+        var cursor = intervalOffset(index);
         int empStart = intervals[cursor];
         if (x < empStart)
           return -1 - index;
@@ -165,10 +161,74 @@ public class P85MaximalRectangle {
       }
     }
 
+    private static int intervalOffset(int intervalNumber) {
+      return intervalNumber << 1;
+    }
+
+    private void removeIntervals(int start, int stop) {
+      int removeCount = stop - start;
+      if (removeCount <= 0)
+        return;
+      shiftIntervals(stop, mSize, start);
+      //      int remBytes = intervalOffset(stop - start);
+      //      int shiftTarget = intervalOffset(start);
+      //      int shiftSource = intervalOffset(stop);
+      //      for (int i = 0; i < remBytes; i++)
+      //        intervals[shiftTarget + i] = intervals[shiftSource + i];
+      mSize -= removeCount;
+    }
+
+    private void shiftIntervals(int source, int sourceStop, int target) {
+      int numIntervals = sourceStop - source;
+      checkArgument(sourceStop >= source);
+      if (source == target || numIntervals == 0)
+        return;
+
+      int shiftBytes = intervalOffset(sourceStop - source);
+      int shiftTarget = intervalOffset(target);
+      int shiftSource = intervalOffset(source);
+      if (target < source) {
+        for (int i = 0; i < shiftBytes; i++)
+          intervals[shiftTarget + i] = intervals[shiftSource + i];
+      } else {
+        for (int i = shiftBytes - 1; i >= 0; i--)
+          intervals[shiftTarget + i] = intervals[shiftSource + i];
+      }
+    }
+
+    public void insertInterval(int x, int xe) {
+
+      var startSlot = find(x);
+      var stopSlot = find(xe);
+
+      if (startSlot >= 0) {
+        x = Math.min(x, start(startSlot));
+        if (stopSlot >= 0) {
+          xe = Math.max(xe, stop(stopSlot));
+          removeIntervals(startSlot + 1, stopSlot);
+        } else {
+          storeInterval(startSlot, x, xe);
+          removeIntervals(startSlot + 1, normalize(stopSlot));
+        }
+      } else {
+        startSlot = normalize(startSlot);
+        shiftIntervals(startSlot, mSize, startSlot + 1);
+        //storeInterval(startSlot,x,xe);
+      }
+      storeInterval(startSlot, x, xe);
+    }
+
+    private void storeInterval(int index, int x, int xe) {
+      checkArgument(x >= 0 && x <= xe);
+      var c = intervalOffset(index);
+      intervals[c] = x;
+      intervals[c + 1] = xe;
+    }
+
     public void addInterval(int x, int xe) {
-        pr("interval list, add:", x, "..", xe);
+      pr("interval list, add:", x, "..", xe);
       checkArgument(x >= 0 && xe > x);
-      int c = (mSize << 1);
+      int c = intervalOffset(mSize);
       if (c == 0 || x > intervals[c - 1]) {
         intervals[c] = x;
         intervals[c + 1] = xe;
@@ -177,7 +237,7 @@ public class P85MaximalRectangle {
         checkArgument(c != 0 && x == intervals[c - 1]);
         intervals[c - 1] = xe;
       }
-       pr("...after add:", this);
+      pr("...after add:", this);
     }
 
     @Override
@@ -185,7 +245,7 @@ public class P85MaximalRectangle {
       StringBuilder sb = new StringBuilder("GapList{ ");
       var k = sb.length();
       for (int i = 0; i < mSize; i++) {
-        var c = i << 1;
+        var c = intervalOffset(i);
         int gStart = intervals[c];
         int gEnd = intervals[c + 1];
         sb.append(spaces(gStart * 5 - (sb.length() - k)));
@@ -202,11 +262,11 @@ public class P85MaximalRectangle {
     }
 
     public int start(int i) {
-      return intervals[i << 1];
+      return intervals[intervalOffset(i)];
     }
 
     public int stop(int i) {
-      return intervals[(i << 1) + 1];
+      return intervals[intervalOffset(i) + 1];
     }
 
     public int size() {
@@ -260,27 +320,37 @@ public class P85MaximalRectangle {
         boolean retain = true;
         checkInf();
 
-         pr(VERT_SP, "examining active rect", r);
+        pr(VERT_SP, "examining active rect", r);
         // pr("boardRowGaps:", rowSpaceIntervals);
         todo("we can maintain a pointer into the empty list since the rects are sorted by x");
-        var aInt = rowSpaceIntervals.findz(r.x);
-         pr("...index of interval containing r.x", r.x, aInt);
+        var aInt = rowSpaceIntervals.find(r.x);
+        pr("...index of interval containing r.x", r.x, aInt);
         if (aInt < 0) {
           retain = false;
-          aInt = -aInt - 1;
+          aInt = normalize(aInt);
         }
-        if (aInt == rowSpaceIntervals.size()) {
-          retain = false;
-        } else {
-          var bInt = rowSpaceIntervals.findz(r.xe - 1);
-           pr("...index of interval containing r.xe-1", r.xe - 1, bInt);
+
+        //        if (aInt == rowSpaceIntervals.size()) {
+        //          retain = false;
+        //        } else 
+        {
+          var bInt = rowSpaceIntervals.find(r.xe - 1);
           if (bInt < 0) {
             retain = false;
-            bInt = -bInt - 2; // Move back to previous gap
+            bInt = normalize(bInt);
           }
-             pr("normalized:", aInt, bInt);
+          //          pr("...index of interval containing r.xe-1", r.xe - 1, bInt);
+          //          if (bInt < 0) {
+          //            retain = false;
+          //            bInt = -bInt - 2; // Move back to previous gap
+          //          }
+          pr("normalized:", aInt, bInt);
 
-          checkState(bInt >= aInt);
+          if (bInt < aInt) {
+            pr("interval:", rowSpaceIntervals, CR, "unexpected finding r.xe-1:", r.xe - 1, "=>",
+                rowSpaceIntervals.find(r.xe - 1), " bInt:", bInt);
+            checkState(bInt >= aInt);
+          }
           if (aInt != bInt)
             retain = false;
 
@@ -316,9 +386,22 @@ public class P85MaximalRectangle {
       // Build a second gap list from the active list
 
       // The active list rectangles may overlap, but they are sorted by start coordinate...
+      //      var lastIntervalEnd = -1;
+
       rectIntervals.clear();
-      for (var r : bActiveList)
-        rectIntervals.addInterval(r.x, r.xe);
+      pr("activeList:", INDENT, bActiveList);
+      for (var r : bActiveList) {
+        var x = r.x;
+        var xe = r.xe;
+        pr("...adding r:", r);
+        todo("the active list doesn't need to be sorted?");
+        //        if (x < lastIntervalEnd) {
+        //          x = lastIntervalEnd;
+        //          checkState(xe > x);
+        //        }
+        rectIntervals.insertInterval(x, xe);
+        //        lastIntervalEnd = xe;
+      }
       pr("...built rect interval list:", rectIntervals);
 
       // Where the active list's gap list is "less" than the board's, generate new (maximal) rectangles 
@@ -400,6 +483,12 @@ public class P85MaximalRectangle {
     }
     return maxArea;
 
+  }
+
+  private static int normalize(int intervalCode) {
+    if (intervalCode < 0)
+      return -intervalCode - 1;
+    return intervalCode;
   }
 
   int inf;
