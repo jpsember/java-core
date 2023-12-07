@@ -6,8 +6,6 @@ import static js.base.Tools.*;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
 
 import js.base.BasePrinter;
 
@@ -18,6 +16,8 @@ public class P85MaximalRectangle {
   }
 
   private void run() {
+
+    x(1, 1, "1", 1);
 
     x(5, 5, "10100" //
         + "10111" //
@@ -37,8 +37,7 @@ public class P85MaximalRectangle {
         + "111" //
         , 3);
 
-    x(1, 1, "1", 1);
-
+   
     for (int y = 1; y < 20; y++) {
       for (int x = 1; x < 5; x++) {
         y(x, y);
@@ -300,13 +299,14 @@ public class P85MaximalRectangle {
     var rowSpaceIntervals = new IntervalList(bw);
     var rectIntervals = new IntervalList(bw);
 
-    var newRects = new ArrayList<Rect>();
-    var removeRects = new ArrayList<Rect>();
+    List<Rect> updatedRects = new ArrayList<>();
 
     int cellIndex = 0;
     for (var y = 0; y < bh; y++, cellIndex += bw) {
       pr(VERT_SP, "sweep:", y);
 
+     // bActiveList.sort(RECT_COMPARATOR);
+      todo("do we still need padding?");
       pr("...constructing board spaces");
       {
         var g = rowSpaceIntervals;
@@ -320,39 +320,29 @@ public class P85MaximalRectangle {
         }
       }
       pr("...board spaces:", rowSpaceIntervals);
-      newRects.clear();
-      removeRects.clear();
+      updatedRects.clear();
 
       pr("...activeList:", bActiveList);
 
+      todo("should we keep the active list sorted?");
       for (var r : bActiveList) {
         boolean retain = true;
-        checkInf();
 
         pr(VERT_SP, "examining active rect", r);
-        // pr("boardRowGaps:", rowSpaceIntervals);
-        todo("we can maintain a pointer into the empty list since the rects are sorted by x");
         var aInt = rowSpaceIntervals.find(r.x);
         pr("...index of interval containing r.x", r.x, aInt);
         if (aInt < 0) {
           retain = false;
           aInt = normalize(aInt);
         }
-
-        //        if (aInt == rowSpaceIntervals.size()) {
-        //          retain = false;
-        //        } else 
+         
         {
           var bInt = rowSpaceIntervals.find(r.xe - 1);
           if (bInt < 0) {
             retain = false;
             bInt = normalize(bInt);
           }
-          //          pr("...index of interval containing r.xe-1", r.xe - 1, bInt);
-          //          if (bInt < 0) {
-          //            retain = false;
-          //            bInt = -bInt - 2; // Move back to previous gap
-          //          }
+           
           pr("normalized:", aInt, bInt);
 
           if (bInt < aInt) {
@@ -372,7 +362,7 @@ public class P85MaximalRectangle {
               var effx0 = Math.max(r.x, g0);
               var effx1 = Math.min(r.xe, g1);
               if (effx0 < effx1) {
-                addNewRect(y, newRects, effx0, effx1, r.y, "vert slice");
+                addNewRect(y, updatedRects, effx0, effx1, r.y, "vert slice");
               }
             }
           }
@@ -381,14 +371,16 @@ public class P85MaximalRectangle {
           var area = r.area();
           if (area > maxArea)
             maxArea = area;
-          removeRects.add(r);
           pr("...removing rect:", r);
         } else {
           r.ye++;
+          updatedRects.add(r);
         }
       }
 
-      bActiveList.removeAll(removeRects);
+      var tmp = bActiveList;
+      bActiveList = updatedRects;
+      updatedRects = tmp;
 
       // While there are gaps that are not occupied by rects in the active list, generate new rects to fill them
 
@@ -482,13 +474,12 @@ public class P85MaximalRectangle {
 
           // Case 4: R doesn't exist or is strictly to the right of B.
           // Add a rect to fill B
-          addNewRect(y, newRects, b0, b1, y, "spawned new rect filling board space strictly to left of rect");
+          addNewRect(y, bActiveList, b0, b1, y,
+              "spawned new rect filling board space strictly to left of rect");
           boardCursor++;
           //newRectX = b1;
         }
       }
-
-      bActiveList.addAll(newRects);
     }
     return maxArea;
 
@@ -499,31 +490,6 @@ public class P85MaximalRectangle {
       return -intervalCode - 1;
     return intervalCode;
   }
-
-  int inf;
-
-  void checkInf() {
-    checkState(inf++ < 1000);
-  }
-
-  //  /**
-  //   * Determine the index of the gap that contains x, or if x is not in a gap,
-  //   * the first gap beyond x (or the pointer to the end of the list is there is
-  //   * no next gap)
-  //   */
-  //  private int posWithinEmptyList(int x, int[] empList) {
-  //    todo("binary search");
-  //    int cursor = 0;
-  //    while (true) {
-  //      checkInf();
-  //      int empStop = empList[cursor + 1];
-  //      pr("empStop:", empStop, "x:", x, "cursor:", cursor);
-  //      if (x < empStop)
-  //        break;
-  //      cursor += 2;
-  //    }
-  //    return cursor;
-  //  }
 
   private void addNewRect(int sweepY, List<Rect> destination, int x, int xe, int y, Object... messages) {
     if (x >= xe)
@@ -568,7 +534,7 @@ public class P85MaximalRectangle {
   private static byte[] sCells;
   private static int bWidth;
   private static int bHeight;
-  private static Set<Rect> bActiveList = new TreeSet<Rect>(RECT_COMPARATOR);
+  private static List<Rect> bActiveList = new ArrayList<>();
 
   private static class Rect {
     int x, y, xe, ye;
