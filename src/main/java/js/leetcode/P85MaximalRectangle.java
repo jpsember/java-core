@@ -102,31 +102,43 @@ public class P85MaximalRectangle {
     pr("--------------------------------------------");
   }
 
-  //  /* private */ void showGapList(GapList gapList, Object... messages) {
-  //    pr(VERT_SP, "Gap list:", BasePrinter.toString(messages));
-  //    var sb = new StringBuilder();
-  //    int c = 0;
-  //    var gaps = gapList.gaps;
-  //    while (true) {
-  //      int gStart = gaps[c];
-  //      int gEnd = gaps[c + 1];
-  //      c += 2;
-  //      if (gStart == GAP_STOP)
-  //        break;
-  //      sb.append(spaces(gStart * 5 - sb.length()));
-  //      sb.append('[');
-  //      sb.append(gStart);
-  //      if (gEnd - 1 > gStart) {
-  //        sb.append("..");
-  //        sb.append(gEnd - 1);
-  //      }
-  //      sb.append(']');
-  //    }
-  //    pr(sb);
-  //  }
-  // ------------------------------------------------------------------
-
+  /**
+   * A data structure that maintains a sorted list of integer intervals, in the
+   * form of pairs:
+   * 
+   * [start0, end0, start1, end1 ...]
+   * 
+   * where each interval includes startx and endx-1 (i.e., endx is exclusive),
+   * and endx < start(x+1)
+   *
+   */
   private static class IntervalList {
+
+    private void validate() {
+      String prob;
+      outer: do {
+        prob = "negative size";
+        if (mSize < 0)
+          break;
+
+        prob = "interval has zero or negative size";
+        int vt = intervalOffset(mSize);
+        for (int i = 0; i < vt; i += 2) {
+          if (intervals[i] >= intervals[i + 1]) {
+            prob = "interval has zero or negative size";
+            break outer;
+          }
+          if (i > 0 && intervals[i] < intervals[i - 1]) {
+            prob = "interval is not strictly ahead of previous";
+            break outer;
+          }
+        }
+        prob = "";
+      } while (false);
+      if (!prob.isEmpty())
+        badArg("Problem with IntervalList:", prob, INDENT, this);
+    }
+
     IntervalList(int maxIntervals) {
       intervals = new int[intervalOffset(maxIntervals + 1)];
     }
@@ -170,12 +182,7 @@ public class P85MaximalRectangle {
       if (removeCount <= 0)
         return;
       shiftIntervals(stop, mSize, start);
-      //      int remBytes = intervalOffset(stop - start);
-      //      int shiftTarget = intervalOffset(start);
-      //      int shiftSource = intervalOffset(stop);
-      //      for (int i = 0; i < remBytes; i++)
-      //        intervals[shiftTarget + i] = intervals[shiftSource + i];
-      mSize -= removeCount;
+            mSize -= removeCount;
     }
 
     private void shiftIntervals(int source, int sourceStop, int target) {
@@ -213,9 +220,9 @@ public class P85MaximalRectangle {
       } else {
         startSlot = normalize(startSlot);
         shiftIntervals(startSlot, mSize, startSlot + 1);
-        //storeInterval(startSlot,x,xe);
       }
       storeInterval(startSlot, x, xe);
+      validate();
     }
 
     private void storeInterval(int index, int x, int xe) {
@@ -238,6 +245,7 @@ public class P85MaximalRectangle {
         intervals[c - 1] = xe;
       }
       pr("...after add:", this);
+      validate();
     }
 
     @Override
