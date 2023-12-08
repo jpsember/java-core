@@ -27,12 +27,34 @@ import static js.base.Tools.*;
  * 
  * I think I want to use modular arithmetic to do psuedo rotations, to simplify
  * the binary search parameters.
+ * 
+ * 
+ * Got it working; notes:
+ * 
+ * I did a lot of fiddling around with modular arithmetic, and it was confusing
+ * and unnecessary, as I would subdivide the search region into three
+ * subregions, none of which crossed the n-1..0 boundary.
+ * 
+ * I wasted a lot of time trying to avoid searching a particular value again,
+ * i.e. searching (a,...b) then (a+1, ....) or (...,b-1), but these 'creeping
+ * inward' values would produce subtle problems.
+ * 
+ * In conclusion, if there are no duplicates, we can quickly determine which
+ * of three subregions contains the minimum value (or 'rotate point'), then
+ * recursively search within that subregion again.
+ * 
+ * If there are duplicates, then if at least one of the three 'probe' searches
+ * is different than the other two, we can still eliminate two thirds of the
+ * search space.
+ * 
+ * If all (or almost all) values are the same, then the search may still take
+ * linear (or O(n log n?)) time.  Otherwise, it is O(log n).
  */
-public class P154FindMinimumInSortedArrayII {
+public class P154FindMinimumInRotatedSortedArrayII {
 
   public static void main(String[] args) {
     loadTools();
-    new P154FindMinimumInSortedArrayII().run();
+    new P154FindMinimumInRotatedSortedArrayII().run();
   }
 
   private void run() {
@@ -103,8 +125,6 @@ public class P154FindMinimumInSortedArrayII {
     a.add(a.remove(0));
   }
 
-  private static final boolean db = true;
-
   private int findMindb(int[] nums) {
     mNums = nums;
     mReadCount = 0;
@@ -129,7 +149,6 @@ public class P154FindMinimumInSortedArrayII {
     int diff = b - a;
     if (diff <= 0)
       return;
-    pr("auxFindMin a:", a, "b:", b, "diff:", diff, "nums.length:", mNums.length);
     if (diff < 3) {
       for (int i = 0; i < diff; i++)
         get(i + a, "(range of < 3)");
@@ -143,45 +162,27 @@ public class P154FindMinimumInSortedArrayII {
     int nv = get(v, "v");
     int nw = get(w, "w");
     if (nu > nv) {
-      pr("...nu>nv, assuming in u...v region");
       auxFindMin(u, v);
     } else if (nv > nw) {
-      pr("...nv>nw, assuming in v...w region");
       auxFindMin(v, w);
     } else if (nw > nu) {
-      pr("...nw>nu, assuming in < u or > w region");
       auxFindMin(w, b);
     } else {
-      pr("...nu,nv,nw all same");
       int oldMin = minValueSoFar;
-      pr("...scanning u+1..v-1");
       auxFindMin(u, v);
-      if (oldMin == minValueSoFar) {
-        pr("......haven't found new min, scanning v...w", v, w);
+      if (oldMin == minValueSoFar)
         auxFindMin(v, w);
-      }
-      if (oldMin == minValueSoFar) {
-        pr("......haven't found new min, scanning w...b", w, b);
+      if (oldMin == minValueSoFar)
         auxFindMin(w, b);
-      }
     }
   }
 
   private int get(int index, String prompt) {
     var nums = mNums;
     int effInd = index % nums.length;
-    if (db) {
-      mReadCount++;
-    }
-
     var value = nums[effInd];
-    boolean upd = false;
-    if (minValueSoFar == null || minValueSoFar > value) {
-      upd = true;
+    if (minValueSoFar == null || minValueSoFar > value)
       minValueSoFar = value;
-    }
-    if (db)
-      pr("....read", prompt, " nums[", effInd, "]=", value, upd ? "*** new min" : "");
     return value;
   }
 
