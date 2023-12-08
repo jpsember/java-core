@@ -13,6 +13,10 @@ import js.base.BasePrinter;
  * 
  * This looks like a straightforward dynamic programming problem, but perhaps
  * the minimum initial health is the wrinkle.
+ * 
+ * First attempt: for each state, keeping a map of current values => best
+ * minimum current value on any path to that state
+ * 
  */
 public class P174DungeonGame {
 
@@ -121,7 +125,7 @@ public class P174DungeonGame {
       if (bestMin == null || min > bestMin)
         bestMin = min;
     }
-    return Math.max(1,  1-bestMin);
+    return Math.max(1, 1 - bestMin);
   }
 
   private static class Info {
@@ -138,16 +142,16 @@ public class P174DungeonGame {
     }
 
     void merge(Info info, int cost) {
-      pr("...merge for cost:",cost);
+      pr("...merge for cost:", cost);
       for (var ent : info.paths.entrySet()) {
         // Get source val and min
         int val = ent.getKey();
         int min = ent.getValue();
-        
+
         // Calculate target value
         int newVal = val + cost;
         int newMin = Math.min(min, newVal);
-        
+
         add(newVal, newMin);
       }
     }
