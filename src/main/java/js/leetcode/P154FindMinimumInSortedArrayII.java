@@ -142,7 +142,6 @@ public class P154FindMinimumInSortedArrayII {
     int nu = get(u, "u");
     int nv = get(v, "v");
     int nw = get(w, "w");
-    //pr("...u:", u, nu, "v:", v, nv, "w:", w, nw);
     if (nu > nv) {
       pr("...nu>nv, assuming in u...v region");
       auxFindMin(u, v);
@@ -163,7 +162,6 @@ public class P154FindMinimumInSortedArrayII {
       }
       if (oldMin == minValueSoFar) {
         pr("......haven't found new min, scanning w...b", w, b);
-        //checkState(w + 1 < u - 1 + mNums.length);
         auxFindMin(w, b);
       }
     }
