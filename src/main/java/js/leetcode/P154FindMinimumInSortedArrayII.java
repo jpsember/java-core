@@ -2,7 +2,6 @@
 package js.leetcode;
 
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.List;
 import java.util.Random;
 
@@ -37,7 +36,7 @@ public class P154FindMinimumInSortedArrayII {
   }
 
   private void run() {
-    y("", "1", 100, "01");
+    y("", "1", 22, "01");
     y("10", "1", 100, "");
 
     //    y("000000000000000000000000000000001","0",100,"0");
@@ -104,19 +103,17 @@ public class P154FindMinimumInSortedArrayII {
     a.add(a.remove(0));
   }
 
-  private static final boolean db = false;
+  private static final boolean db = true;
 
   private int findMindb(int[] nums) {
     mNums = nums;
     mReadCount = 0;
-    mRead = new BitSet();
     minValueSoFar = null;
     auxFindMin(0, nums.length);
     pr("read count:", mReadCount, ((100 * mReadCount) / mNums.length) + "%");
     return minValueSoFar;
   }
 
-  private BitSet mRead;
   private int mReadCount;
 
   // ------------------------------------------------------------------
@@ -145,19 +142,30 @@ public class P154FindMinimumInSortedArrayII {
     int nu = get(u, "u");
     int nv = get(v, "v");
     int nw = get(w, "w");
-    if (nu > nv)
-      auxFindMin(u + 1, v - 1);
-    else if (nv > nw)
-      auxFindMin(v + 1, w - 1);
-    else if (nw > nu)
-      auxFindMin(w + 1, b);
-    else {
+    //pr("...u:", u, nu, "v:", v, nv, "w:", w, nw);
+    if (nu > nv) {
+      pr("...nu>nv, assuming in u...v region");
+      auxFindMin(u, v);
+    } else if (nv > nw) {
+      pr("...nv>nw, assuming in v...w region");
+      auxFindMin(v, w);
+    } else if (nw > nu) {
+      pr("...nw>nu, assuming in < u or > w region");
+      auxFindMin(w, b);
+    } else {
+      pr("...nu,nv,nw all same");
       int oldMin = minValueSoFar;
-      auxFindMin(u + 1, v - 1);
-      if (oldMin == minValueSoFar)
-        auxFindMin(v + 1, w - 1);
-      if (oldMin == minValueSoFar)
-        auxFindMin(w + 1, b - 1);
+      pr("...scanning u+1..v-1");
+      auxFindMin(u, v);
+      if (oldMin == minValueSoFar) {
+        pr("......haven't found new min, scanning v...w", v, w);
+        auxFindMin(v, w);
+      }
+      if (oldMin == minValueSoFar) {
+        pr("......haven't found new min, scanning w...b", w, b);
+        //checkState(w + 1 < u - 1 + mNums.length);
+        auxFindMin(w, b);
+      }
     }
   }
 
@@ -165,11 +173,6 @@ public class P154FindMinimumInSortedArrayII {
     var nums = mNums;
     int effInd = index % nums.length;
     if (db) {
-      if (mRead.get(effInd)) {
-        pr("*** Already read index:", index, prompt);
-        halt();
-      } else
-        mRead.set(effInd);
       mReadCount++;
     }
 
