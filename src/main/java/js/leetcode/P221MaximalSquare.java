@@ -12,6 +12,9 @@ public class P221MaximalSquare {
   }
 
   private void run() {
+
+    x(5, 6, "01101 11010 01110 11110 11111 00000", 9);
+    x(4, 5, "00011101111101110111", 9);
     x(5, 4, "10100 10111 11111 10010", 4);
   }
 
@@ -52,44 +55,38 @@ public class P221MaximalSquare {
   }
 
   public int maximalSquare(char[][] matrix) {
+    // The 'size' of a square is its width (or length)
     final var bw = matrix[0].length;
     final var bh = matrix.length;
-    
-    int[] sizesTable = new int[bw * bh];
-
     int bestSizeSeen = 0;
-    int xSource = 0;
-    int ySource = 0;
-    while (true) {
-      if (xSource < bw - 1)
-        xSource++;
-      else if (ySource < bh - 1)
-        ySource++;
-      else
-        break;
+    int maxPossible = bw < bh ? bw : bh;
 
-      int x = xSource;
-      int y = ySource;
-      while (true) {
+    outer: for (int x0 = 0; x0 < bw + bh - 1; x0++) {
+      var x = x0;
+      var y = 0;
+      if (x0 >= bw) {
+        y = x0 - bw + 1;
+        x = bw - 1;
+      }
+      while (x >= 0 && y < bh) {
         int best = 0;
         var c = matrix[y][x];
         if (c == '1') {
           best = 1;
           if (x > 0 && y > 0) {
-            var j = sizesTable[(y - 1) * bw + (x - 1)];
-            for (int i = 1; i <= j; i++) {
-              if (matrix[y - i][x] != '1' || matrix[y][x - i] != '1')
-                break;
+            int nbr1 = matrix[y - 1][x];
+            int nbr2 = matrix[y][x - 1];
+            best = nbr1 < nbr2 ? nbr1 : nbr2;
+            if (matrix[y - best][x - best] != 0)
               best++;
-            }
           }
-          sizesTable[y * bw + x] = best;
-          bestSizeSeen = Math.max(bestSizeSeen, best);
+          bestSizeSeen = best > bestSizeSeen ? best : bestSizeSeen;
+          if (bestSizeSeen == maxPossible)
+            break outer;
         }
+        matrix[y][x] = (char) best;
         x--;
         y++;
-        if (x < 0 || y == bh)
-          break;
       }
     }
     return bestSizeSeen * bestSizeSeen;
