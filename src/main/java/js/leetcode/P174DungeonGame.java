@@ -3,8 +3,8 @@ package js.leetcode;
 
 import static js.base.Tools.*;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 import js.base.BasePrinter;
 
@@ -17,6 +17,8 @@ import js.base.BasePrinter;
  * First attempt: for each state, keeping a map of current values => best
  * minimum current value on any path to that state
  * 
+ * Now I think a simple array of these values, sorted by current value, is the
+ * best approach.
  */
 public class P174DungeonGame {
 
@@ -47,8 +49,11 @@ public class P174DungeonGame {
       }
     }
 
+    dump(d, 0, 0);
+
     var result = calculateMinimumHP(d);
-    dump(d, 0, 0, "Result:", result);
+    pr("result:", result);
+
     checkState(result == expected, "expected", expected);
 
   }
@@ -80,7 +85,7 @@ public class P174DungeonGame {
     int dw = dungeon[0].length;
     int dh = dungeon.length;
 
-    Info[][] stats = new Info[dh][dw];
+    State[][] stats = new State[dh][dw];
 
     for (int s = 0; s < dw + dh - 1; s++) {
       int x = s;
@@ -91,13 +96,14 @@ public class P174DungeonGame {
       }
       while (x >= 0 && y < dh) {
 
+        dump(dungeon, x, y);
+
         var val = dungeon[y][x];
 
-        pr("x:", x, "y:", y, "val:", val);
-        var state = new Info();
+        var state = new State();
 
-        Info left = null;
-        Info up = null;
+        State left = null;
+        State up = null;
         if (x > 0)
           left = stats[y][x - 1];
         if (y > 0)
@@ -112,6 +118,7 @@ public class P174DungeonGame {
             state.merge(up, val);
         }
         stats[y][x] = state;
+        pr("stored state:", state);
         x--;
         y++;
 
@@ -120,41 +127,113 @@ public class P174DungeonGame {
 
     var last = stats[dh - 1][dw - 1];
     Integer bestMin = null;
-    for (var ent : last.paths.entrySet()) {
-      var min = ent.getValue();
+    for (var ent : last.valuePairs) {
+      var min = ent.minimumValue;
       if (bestMin == null || min > bestMin)
         bestMin = min;
     }
     return Math.max(1, 1 - bestMin);
   }
 
-  private static class Info {
+  private static class ValuePair {
+    ValuePair(int currentValue, int minValue) {
+      this.currentValue = currentValue;
+      this.minimumValue = minValue;
+    }
 
-    // A map of current values -> min value on path
-    Map<Integer, Integer> paths = new HashMap<>();
+    ValuePair extend(int cost) {
+      return new ValuePair(currentValue + cost, Math.min(minimumValue, currentValue + cost));
+    }
+
+    boolean dominates(ValuePair other) {
+      return currentValue >= other.currentValue && minimumValue >= other.minimumValue;
+    }
+
+    @Override
+    public String toString() {
+      return "(c" + currentValue + " m" + minimumValue + ")";
+    }
+
+    int currentValue;
+    int minimumValue;
+  }
+
+  private static class State {
 
     void add(int currentValue, int minValue) {
-      Integer existing = paths.get(currentValue);
-      if (existing == null || existing < minValue) {
-        pr("...updating val", currentValue, "==> min", minValue);
-        paths.put(currentValue, minValue);
-      }
+      valuePairs.add(new ValuePair(currentValue, minValue));
     }
 
-    void merge(Info info, int cost) {
-      pr("...merge for cost:", cost);
-      for (var ent : info.paths.entrySet()) {
-        // Get source val and min
-        int val = ent.getKey();
-        int min = ent.getValue();
+    /**
+     * Extend a previous state's values to add the cost of an edge to get to
+     * this state, and merge the resulting ValuePairs into this states'.
+     */
+    void merge(State prevState, int edgeCost) {
 
-        // Calculate target value
-        int newVal = val + cost;
-        int newMin = Math.min(min, newVal);
+      int prevCursor = 0;
+      var prevVals = prevState.valuePairs;
 
-        add(newVal, newMin);
+      var currVals = valuePairs;
+      var currCursor = 0;
+
+      var merged = new ArrayList<ValuePair>(prevVals.size() + currVals.size());
+
+      ValuePair srcValue = null;
+      ValuePair destValue = null;
+
+      int origVals = currVals.size();
+
+      while (true) {
+        if (srcValue == null && prevCursor != prevVals.size())
+          srcValue = prevVals.get(prevCursor++).extend(edgeCost);
+
+        if (destValue == null && currCursor < currVals.size())
+          destValue = currVals.get(currCursor++);
+
+        if (srcValue != null) {
+          if (destValue != null) {
+            if (srcValue.dominates(destValue)) {
+              destValue = null;
+            } else if (destValue.dominates(srcValue)) {
+              srcValue = null;
+            } else if (destValue.currentValue < srcValue.currentValue) {
+              merged.add(destValue);
+              destValue = null;
+            } else {
+              merged.add(srcValue);
+              srcValue = null;
+            }
+          } else {
+            merged.add(srcValue);
+            srcValue = null;
+          }
+        } else if (destValue != null) {
+          merged.add(destValue);
+          destValue = null;
+
+        } else
+          break;
       }
+
+      valuePairs = merged;
+
+      pr("...merge for cost:", edgeCost, "prev vals:", prevVals.size(), "orig src vals:", origVals, "merged:",
+          merged.size());
     }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder();
+      pr("State, values:");
+      for (var v : valuePairs) {
+        sb.append(' ');
+        sb.append(v);
+      }
+      return sb.toString();
+    }
+
+    // Pairs of current value, historical min value
+    List<ValuePair> valuePairs = new ArrayList<>();
   }
 
 }
