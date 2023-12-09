@@ -3,12 +3,13 @@ package js.leetcode;
 
 import static js.base.Tools.*;
 
+import java.util.AbstractQueue;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.PriorityQueue;
 import java.util.Random;
-import java.util.TreeSet;
 
 import js.base.BasePrinter;
 
@@ -65,7 +66,6 @@ public class P174DungeonGame {
   }
 
   private void x(int w, String s) {
-    var origs = s;
     while (true) {
       var x = s.length();
       s = s.replace('[', ' ').replace(']', ' ').replace(',', ' ').replace("  ", " ").trim();
@@ -296,15 +296,14 @@ public class P174DungeonGame {
   }
 
   public int calculateMinimumHP(int[][] dungeon) {
-    this.dungeon = dungeon;
+    dung = dungeon;
     dw = dungeon[0].length;
     dh = dungeon.length;
     memo = new int[dh * dw * 2];
     Arrays.fill(memo, 0x80000);
-    //    memo = new State[dh][dw];
     stateBuffer = new ArrayList<>();
 
-    priorityQueue = new TreeSet<State>(new Comparator<State>() {
+    priorityQueue = new PriorityQueue<State>(new Comparator<State>() {
       public int compare(State o1, State o2) {
         int result = -(o1.minimumValue - o2.minimumValue);
         if (result == 0)
@@ -320,8 +319,7 @@ public class P174DungeonGame {
 
     int result;
     while (true) {
-      var state = priorityQueue.first();
-      priorityQueue.remove(state);
+      var state = priorityQueue.remove();
       var x = state.x;
       var y = state.y;
       if (x == dw - 1 && y == dh - 1) {
@@ -338,7 +336,7 @@ public class P174DungeonGame {
   }
 
   private void tryExtend(State state, int nx, int ny) {
-    var ns = state.extend(nx, ny, dungeon[ny][nx]);
+    var ns = state.extend(nx, ny, dung[ny][nx]);
     var mi = (ny * dw + nx) << 1;
 
     int bestValue = memo[mi];
@@ -353,8 +351,8 @@ public class P174DungeonGame {
   }
 
   private static int[] memo;
-  private static TreeSet<State> priorityQueue;
-  private static int[][] dungeon;
+  private static AbstractQueue<State> priorityQueue;
+  private static int[][] dung;
   private static int dw, dh;
 
   private static List<State> stateBuffer;
@@ -377,14 +375,8 @@ public class P174DungeonGame {
 
     public State extend(int x, int y, int cost) {
       int val = value + cost;
-      var out = State.build(x, y, val, Math.min(val, minimumValue));
-      return out;
+      return State.build(x, y, val, Math.min(val, minimumValue));
     }
-
-    //    @Override
-    //    public String toString() {
-    //      return "(" + x + " " + y + " v:" + value + " m:" + minimumValue + ")";
-    //    }
 
     int x, y;
     int value, minimumValue;
