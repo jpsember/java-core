@@ -295,6 +295,10 @@ public class P174DungeonGame {
     List<ValuePairSLOW> valuePairs = new ArrayList<>();
   }
 
+  // ------------------------------------------------------------------
+  // 
+  // ------------------------------------------------------------------
+
   public int calculateMinimumHP(int[][] dungeon) {
     dung = dungeon;
     dw = dungeon[0].length;
