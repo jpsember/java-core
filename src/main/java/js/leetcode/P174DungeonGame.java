@@ -40,7 +40,7 @@ public class P174DungeonGame {
     // x(3, 3, "[[-2,-3,3],[-5,-10,1],[10,30,-5]]");
   }
 
-  private void x(int w, int h, String s) {
+  /* private */void x(int w, int h, String s) {
     while (true) {
       var x = s.length();
       s = s.replace('[', ' ').replace(']', ' ').replace(',', ' ').replace("  ", " ").trim();
@@ -211,8 +211,6 @@ public class P174DungeonGame {
       ValuePair srcValue = null;
       ValuePair destValue = null;
 
-      int origVals = currVals.size();
-
       while (true) {
         if (srcValue == null && prevCursor != prevVals.size())
           srcValue = prevVals.get(prevCursor++).extend(edgeCost);
@@ -265,10 +263,12 @@ public class P174DungeonGame {
   }
 
   public int calculateMinimumHP(int[][] dungeon) {
+    this.dungeon = dungeon;
     int dw = dungeon[0].length;
     int dh = dungeon.length;
+    memo = new St[dh][dw];
 
-    var priorityQueue = new TreeSet<St>(new Comparator<St>() {
+    priorityQueue = new TreeSet<St>(new Comparator<St>() {
       public int compare(St o1, St o2) {
         int result = -(o1.minimumValue - o2.minimumValue);
         if (result == 0)
@@ -291,13 +291,34 @@ public class P174DungeonGame {
       if (x == dw - 1 && y == dh - 1) {
         return Math.max(1, 1 - state.minimumValue);
       }
-      if (x + 1 < dw)
-        priorityQueue.add(state.extend(x + 1, y, dungeon[y][x + 1]));
+      if (x + 1 < dw) {
+        tryExtend(state, x + 1, y);
+        var ns = state.extend(x + 1, y, dungeon[y][x + 1]);
+        priorityQueue.add(ns);
+      }
       if (y + 1 < dh)
         priorityQueue.add(state.extend(x, y + 1, dungeon[y + 1][x]));
     }
-
   }
+
+  private void tryExtend(St state, int nx, int ny) {
+    var ns = state.extend(nx, ny, dungeon[ny][nx]);
+    var best = memo[ny][nx];
+    if (best != null)
+      checkState(best.minimumValue <= ns.minimumValue);
+    checkState(best == null);
+    if (best != null) {
+      pr("*** try extend, found memoized");
+    }
+    if (best == null || !(best.value < ns.value)) {
+      memo[ny][nx] = ns;
+      priorityQueue.add(ns);
+    }
+  }
+
+  private St[][] memo;
+  private TreeSet<St> priorityQueue;
+  private int[][] dungeon;
 
   private static class St {
     St(int x, int y, int value, int minValue) {
