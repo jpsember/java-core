@@ -4,7 +4,9 @@ import static js.base.Tools.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import js.base.Tools;
 
@@ -27,7 +29,7 @@ public class P95UniqueBinarySearchTreesII {
   }
 
   private void run() {
-    x(3);
+    x(8);
   }
 
   private void x(int n) {
@@ -78,17 +80,44 @@ public class P95UniqueBinarySearchTreesII {
       ord[i] = i + 1;
 
     List<TreeNode> res = new ArrayList<>();
+    Set<String> unique = new HashSet<>();
+    var sb = new StringBuilder();
 
-    for (var order : permuteUnique(ord)) {
+    var pm = permuteUnique(ord);
+    for (var order : pm) {
       TreeNode parent = null;
       for (var val : order) {
         parent = insert(parent, val);
       }
-      res.add(parent);
 
+      sb.setLength(0);
+      signature(sb, parent);
+      var sig = sb.toString();
+      if (unique.add(sig)) {
+        //pr("unique sig:", sig);
+        res.add(parent);
+      } else {
+        //pr("***dup sig:", sig);
+      }
     }
-
+    pr("perm:",pm.size(),"results:",res.size());
     return res;
+  }
+
+  private void signature(StringBuilder sb, TreeNode node) {
+    if (node == null)
+      return;
+    sb.append('.');
+    if (node.left != null) {
+      sb.append('L');
+      signature(sb, node.left);
+      sb.append(')');
+    }
+    if (node.right != null) {
+      sb.append('R');
+      signature(sb, node.right);
+      sb.append(')');
+    }
   }
 
   private TreeNode insert(TreeNode root, int val) {
