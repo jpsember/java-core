@@ -1,9 +1,9 @@
 package js.leetcode;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
-
+import java.util.Map;
 import static js.base.Tools.*;
 
 /**
@@ -16,8 +16,6 @@ import static js.base.Tools.*;
  */
 public class P95UniqueBinarySearchTreesII {
 
-  private static int depth;
-
   public static void main(String[] args) {
     new P95UniqueBinarySearchTreesII().run();
   }
@@ -28,7 +26,7 @@ public class P95UniqueBinarySearchTreesII {
 
   private void x(int n) {
     var s = generateTrees(n);
-    pn(s);
+    pr(s);
   }
 
   public class TreeNode {
@@ -69,50 +67,38 @@ public class P95UniqueBinarySearchTreesII {
   }
 
   public List<TreeNode> generateTrees(int n) {
+    memo.clear();
     return auxGenerateTrees(1, n);
   }
 
   private List<TreeNode> auxGenerateTrees(int offset, int n) {
+    var key = (offset << 8) | n;
+    var res = memo.get(key);
+    if (res != null)
+      return res;
 
-    depth++;
-    pn("genTrees, n:", n, "offset:", offset);
-    List<TreeNode> res = new ArrayList<>();
+    res = new ArrayList<>();
 
     if (n == 0) {
       res.add(null);
-    } else
-
+    } else {
       for (int leftCount = 0; leftCount < n; leftCount++) {
         var rightCount = n - 1 - leftCount;
-        pn("...left:", leftCount, "right:", rightCount);
         var leftOffset = offset;
         var rootOffset = leftOffset + leftCount;
         var rightOffset = rootOffset + 1;
-
         var chLeft = auxGenerateTrees(leftOffset, leftCount);
-        pn("...left trees:", chLeft);
-        var chRight = auxGenerateTrees(rightOffset, n - 1 - leftCount);
-        pn("...right trees:", chRight);
-
+        var chRight = auxGenerateTrees(rightOffset, rightCount);
         for (var left : chLeft) {
-          //int i = 0; i <  chLeft.size(); i++) {
-          //        TreeNode left = (i < chLeft.size() ? chLeft.get(i) : null);
           for (var right : chRight) {
-            //          int j = 0; j <= chRight.size(); j++) {
-            //          TreeNode right = (j < chRight.size() ? chRight.get(j) : null);
-            var root = new TreeNode(rootOffset, left, right);
-            res.add(root);
-            if (depth == 1)
-              pn("...generated:", root);
+            res.add(new TreeNode(rootOffset, left, right));
           }
         }
       }
-    depth--;
+    }
+    memo.put(key, res);
     return res;
   }
 
-  private static void pn(Object... messages) {
-    //    if (depth <= 1)
-    //      pr(insertStringToFront(spaces(depth * 2), messages));
-  }
+  private Map<Integer, List<TreeNode>> memo = new HashMap<>();
 }
