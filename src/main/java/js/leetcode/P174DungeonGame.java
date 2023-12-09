@@ -36,22 +36,49 @@ public class P174DungeonGame {
   }
 
   private void run() {
+
     if (false)
-      x(3, "0 0 0 -20 x 0 40 0 0 x x 0 x x -30 x x 0");
-    xr(1965, 200, 200);
+      x(32,
+          " 1 1 1 1   1 1 1 1    1 1 1 1   1 1 1 1   1 1 1 1   1 1 1 1    1 1 1 1   1 1 1 1   1 1 1 1   1 1 1 1    1 1 1 1   1 1 1 1"
+              + " 1 1 1 1   1 1 1 1    1 1 1 1   1 1 1 1   1 1 1 1   1 1 1 1    1 1 1 1   1 1 1 1   1 1 1 1   1 1 1 1    1 1 1 1   1 1 1 1"
+              + " 1 1 1 1   1 1 1 1    1 1 1 1   1 1 1 1   1 1 1 1   1 1 1 1    1 1 1 1   1 1 1 1   1 1 1 1   1 1 1 1    1 1 1 1   1 1 1 1"
+              + " 1 1 1 1   1 1 1 1    1 1 1 1   1 1 1 1   1 1 1 1   1 1 1 1    1 1 1 1   1 1 1 1   1 1 1 1   1 1 1 1    1 1 1 1   1 1 1 1"
+              + " 1 1 1 1   1 1 1 1    1 1 1 1   1 1 1 1   1 1 1 1   1 1 1 1    1 1 1 1   1 1 1 1   1 1 1 1   1 1 1 1    1 1 1 1   1 1 1 1"
+              + " 1 1 1 1   1 1 1 1    1 1 1 1   1 1 1 1   1 1 1 1   1 1 1 1    1 1 1 1   1 1 1 1   1 1 1 1   1 1 1 1    1 1 1 1   1 1 1 1"
+              + " 1 1 1 1   1 1 1 1    1 1 1 1   1 1 1 1   1 1 1 1   1 1 1 1    1 1 1 1   1 1 1 1   1 1 1 1   1 1 1 1    1 1 1 1   1 1 1 1"
+              + " 1 1 1 1   1 1 1 1    1 1 1 1   1 1 1 1   1 1 1 1   1 1 1 1    1 1 1 1   1 1 1 1   1 1 1 1   1 1 1 1    1 1 1 1   1 1 1 1"
+              + " 1 1 1 1   1 1 1 1    1 1 1 1   1 1 1 1   1 1 1 1   1 1 1 1    1 1 1 1   1 1 1 1   1 1 1 1   1 1 1 1    1 1 1 1   1 1 1 1"
+              + " 1 1 1 1   1 1 1 1    1 1 1 1   1 1 1 1   1 1 1 1   1 1 1 1    1 1 1 1   1 1 1 1   1 1 1 1   1 1 1 1    1 1 1 1   1 1 1 1"
+
+      );
+
+    x(7, "[[0,-74,-47,-20,-23,-39,-48],[37,-30,37,-65,-82,28,-27],[-76,-33,7,42,3,49,-93],[37,-41,35,-16,-96,-56,38],[-52,19,-37,14,-65,-42,9],[5,-26,-30,-65,11,5,16],[-60,9,36,-36,41,-47,-86],[-22,19,-5,-41,-8,-96,-95]]");
+
+    //x(3,"[[0,0,0],[-1,0,0],[2,0,-2]]");
+
+    // x(3, "0 0 0 -20 x 0 40 0 0 x x 0 x x -30 x x 0");
+    if (false)
+      xr(1965, 200, 200);
 
     // x(  3, "[[-2,-3,3],[-5,-10,1],[10,30,-5]]");
   }
 
   private void x(int w, String s) {
+    var origs = s;
     while (true) {
       var x = s.length();
       s = s.replace('[', ' ').replace(']', ' ').replace(',', ' ').replace("  ", " ").trim();
       if (s.length() == x)
         break;
     }
+    pr("s    :", s);
+    pr("origs:", origs);
+
     var items = split(s, ' ');
     var h = items.size() / w;
+    pr("items size:", items.size(), "w:", w, "h:", h);
+    pr("s:", s);
+
     checkArgument(items.size() == w * h);
     int[][] d = new int[h][w];
     int i = 0;
@@ -125,7 +152,7 @@ public class P174DungeonGame {
     int dw = dungeon[0].length;
     int dh = dungeon.length;
 
-    State[][] stats = new State[dh][dw];
+    StateSLOW[][] stats = new StateSLOW[dh][dw];
 
     for (int s = 0; s < dw + dh - 1; s++) {
       int x = s;
@@ -141,10 +168,10 @@ public class P174DungeonGame {
         var val = dungeon[y][x];
 
         //pr("x:", x, "y:", y, "val:", val);
-        var state = new State();
+        var state = new StateSLOW();
 
-        State left = null;
-        State up = null;
+        StateSLOW left = null;
+        StateSLOW up = null;
         if (x > 0)
           left = stats[y][x - 1];
         if (y > 0)
@@ -175,17 +202,17 @@ public class P174DungeonGame {
     return Math.max(1, 1 - bestMin);
   }
 
-  private static class ValuePair {
-    ValuePair(int currentValue, int minValue) {
+  private static class ValuePairSLOW {
+    ValuePairSLOW(int currentValue, int minValue) {
       this.currentValue = currentValue;
       this.minimumValue = minValue;
     }
 
-    ValuePair extend(int cost) {
-      return new ValuePair(currentValue + cost, Math.min(minimumValue, currentValue + cost));
+    ValuePairSLOW extend(int cost) {
+      return new ValuePairSLOW(currentValue + cost, Math.min(minimumValue, currentValue + cost));
     }
 
-    boolean dominates(ValuePair other) {
+    boolean dominates(ValuePairSLOW other) {
       return currentValue >= other.currentValue && minimumValue >= other.minimumValue;
     }
 
@@ -198,17 +225,17 @@ public class P174DungeonGame {
     int minimumValue;
   }
 
-  private static class State {
+  private static class StateSLOW {
 
     void add(int currentValue, int minValue) {
-      valuePairs.add(new ValuePair(currentValue, minValue));
+      valuePairs.add(new ValuePairSLOW(currentValue, minValue));
     }
 
     /**
      * Extend a previous state's values to add the cost of an edge to get to
      * this state, and merge the resulting ValuePairs into this states'.
      */
-    void merge(State prevState, int edgeCost) {
+    void merge(StateSLOW prevState, int edgeCost) {
 
       int prevCursor = 0;
       var prevVals = prevState.valuePairs;
@@ -216,10 +243,10 @@ public class P174DungeonGame {
       var currVals = valuePairs;
       var currCursor = 0;
 
-      var merged = new ArrayList<ValuePair>(prevVals.size() + currVals.size());
+      var merged = new ArrayList<ValuePairSLOW>(prevVals.size() + currVals.size());
 
-      ValuePair srcValue = null;
-      ValuePair destValue = null;
+      ValuePairSLOW srcValue = null;
+      ValuePairSLOW destValue = null;
 
       while (true) {
         if (srcValue == null && prevCursor != prevVals.size())
@@ -268,22 +295,25 @@ public class P174DungeonGame {
     }
 
     // Pairs of current value, historical min value
-    List<ValuePair> valuePairs = new ArrayList<>();
+    List<ValuePairSLOW> valuePairs = new ArrayList<>();
 
   }
 
-  private static final boolean withMemo = false;
+  private static final boolean withMemo = true;
 
   public int calculateMinimumHP(int[][] dungeon) {
     this.dungeon = dungeon;
     int dw = dungeon[0].length;
     int dh = dungeon.length;
     if (withMemo)
-      memo = new St[dh][dw];
+      memo = new State[dh][dw];
 
-    priorityQueue = new TreeSet<St>(new Comparator<St>() {
-      public int compare(St o1, St o2) {
+    mStatesAdded = 0;
+    priorityQueue = new TreeSet<State>(new Comparator<State>() {
+      public int compare(State o1, State o2) {
         int result = -(o1.minimumValue - o2.minimumValue);
+        if (result == 0)
+          result = -(o1.value - o2.value);
         if (result == 0)
           result = (o1.y * 300 + o1.x) - (o2.y * 300 + o2.x);
         return result;
@@ -291,59 +321,63 @@ public class P174DungeonGame {
     });
 
     var c00 = dungeon[0][0];
-    priorityQueue.add(new St(0, 0, c00, c00));
-    int popCount = 0;
+    priorityQueue.add(new State(0, 0, c00, c00));
+
+    int result;
     while (true) {
       var state = priorityQueue.first();
-      popCount++;
-      pr("popped state:", popCount, state);
       priorityQueue.remove(state);
       var x = state.x;
       var y = state.y;
       if (x == dw - 1 && y == dh - 1) {
-        return Math.max(1, 1 - state.minimumValue);
+        result = Math.max(1, 1 - state.minimumValue);
+        break;
       }
       if (x + 1 < dw)
         tryExtend(state, x + 1, y);
       if (y + 1 < dh)
         tryExtend(state, x, y + 1);
     }
+    pr("states added:", mStatesAdded);
+    return result;
   }
 
-  private void tryExtend(St state, int nx, int ny) {
+  private void tryExtend(State state, int nx, int ny) {
     var ns = state.extend(nx, ny, dungeon[ny][nx]);
     if (withMemo) {
       var best = memo[ny][nx];
-      if (best != null) {
-        pr("*** try extend, found memoized");
-      }
+      //      if (best != null) {
+      //        pr("*** try extend, found memoized");
+      //      }
       if (best == null || !(best.value >= ns.value && best.minimumValue >= ns.minimumValue)) {
-        pr("memoizing:", nx, ny, ns);
         memo[ny][nx] = ns;
         priorityQueue.add(ns);
+        mStatesAdded++;
       } else {
-        pr(VERT_SP, "*** Not extending due to memo:", ns);
+        pr("*** not extending, memo says previous state subsumes this one;", INDENT, best, CR, ns);
       }
     } else {
       priorityQueue.add(ns);
+      mStatesAdded++;
     }
   }
 
-  private St[][] memo;
-  private TreeSet<St> priorityQueue;
+  private State[][] memo;
+  private TreeSet<State> priorityQueue;
+  private int mStatesAdded;
   private int[][] dungeon;
 
-  private static class St {
-    St(int x, int y, int value, int minValue) {
+  private static class State {
+    State(int x, int y, int value, int minValue) {
       this.value = value;
       this.minimumValue = minValue;
       this.x = x;
       this.y = y;
     }
 
-    public St extend(int x, int y, int cost) {
+    public State extend(int x, int y, int cost) {
       int val = value + cost;
-      var out = new St(x, y, val, Math.min(val, minimumValue));
+      var out = new State(x, y, val, Math.min(val, minimumValue));
       pr("...extending to:", out);
       return out;
     }
