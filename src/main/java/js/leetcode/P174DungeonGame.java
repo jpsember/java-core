@@ -4,7 +4,10 @@ package js.leetcode;
 import static js.base.Tools.*;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Random;
+import java.util.TreeSet;
 
 import js.base.BasePrinter;
 
@@ -19,6 +22,11 @@ import js.base.BasePrinter;
  * 
  * Now I think a simple array of these values, sorted by current value, is the
  * best approach.
+ * 
+ * This works, but it is 20 times slower than the others... ...now I am thinking
+ * a breadth-first search to minimize the cost?
+ * 
+ * 
  */
 public class P174DungeonGame {
 
@@ -28,11 +36,11 @@ public class P174DungeonGame {
   }
 
   private void run() {
-    x(3, 3, 7, "[[-2,-3,3],[-5,-10,1],[10,30,-5]]");
-
+    xr(1965, 200, 200);
+    // x(3, 3, "[[-2,-3,3],[-5,-10,1],[10,30,-5]]");
   }
 
-  private void x(int w, int h, int expected, String s) {
+  private void x(int w, int h, String s) {
     while (true) {
       var x = s.length();
       s = s.replace('[', ' ').replace(']', ' ').replace(',', ' ').replace("  ", " ").trim();
@@ -54,8 +62,30 @@ public class P174DungeonGame {
     var result = calculateMinimumHP(d);
     pr("result:", result);
 
+    var expected = SLOWcalculateMinimumHP(d);
     checkState(result == expected, "expected", expected);
+  }
 
+  private void xr(int seed, int w, int h) {
+    var r = new Random(seed);
+    int[][] d = new int[h][w];
+    for (int y = 0; y < h; y++) {
+      for (int x = 0; x < w; x++) {
+        d[y][x] = r.nextInt(30) - 15;
+      }
+    }
+    xtest(d);
+  }
+
+  private void xtest(int[][] d) {
+    if (Math.max(d.length, d[0].length) < 30)
+      dump(d, 0, 0);
+
+    var result = calculateMinimumHP(d);
+    pr("result:", result);
+
+    var expected = SLOWcalculateMinimumHP(d);
+    checkState(result == expected, "expected", expected);
   }
 
   private static void dump(int[][] matrix, int cx, int cy, Object... prompt) {
@@ -81,7 +111,7 @@ public class P174DungeonGame {
 
   // ------------------------------------------------------------------
 
-  public int calculateMinimumHP(int[][] dungeon) {
+  private int SLOWcalculateMinimumHP(int[][] dungeon) {
     int dw = dungeon[0].length;
     int dh = dungeon.length;
 
@@ -96,10 +126,11 @@ public class P174DungeonGame {
       }
       while (x >= 0 && y < dh) {
 
-        dump(dungeon, x, y);
+        // dump(dungeon, x, y);
 
         var val = dungeon[y][x];
 
+        //pr("x:", x, "y:", y, "val:", val);
         var state = new State();
 
         State left = null;
@@ -118,7 +149,6 @@ public class P174DungeonGame {
             state.merge(up, val);
         }
         stats[y][x] = state;
-        pr("stored state:", state);
         x--;
         y++;
 
@@ -151,7 +181,7 @@ public class P174DungeonGame {
 
     @Override
     public String toString() {
-      return "(c" + currentValue + " m" + minimumValue + ")";
+      return "(c" + currentValue + "m" + minimumValue + ")";
     }
 
     int currentValue;
@@ -216,9 +246,6 @@ public class P174DungeonGame {
       }
 
       valuePairs = merged;
-
-      pr("...merge for cost:", edgeCost, "prev vals:", prevVals.size(), "orig src vals:", origVals, "merged:",
-          merged.size());
     }
 
     @Override
@@ -234,6 +261,65 @@ public class P174DungeonGame {
 
     // Pairs of current value, historical min value
     List<ValuePair> valuePairs = new ArrayList<>();
+
   }
 
+  public int calculateMinimumHP(int[][] dungeon) {
+    int dw = dungeon[0].length;
+    int dh = dungeon.length;
+
+    var priorityQueue = new TreeSet<St>(new Comparator<St>() {
+      public int compare(St o1, St o2) {
+        int result = -(o1.minimumValue - o2.minimumValue);
+        if (result == 0)
+          result = (o1.y * 300 + o1.x) - (o2.y * 300 + o2.x);
+        return result;
+      }
+    });
+
+    todo("maybe we need to memoize the best state for visiting a cell?");
+    var c00 = dungeon[0][0];
+    priorityQueue.add(new St(0, 0, c00, c00));
+    int popCount = 0;
+    while (true) {
+      var state = priorityQueue.first();
+      popCount++;
+      pr("popped state:", popCount, state);
+      priorityQueue.remove(state);
+      var x = state.x;
+      var y = state.y;
+      if (x == dw - 1 && y == dh - 1) {
+        return Math.max(1, 1 - state.minimumValue);
+      }
+      if (x + 1 < dw)
+        priorityQueue.add(state.extend(x + 1, y, dungeon[y][x + 1]));
+      if (y + 1 < dh)
+        priorityQueue.add(state.extend(x, y + 1, dungeon[y + 1][x]));
+    }
+
+  }
+
+  private static class St {
+    St(int x, int y, int value, int minValue) {
+      this.value = value;
+      this.minimumValue = minValue;
+      this.x = x;
+      this.y = y;
+    }
+
+    public St extend(int x, int y, int cost) {
+      int val = value + cost;
+      var out = new St(x, y, val, Math.min(val, minimumValue));
+      pr("...extending to:", out);
+      return out;
+    }
+
+    @Override
+    public String toString() {
+      return "(" + x + " " + y + " v:" + value + " m:" + minimumValue + ")";
+    }
+
+    int x, y;
+    int value, minimumValue;
+  }
 }
