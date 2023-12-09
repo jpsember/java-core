@@ -296,17 +296,13 @@ public class P174DungeonGame {
 
     // Pairs of current value, historical min value
     List<ValuePairSLOW> valuePairs = new ArrayList<>();
-
   }
-
-  private static final boolean withMemo = true;
 
   public int calculateMinimumHP(int[][] dungeon) {
     this.dungeon = dungeon;
     int dw = dungeon[0].length;
     int dh = dungeon.length;
-    if (withMemo)
-      memo = new State[dh][dw];
+    memo = new State[dh][dw];
 
     mStatesAdded = 0;
     priorityQueue = new TreeSet<State>(new Comparator<State>() {
@@ -344,19 +340,9 @@ public class P174DungeonGame {
 
   private void tryExtend(State state, int nx, int ny) {
     var ns = state.extend(nx, ny, dungeon[ny][nx]);
-    if (withMemo) {
-      var best = memo[ny][nx];
-      //      if (best != null) {
-      //        pr("*** try extend, found memoized");
-      //      }
-      if (best == null || !(best.value >= ns.value && best.minimumValue >= ns.minimumValue)) {
-        memo[ny][nx] = ns;
-        priorityQueue.add(ns);
-        mStatesAdded++;
-      } else {
-        pr("*** not extending, memo says previous state subsumes this one;", INDENT, best, CR, ns);
-      }
-    } else {
+    var best = memo[ny][nx];
+    if (best == null || !(best.value >= ns.value && best.minimumValue >= ns.minimumValue)) {
+      memo[ny][nx] = ns;
       priorityQueue.add(ns);
       mStatesAdded++;
     }
