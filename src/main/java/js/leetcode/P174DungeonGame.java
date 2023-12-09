@@ -4,6 +4,7 @@ package js.leetcode;
 import static js.base.Tools.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
@@ -71,13 +72,9 @@ public class P174DungeonGame {
       if (s.length() == x)
         break;
     }
-    pr("s    :", s);
-    pr("origs:", origs);
 
     var items = split(s, ' ');
     var h = items.size() / w;
-    pr("items size:", items.size(), "w:", w, "h:", h);
-    pr("s:", s);
 
     checkArgument(items.size() == w * h);
     int[][] d = new int[h][w];
@@ -300,11 +297,13 @@ public class P174DungeonGame {
 
   public int calculateMinimumHP(int[][] dungeon) {
     this.dungeon = dungeon;
-    int dw = dungeon[0].length;
-    int dh = dungeon.length;
-    memo = new State[dh][dw];
+    dw = dungeon[0].length;
+    dh = dungeon.length;
+    memo = new int[dh * dw * 2];
+    Arrays.fill(memo, 0x80000);
+    //    memo = new State[dh][dw];
+    stateBuffer = new ArrayList<>();
 
-    mStatesAdded = 0;
     priorityQueue = new TreeSet<State>(new Comparator<State>() {
       public int compare(State o1, State o2) {
         int result = -(o1.minimumValue - o2.minimumValue);
@@ -317,7 +316,7 @@ public class P174DungeonGame {
     });
 
     var c00 = dungeon[0][0];
-    priorityQueue.add(new State(0, 0, c00, c00));
+    priorityQueue.add(State.build(0, 0, c00, c00));
 
     int result;
     while (true) {
@@ -333,45 +332,59 @@ public class P174DungeonGame {
         tryExtend(state, x + 1, y);
       if (y + 1 < dh)
         tryExtend(state, x, y + 1);
+      stateBuffer.add(state);
     }
-    pr("states added:", mStatesAdded);
     return result;
   }
 
   private void tryExtend(State state, int nx, int ny) {
     var ns = state.extend(nx, ny, dungeon[ny][nx]);
-    var best = memo[ny][nx];
-    if (best == null || !(best.value >= ns.value && best.minimumValue >= ns.minimumValue)) {
-      memo[ny][nx] = ns;
+    var mi = (ny * dw + nx) << 1;
+
+    int bestValue = memo[mi];
+    var bestMinValue = memo[mi + 1];
+    if (bestValue == 0x80000 || !(bestValue >= ns.value && bestMinValue >= ns.minimumValue)) {
+      memo[mi] = ns.value;
+      memo[mi + 1] = ns.minimumValue;
       priorityQueue.add(ns);
-      mStatesAdded++;
+    } else {
+      stateBuffer.add(ns);
     }
   }
 
-  private State[][] memo;
-  private TreeSet<State> priorityQueue;
-  private int mStatesAdded;
-  private int[][] dungeon;
+  private static int[] memo;
+  private static TreeSet<State> priorityQueue;
+  private static int[][] dungeon;
+  private static int dw, dh;
+
+  private static List<State> stateBuffer;
 
   private static class State {
-    State(int x, int y, int value, int minValue) {
-      this.value = value;
-      this.minimumValue = minValue;
-      this.x = x;
-      this.y = y;
+
+    public static State build(int x, int y, int value, int minValue) {
+      State s = null;
+      if (stateBuffer.isEmpty()) {
+        s = new State();
+      } else {
+        s = stateBuffer.remove(stateBuffer.size() - 1);
+      }
+      s.value = value;
+      s.minimumValue = minValue;
+      s.x = x;
+      s.y = y;
+      return s;
     }
 
     public State extend(int x, int y, int cost) {
       int val = value + cost;
-      var out = new State(x, y, val, Math.min(val, minimumValue));
-      pr("...extending to:", out);
+      var out = State.build(x, y, val, Math.min(val, minimumValue));
       return out;
     }
 
-    @Override
-    public String toString() {
-      return "(" + x + " " + y + " v:" + value + " m:" + minimumValue + ")";
-    }
+    //    @Override
+    //    public String toString() {
+    //      return "(" + x + " " + y + " v:" + value + " m:" + minimumValue + ")";
+    //    }
 
     int x, y;
     int value, minimumValue;
