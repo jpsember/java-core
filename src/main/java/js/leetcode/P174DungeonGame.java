@@ -36,11 +36,14 @@ public class P174DungeonGame {
   }
 
   private void run() {
+    if (false)
+      x(3, "0 0 0 -20 x 0 40 0 0 x x 0 x x -30 x x 0");
     xr(1965, 200, 200);
-    // x(3, 3, "[[-2,-3,3],[-5,-10,1],[10,30,-5]]");
+
+    // x(  3, "[[-2,-3,3],[-5,-10,1],[10,30,-5]]");
   }
 
-  /* private */void x(int w, int h, String s) {
+  private void x(int w, String s) {
     while (true) {
       var x = s.length();
       s = s.replace('[', ' ').replace(']', ' ').replace(',', ' ').replace("  ", " ").trim();
@@ -48,12 +51,17 @@ public class P174DungeonGame {
         break;
     }
     var items = split(s, ' ');
+    var h = items.size() / w;
     checkArgument(items.size() == w * h);
     int[][] d = new int[h][w];
     int i = 0;
     for (int y = 0; y < h; y++) {
       for (int x = 0; x < w; x++, i++) {
-        d[y][x] = Integer.parseInt(items.get(i));
+        var st = items.get(i);
+        int val = -1000;
+        if (!st.equals("x"))
+          val = Integer.parseInt(st);
+        d[y][x] = val;
       }
     }
 
@@ -98,7 +106,9 @@ public class P174DungeonGame {
       int x = -1;
       for (var c : row) {
         x++;
-        var v = Integer.toString(c);
+        String v = "x";
+        if (c != -1000)
+          v = Integer.toString(c);
         sb.append(spaces(3 - v.length()));
         sb.append(v);
         if (y == cy && x == cx)
@@ -262,11 +272,14 @@ public class P174DungeonGame {
 
   }
 
+  private static final boolean withMemo = false;
+
   public int calculateMinimumHP(int[][] dungeon) {
     this.dungeon = dungeon;
     int dw = dungeon[0].length;
     int dh = dungeon.length;
-    memo = new St[dh][dw];
+    if (withMemo)
+      memo = new St[dh][dw];
 
     priorityQueue = new TreeSet<St>(new Comparator<St>() {
       public int compare(St o1, St o2) {
@@ -277,7 +290,6 @@ public class P174DungeonGame {
       }
     });
 
-    todo("maybe we need to memoize the best state for visiting a cell?");
     var c00 = dungeon[0][0];
     priorityQueue.add(new St(0, 0, c00, c00));
     int popCount = 0;
@@ -291,27 +303,28 @@ public class P174DungeonGame {
       if (x == dw - 1 && y == dh - 1) {
         return Math.max(1, 1 - state.minimumValue);
       }
-      if (x + 1 < dw) {
+      if (x + 1 < dw)
         tryExtend(state, x + 1, y);
-        var ns = state.extend(x + 1, y, dungeon[y][x + 1]);
-        priorityQueue.add(ns);
-      }
       if (y + 1 < dh)
-        priorityQueue.add(state.extend(x, y + 1, dungeon[y + 1][x]));
+        tryExtend(state, x, y + 1);
     }
   }
 
   private void tryExtend(St state, int nx, int ny) {
     var ns = state.extend(nx, ny, dungeon[ny][nx]);
-    var best = memo[ny][nx];
-    if (best != null)
-      checkState(best.minimumValue <= ns.minimumValue);
-    checkState(best == null);
-    if (best != null) {
-      pr("*** try extend, found memoized");
-    }
-    if (best == null || !(best.value < ns.value)) {
-      memo[ny][nx] = ns;
+    if (withMemo) {
+      var best = memo[ny][nx];
+      if (best != null) {
+        pr("*** try extend, found memoized");
+      }
+      if (best == null || !(best.value >= ns.value && best.minimumValue >= ns.minimumValue)) {
+        pr("memoizing:", nx, ny, ns);
+        memo[ny][nx] = ns;
+        priorityQueue.add(ns);
+      } else {
+        pr(VERT_SP, "*** Not extending due to memo:", ns);
+      }
+    } else {
       priorityQueue.add(ns);
     }
   }
