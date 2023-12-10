@@ -2,9 +2,7 @@ package js.leetcode;
 
 import static js.base.Tools.*;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.BitSet;
 
 public class P97InterleavingString {
 
@@ -26,41 +24,20 @@ public class P97InterleavingString {
 
   // ------------------------------------------------------------------
 
-  private static final boolean sortHeuristic = false;
-
   public boolean isInterleave(String sa, String sb, String sc) {
     var a = sa.getBytes();
     var b = sb.getBytes();
     var c = sc.getBytes();
     if (a.length + b.length != c.length)
       return false;
-
-    if (sortHeuristic) {
-      if (!Arrays.equals(sorted(c), sorted(append(a, b))))
-        return false;
-    }
-
-    memo.clear();
+    memo = new BitSet((a.length + 1) << 9);
     return auxInterleave(a, b, c, 0, 0);
   }
 
-  private static byte[] append(byte[] a, byte[] b) {
-    var out = new byte[a.length + b.length];
-    System.arraycopy(a, 0, out, 0, a.length);
-    System.arraycopy(b, 0, out, a.length, b.length);
-    return out;
-  }
-
-  private static byte[] sorted(byte[] s) {
-    var c = Arrays.copyOf(s, s.length);
-    Arrays.sort(c);
-    return c;
-  }
-
   private boolean auxInterleave(byte[] a, byte[] b, byte[] c, int acurs, int bcurs) {
-    var key = (acurs << 8) | bcurs;
-    if (memo.containsKey(key))
-      return memo.get(key);
+    var memoIndex = ((acurs << 8) | bcurs) << 1;
+    if (memo.get(memoIndex))
+      return memo.get(memoIndex + 1);
 
     boolean res = true;
     outer: do {
@@ -94,10 +71,11 @@ public class P97InterleavingString {
       }
       res = false;
     } while (false);
-    memo.put(key, res);
+    memo.set(memoIndex);
+    memo.set(memoIndex + 1, res);
     return res;
   }
 
-  private Map<Integer, Boolean> memo = new HashMap<>();
+  private static BitSet memo;
 
 }
