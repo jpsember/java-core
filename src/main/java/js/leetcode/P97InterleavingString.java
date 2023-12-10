@@ -3,6 +3,8 @@ package js.leetcode;
 import static js.base.Tools.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 public class P97InterleavingString {
@@ -12,8 +14,9 @@ public class P97InterleavingString {
   }
 
   private void run() {
-    x("abc", "def", "abdcef");
-    x("abc", "def", "abxcef");
+    x("aabcc", "dbbca", "aadbbbaccc", false);
+    x("abc", "def", "abdcef", true);
+    x("abc", "def", "abxcef", false);
     if (false)
       x(100);
     if (false)
@@ -59,11 +62,14 @@ public class P97InterleavingString {
     x(a, b, sb.toString());
   }
 
-  private void x(String a, String b, String c) {
+  private void x(String a, String b, String c, boolean expected) {
     var result = isInterleave(a, b, c);
     pr("a:", a, "b:", b, "c:", c, "result:", result);
-    boolean expected = slowisInterleave(a, b, c);
     checkState(result == expected, "expected:", expected);
+  }
+
+  private void x(String a, String b, String c) {
+    x(a, b, c, slowisInterleave(a, b, c));
   }
 
   private boolean slowisInterleave(String a, String b, String c) {
@@ -71,7 +77,6 @@ public class P97InterleavingString {
       return false;
     if (!sorted(c).equals(sorted(a + b)))
       return false;
-
     return auxInterleave(a, b, c, 0, 0);
   }
 
@@ -81,6 +86,7 @@ public class P97InterleavingString {
     if (!sorted(c).equals(sorted(a + b)))
       return false;
 
+    memo.clear();
     return auxInterleave(a, b, c, 0, 0);
   }
 
@@ -97,19 +103,45 @@ public class P97InterleavingString {
   }
 
   private boolean auxInterleave(String a, String b, String c, int acurs, int bcurs) {
-    boolean adone = acurs == a.length();
-    boolean bdone = bcurs == b.length();
-    if (adone && bdone)
-      return true;
+    var key = (acurs << 8) | bcurs;
+    if (memo.containsKey(key))
+      return memo.get(key);
 
-    if (!adone && a.charAt(acurs) == c.charAt(acurs + bcurs)) {
-      if (auxInterleave(a, b, c, acurs + 1, bcurs))
-        return true;
-    }
-    if (!bdone && b.charAt(bcurs) == c.charAt(acurs + bcurs)) {
-      if (auxInterleave(a, b, c, acurs, bcurs + 1))
-        return true;
-    }
-    return false;
+    boolean res = true;
+    outer: do {
+      boolean adone = acurs == a.length();
+      boolean bdone = bcurs == b.length();
+      if (adone && bdone)
+        break;
+
+      for (int pass = 0; pass < 2; pass++) {
+        boolean addA = (pass == 0);
+        int newa = acurs;
+        if (addA) {
+          if (adone)
+            continue;
+          if (a.charAt(acurs) != c.charAt(acurs + bcurs))
+            continue;
+          newa++;
+        }
+        int newb = bcurs;
+        if (!addA) {
+          if (bdone)
+            continue;
+          if (b.charAt(bcurs) != c.charAt(acurs + bcurs))
+            continue;
+          newb++;
+        }
+
+        if (auxInterleave(a, b, c, newa, newb))
+          break outer;
+      }
+      res = false;
+    } while (false);
+    memo.put(key, res);
+    return res;
   }
+
+  private Map<Integer, Boolean> memo = new HashMap<>();
+
 }
