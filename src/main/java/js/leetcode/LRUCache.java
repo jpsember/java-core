@@ -10,11 +10,11 @@ public class LRUCache {
 
   public static void main(String[] args) {
 
-    ["LRUCache","put","put","get","put","put","get"]
-        [[2],[2,1],[2,2],[2],[1,1],[4,1],[2]]
-            
-    String[] cmds = { "LRUCache", "put", "put", "get", "put", "get", "put", "get", "get", "get" };
-    int[] arg = { 2, 1, 1, 2, 2, 1, 3, 3, 2, 4, 4, 1, 3, 4, };
+    //    ["LRUCache","put","put","get","put","put","get"]
+    //        [[2],[2,1],[2,2],[2],[1,1],[4,1],[2]]
+    //            
+    String[] cmds = { "LRUCache", "put", "put", "get", "put", "put", "get" };
+    int[] arg = { 2, 2, 1, 2, 2, 2, 1, 1, 4, 1, 2 };
     List<Object> out = new ArrayList<>();
 
     LRUCache c = null;
@@ -40,6 +40,7 @@ public class LRUCache {
       }
       out.add(value);
     }
+
     pr(out);
   }
 
@@ -64,6 +65,7 @@ public class LRUCache {
       node = new ListItem(key, value);
       mMap.put(key, node);
     }
+    node.value = value;
     moveToHead(node);
     if (mMap.size() > mCapacity) {
       var preTail = mTail.prev;
@@ -75,38 +77,38 @@ public class LRUCache {
     //    pr("put:", key, value, INDENT, this);
   }
 
-  //  @Override
-  //  public String toString() {
-  //    StringBuilder sb = new StringBuilder();
-  //    sb.append("size:");
-  //    sb.append(mMap.size());
-  //    sb.append(' ');
-  //    if (mHead != null) {
-  //      sb.append(" head:");
-  //      sb.append(mHead.key);
-  //    }
-  //    if (mTail != null) {
-  //      sb.append(" tail:");
-  //      sb.append(mTail.key);
-  //    }
-  //    sb.append(" nodes:");
-  //    var node = mHead;
-  //    boolean first = true;
-  //    while (node != null) {
-  //      if (!first) {
-  //        sb.append(" => ");
-  //      }
-  //      first = false;
-  //      sb.append(node.key);
-  //      sb.append(":");
-  //      sb.append(node.value);
-  //      var pn = node;
-  //      node = node.next;
-  //      if (node != null)
-  //        checkState(node.prev == pn);
-  //    }
-  //    return sb.toString();
-  //  }
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder();
+    sb.append("size:");
+    sb.append(mMap.size());
+    sb.append(' ');
+    if (mHead != null) {
+      sb.append(" head:");
+      sb.append(mHead.key);
+    }
+    if (mTail != null) {
+      sb.append(" tail:");
+      sb.append(mTail.key);
+    }
+    sb.append(" nodes:");
+    var node = mHead;
+    boolean first = true;
+    while (node != null) {
+      if (!first) {
+        sb.append(" => ");
+      }
+      first = false;
+      sb.append(node.key);
+      sb.append(":");
+      sb.append(node.value);
+      var pn = node;
+      node = node.next;
+      if (node != null)
+        checkState(node.prev == pn);
+    }
+    return sb.toString();
+  }
 
   private void moveToHead(ListItem node) {
     // Move this to the head of the list
