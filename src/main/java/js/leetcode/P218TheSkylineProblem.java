@@ -18,6 +18,7 @@ public class P218TheSkylineProblem extends LeetCode {
   }
 
   public void run() {
+    x("[[0,2147483647,2147483647]]", "[[0,2147483647],[2147483647,0]]");
     x("[[0,2,3],[2,5,3]]", "[[0,3],[5,0]]");
 
     x("[[2,9,10],[3,7,15],[5,12,12],[15,20,10],[19,24,8]] ",
@@ -53,12 +54,6 @@ public class P218TheSkylineProblem extends LeetCode {
 
   private static final boolean db = true;
 
-  private static void db(Object... messages) {
-    //    if (db) {
-    //      pr(messages);
-    //    }
-  }
-
   private void show(Set<Edge> edges, Object... messages) {
     //    if (db) {
     //      pr(BasePrinter.toString(messages));
@@ -79,6 +74,127 @@ public class P218TheSkylineProblem extends LeetCode {
     //    }
   }
 
+  public List<List<Integer>> getSkyline(int[][] buildings) {
+    List<Edge> edges = new ArrayList<>();
+    for (var b : buildings)
+      edges.add(new Edge(b[0], b[1], b[2]));
+    edges.sort(EDGE_SORT_BY_HEIGHT);
+
+    SortedSet<Edge> activeEdges = new TreeSet<Edge>(EDGE_SORT_BY_LEFT);
+    // Add a 'ground' edge
+    activeEdges.add(new Edge(-1, Integer.MAX_VALUE, 0));
+
+    for (var insertEdge : edges) {
+      //show(activeEdges, "prior to insert");
+      Edge activeEdge = null;
+      var head = activeEdges.headSet(insertEdge);
+      if (!head.isEmpty())
+        activeEdge = head.last();
+      else {
+        var tail = activeEdges.tailSet(insertEdge);
+        if (!tail.isEmpty())
+          activeEdge = tail.first();
+      }
+
+      Edge joinToLeft = null;
+      Edge joinToRight = null;
+
+      if (activeEdge != null) {
+        // Move backward, if possible, to rightmost edge strictly to left of this one
+
+        while (true) {
+          if (activeEdge.x1 < insertEdge.x0) {
+            joinToLeft = activeEdge;
+            break;
+          }
+          if (activeEdge.prev == null)
+            break;
+          activeEdge = activeEdge.prev;
+        }
+
+        while (true) {
+
+          if (activeEdge.x0 >= insertEdge.x1) {
+            joinToRight = activeEdge;
+            break;
+          }
+
+          if (activeEdge.x1 <= insertEdge.x0) {
+            joinToLeft = activeEdge;
+          } else {
+            int splitLeft = insertEdge.x0 - activeEdge.x0;
+            int splitRight = activeEdge.x1 - insertEdge.x1;
+
+            // Special case, for a building extending to Integer.MAX_VALUE:
+            // If this is the rightmost 'ground' edge, retain it by setting splitRight to a positive value.
+            if (splitRight == 0 && activeEdge.y == 0 && activeEdge.x1 == Integer.MAX_VALUE)
+              splitRight = 1;
+
+            if (splitLeft <= 0 && splitRight <= 0) {
+              activeEdges.remove(activeEdge);
+            } else {
+              var oldActiveX1 = activeEdge.x1;
+              if (splitLeft > 0) {
+                activeEdge.x1 = insertEdge.x0;
+                joinToLeft = activeEdge;
+              }
+              if (splitRight > 0) {
+                if (splitLeft <= 0) {
+                  activeEdge.x0 = insertEdge.x1;
+                  joinToRight = activeEdge;
+                } else {
+                  // The active edge is split on both left and right, so insert a new one for the right
+                  var activeRight = new Edge(insertEdge.x1, oldActiveX1, activeEdge.y);
+                  joinToRight = activeRight;
+                  join(activeRight, activeEdge.next);
+                  activeEdges.add(activeRight);
+                }
+                break;
+              }
+            }
+          }
+          activeEdge = activeEdge.next;
+        }
+
+        join(joinToLeft, insertEdge);
+        join(insertEdge, joinToRight);
+      }
+      activeEdges.add(insertEdge);
+
+      // special case: if new edge is abutting an edge that is at the same height, merge them
+      {
+        var edge = insertEdge.prev;
+        while (true) {
+          var next = edge.next;
+          if (edge.y != next.y || edge.x1 != next.x0)
+            break;
+          join(edge.prev, next);
+          next.x0 = edge.x0;
+          activeEdges.remove(edge);
+          edge = edge.next;
+        }
+      }
+    }
+
+    var res = new ArrayList<List<Integer>>();
+
+    var edge = activeEdges.first();
+    while (edge != null) {
+      if (edge.x0 >= 0) {
+        res.add(ptAsList(edge.x0, edge.y));
+      }
+      edge = edge.next;
+    }
+    return res;
+  }
+
+  private static ArrayList<Integer> ptAsList(int x, int y) {
+    var result = new ArrayList<Integer>(2);
+    result.add(x);
+    result.add(y);
+    return result;
+  }
+
   private static class Edge {
     int x0, x1;
     int y;
@@ -90,10 +206,10 @@ public class P218TheSkylineProblem extends LeetCode {
       y = height;
     }
 
-    @Override
-    public String toString() {
-      return y + ":" + x0 + ".." + (x1 == Integer.MAX_VALUE ? "XX" : "" + x1);
-    }
+    //    @Override
+    //    public String toString() {
+    //      return y + ":" + x0 + ".." + (x1 == Integer.MAX_VALUE ? "XX" : "" + x1);
+    //    }
 
   }
 
@@ -125,141 +241,4 @@ public class P218TheSkylineProblem extends LeetCode {
     }
   };
 
-  public List<List<Integer>> getSkyline(int[][] buildings) {
-    List<Edge> edges = new ArrayList<>();
-    for (var b : buildings)
-      edges.add(new Edge(b[0], b[1], b[2]));
-    edges.sort(EDGE_SORT_BY_HEIGHT);
-
-    db("edges sorted by height:", edges);
-
-    SortedSet<Edge> activeEdges = new TreeSet<Edge>(EDGE_SORT_BY_LEFT);
-    // Add a 'ground' edge
-    activeEdges.add(new Edge(-1, Integer.MAX_VALUE, 0));
-
-    for (var insertEdge : edges) {
-      db("inserting:", insertEdge);
-      show(activeEdges, "prior to insert");
-      Edge activeEdge = null;
-      var head = activeEdges.headSet(insertEdge);
-      if (!head.isEmpty())
-        activeEdge = head.last();
-      else {
-        var tail = activeEdges.tailSet(insertEdge);
-        if (!tail.isEmpty())
-          activeEdge = tail.first();
-      }
-      db("...activeEdge:", activeEdge);
-
-      Edge joinToLeft = null;
-      Edge joinToRight = null;
-
-      if (activeEdge != null) {
-        // Move backward, if possible, to rightmost edge strictly to left of this one
-
-        while (true) {
-          if (activeEdge.x1 < insertEdge.x0) {
-            joinToLeft = activeEdge;
-            break;
-          }
-          if (activeEdge.prev == null)
-            break;
-          activeEdge = activeEdge.prev;
-        }
-        db("...moved backward to strictly left, activeEdge:", activeEdge);
-
-        while (true) {
-          db("...merge loop, insert:", insertEdge, "active:", activeEdge);
-
-          if (activeEdge.x0 >= insertEdge.x1) {
-            db("...existing is strictly to right");
-            joinToRight = activeEdge;
-            db(".......set join to right:", joinToRight);
-            break;
-          }
-
-          if (activeEdge.x1 <= insertEdge.x0) {
-            db("...existing is strictly to left");
-            joinToLeft = activeEdge;
-            db(".......set join to left:", joinToLeft);
-          } else {
-            int splitLeft = insertEdge.x0 - activeEdge.x0;
-            int splitRight = activeEdge.x1 - insertEdge.x1;
-            db("...split to left :", splitLeft);
-            db("...split to right:", splitRight);
-            if (splitLeft <= 0 && splitRight <= 0) {
-              db("......new edge subsumes active edge completely");
-              activeEdges.remove(activeEdge);
-            } else {
-              var oldActiveX1 = activeEdge.x1;
-              if (splitLeft > 0) {
-                db("......active edge overlaps and extends to left of new");
-                activeEdge.x1 = insertEdge.x0;
-                joinToLeft = activeEdge;
-                db(".......set join to left:", joinToLeft);
-              }
-              if (splitRight > 0) {
-                db("......active edge overlaps and extends to right of new");
-                if (splitLeft <= 0) {
-                  db("......active edge does not extend to left of new");
-                  activeEdge.x0 = insertEdge.x1;
-                  joinToRight = activeEdge;
-                  db(".......set join to right:", joinToRight);
-                } else {
-                  db("......active edge extends to both left and right of new");
-                  // The active edge is split on both left and right, so insert a new one for the right
-                  var activeRight = new Edge(insertEdge.x1, oldActiveX1, activeEdge.y);
-                  joinToRight = activeRight;
-                  db(".......set join to right:", joinToRight);
-                  join(activeRight, activeEdge.next);
-                  activeEdges.add(activeRight);
-                }
-                break;
-              }
-            }
-          }
-          activeEdge = activeEdge.next;
-        }
-
-        db("...joining left...insert:", joinToLeft, insertEdge);
-        join(joinToLeft, insertEdge);
-        db("...joining insert...right:", insertEdge, joinToRight);
-        join(insertEdge, joinToRight);
-      }
-      activeEdges.add(insertEdge);
-
-      // special case: if new edge is abutting an edge that is at the same height, merge them
-      {
-        var edge = insertEdge.prev;
-        while (true) {
-          var next = edge.next;
-          if (edge.y != next.y || edge.x1 != next.x0)
-            break;
-          db("...merging:", edge, next);
-          join(edge.prev, next);
-          next.x0 = edge.x0;
-          activeEdges.remove(edge);
-          edge = edge.next;
-        }
-      }
-    }
-
-    var res = new ArrayList<List<Integer>>();
-
-    var edge = activeEdges.first();
-    while (edge != null) {
-      if (edge.x0 >= 0) {
-        res.add(ptAsList(edge.x0, edge.y));
-      }
-      edge = edge.next;
-    }
-    return res;
-  }
-
-  private static ArrayList<Integer> ptAsList(int x, int y) {
-    var result = new ArrayList<Integer>(2);
-    result.add(x);
-    result.add(y);
-    return result;
-  }
 }
