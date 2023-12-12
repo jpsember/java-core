@@ -54,29 +54,29 @@ public class P218TheSkylineProblem extends LeetCode {
   private static final boolean db = true;
 
   private static void db(Object... messages) {
-//    if (db) {
-//      pr(messages);
-//    }
+    //    if (db) {
+    //      pr(messages);
+    //    }
   }
 
   private void show(Set<Edge> edges, Object... messages) {
-//    if (db) {
-//      pr(BasePrinter.toString(messages));
-//      Edge prevEdge = null;
-//      for (var edge : edges) {
-//
-//        if (edge.prev != prevEdge)
-//          pr("*** link to prev is bad!");
-//        if (edge.prev != null && edge.prev.next != edge)
-//          pr("*** prev edge fwd link bad!");
-//        if (edge.prev != null && edge.prev.x1 != edge.x0)
-//          pr("*** prev edge doesn't meet current!");
-//        pr("...", edge);
-//        prevEdge = edge;
-//      }
-//      if (prevEdge != null && prevEdge.next != null)
-//        pr("*** last edge has non null fwd link!");
-//    }
+    //    if (db) {
+    //      pr(BasePrinter.toString(messages));
+    //      Edge prevEdge = null;
+    //      for (var edge : edges) {
+    //
+    //        if (edge.prev != prevEdge)
+    //          pr("*** link to prev is bad!");
+    //        if (edge.prev != null && edge.prev.next != edge)
+    //          pr("*** prev edge fwd link bad!");
+    //        if (edge.prev != null && edge.prev.x1 != edge.x0)
+    //          pr("*** prev edge doesn't meet current!");
+    //        pr("...", edge);
+    //        prevEdge = edge;
+    //      }
+    //      if (prevEdge != null && prevEdge.next != null)
+    //        pr("*** last edge has non null fwd link!");
+    //    }
   }
 
   private static class Edge {
@@ -131,7 +131,7 @@ public class P218TheSkylineProblem extends LeetCode {
       edges.add(new Edge(b[0], b[1], b[2]));
     edges.sort(EDGE_SORT_BY_HEIGHT);
 
-    db("edges sorted by height:",   edges);
+    db("edges sorted by height:", edges);
 
     SortedSet<Edge> activeEdges = new TreeSet<Edge>(EDGE_SORT_BY_LEFT);
     // Add a 'ground' edge
@@ -227,6 +227,21 @@ public class P218TheSkylineProblem extends LeetCode {
         join(insertEdge, joinToRight);
       }
       activeEdges.add(insertEdge);
+
+      // special case: if new edge is abutting an edge that is at the same height, merge them
+      {
+        var edge = insertEdge.prev;
+        while (true) {
+          var next = edge.next;
+          if (edge.y != next.y || edge.x1 != next.x0)
+            break;
+          db("...merging:", edge, next);
+          join(edge.prev, next);
+          next.x0 = edge.x0;
+          activeEdges.remove(edge);
+          edge = edge.next;
+        }
+      }
     }
 
     var res = new ArrayList<List<Integer>>();
