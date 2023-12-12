@@ -18,6 +18,8 @@ public class P218TheSkylineProblem extends LeetCode {
   }
 
   public void run() {
+    x("[[0,2,3],[2,5,3]]", "[[0,3],[5,0]]");
+
     x("[[2,9,10],[3,7,15],[5,12,12],[15,20,10],[19,24,8]] ",
         "  [[2,10],[3,15],[7,12],[12,0],[15,10],[20,8],[24,0]]");
   }
@@ -49,21 +51,31 @@ public class P218TheSkylineProblem extends LeetCode {
     return result;
   }
 
-  private static void show(Collection<Edge> edges, Object... messages) {
-    pr(BasePrinter.toString(messages));
-    Edge prevEdge = null;
-    for (var edge : edges) {
-      if (edge.prev != prevEdge)
-        pr("*** link to prev is bad!");
-      if (edge.prev != null && edge.prev.next != edge)
-        pr("*** prev edge fwd link bad!");
-      if (edge.prev != null && edge.prev.x1 != edge.x0)
-        pr("*** prev edge doesn't meet current!");
-      pr("...", edge);
-      prevEdge = edge;
+  private static final boolean db = true;
+
+  private static void db(Object... messages) {
+    if (db) {
+      pr(messages);
     }
-    if (prevEdge != null && prevEdge.next != null)
-      pr("*** last edge has non null fwd link!");
+  }
+
+  private static void show(Collection<Edge> edges, Object... messages) {
+    if (db) {
+      pr(BasePrinter.toString(messages));
+      Edge prevEdge = null;
+      for (var edge : edges) {
+        if (edge.prev != prevEdge)
+          pr("*** link to prev is bad!");
+        if (edge.prev != null && edge.prev.next != edge)
+          pr("*** prev edge fwd link bad!");
+        if (edge.prev != null && edge.prev.x1 != edge.x0)
+          pr("*** prev edge doesn't meet current!");
+        pr("...", edge);
+        prevEdge = edge;
+      }
+      if (prevEdge != null && prevEdge.next != null)
+        pr("*** last edge has non null fwd link!");
+    }
   }
 
   private static class Edge {
@@ -79,7 +91,7 @@ public class P218TheSkylineProblem extends LeetCode {
 
     @Override
     public String toString() {
-      return y + ":" + x0 + ".." + x1;
+      return y + ":" + x0 + ".." + (x1 == Integer.MAX_VALUE ? "XX" : "" + x1);
     }
 
   }
@@ -118,14 +130,14 @@ public class P218TheSkylineProblem extends LeetCode {
       edges.add(new Edge(b[0], b[1], b[2]));
     edges.sort(EDGE_SORT_BY_HEIGHT);
 
-    pr("edges sorted by height:", INDENT, edges);
+    db("edges sorted by height:", INDENT, edges);
 
     SortedSet<Edge> activeEdges = new TreeSet<Edge>(EDGE_SORT_BY_LEFT);
     // Add a 'ground' edge
-    activeEdges.add(new Edge(0, Integer.MAX_VALUE, 0));
+    activeEdges.add(new Edge(-1, Integer.MAX_VALUE, 0));
 
     for (var insertEdge : edges) {
-      pr(VERT_SP, "inserting:", insertEdge);
+      db(VERT_SP, "inserting:", insertEdge);
       show(activeEdges, "prior to insert");
       Edge activeEdge = null;
       var head = activeEdges.headSet(insertEdge);
@@ -136,7 +148,7 @@ public class P218TheSkylineProblem extends LeetCode {
         if (!tail.isEmpty())
           activeEdge = tail.first();
       }
-      pr("...activeEdge:", activeEdge);
+      db("...activeEdge:", activeEdge);
 
       Edge joinToLeft = null;
       Edge joinToRight = null;
@@ -154,46 +166,52 @@ public class P218TheSkylineProblem extends LeetCode {
             break;
           activeEdge = activeEdge.prev;
         }
-        pr("...moved backward to strictly left, activeEdge:", activeEdge);
+        db("...moved backward to strictly left, activeEdge:", activeEdge);
 
         while (true) {
-          pr("...merge loop, insert:", insertEdge, "active:", activeEdge);
+          db("...merge loop, insert:", insertEdge, "active:", activeEdge);
           checkState(activeEdge != null);
 
-          if (activeEdge == null || activeEdge.x0 > insertEdge.x1) {
-            pr("...existing is null or strictly to right");
+          if (activeEdge == null || activeEdge.x0 >= insertEdge.x1) {
+            db("...existing is null or strictly to right");
             joinToRight = activeEdge;
+            db(".......set join to right:", joinToRight);
             break;
           }
 
-          if (activeEdge.x1 < insertEdge.x0) {
-            pr("...existing is strictly to left");
+          if (activeEdge.x1 <= insertEdge.x0) {
+            db("...existing is strictly to left");
+            joinToLeft = activeEdge;
+            db(".......set join to left:", joinToLeft);
           } else {
             int splitLeft = insertEdge.x0 - activeEdge.x0;
             int splitRight = activeEdge.x1 - insertEdge.x1;
-            pr("...split to left :", splitLeft);
-            pr("...split to right:", splitRight);
+            db("...split to left :", splitLeft);
+            db("...split to right:", splitRight);
             if (splitLeft <= 0 && splitRight <= 0) {
-              pr("......new edge subsumes active edge completely");
+              db("......new edge subsumes active edge completely");
               activeEdges.remove(activeEdge);
             } else {
               var oldActiveX1 = activeEdge.x1;
               if (splitLeft > 0) {
-                pr("......active edge overlaps and extends to left of new");
+                db("......active edge overlaps and extends to left of new");
                 activeEdge.x1 = insertEdge.x0;
                 joinToLeft = activeEdge;
+                db(".......set join to left:", joinToLeft);
               }
               if (splitRight > 0) {
-                pr("......active edge overlaps and extends to right of new");
+                db("......active edge overlaps and extends to right of new");
                 if (splitLeft <= 0) {
-                  pr("......active edge does not extend to left of new");
+                  db("......active edge does not extend to left of new");
                   activeEdge.x0 = insertEdge.x1;
                   joinToRight = activeEdge;
+                  db(".......set join to right:", joinToRight);
                 } else {
-                  pr("......active edge extends to both left and right of new");
+                  db("......active edge extends to both left and right of new");
                   // The active edge is split on both left and right, so insert a new one for the right
                   var activeRight = new Edge(insertEdge.x1, oldActiveX1, activeEdge.y);
                   joinToRight = activeRight;
+                  db(".......set join to right:", joinToRight);
                   join(activeRight, activeEdge.next);
                   activeEdges.add(activeRight);
                 }
@@ -204,7 +222,9 @@ public class P218TheSkylineProblem extends LeetCode {
           activeEdge = activeEdge.next;
         }
 
+        pr("...joining left...insert:", joinToLeft, insertEdge);
         join(joinToLeft, insertEdge);
+        pr("...joining insert...right:", insertEdge, joinToRight);
         join(insertEdge, joinToRight);
       }
       activeEdges.add(insertEdge);
@@ -213,12 +233,10 @@ public class P218TheSkylineProblem extends LeetCode {
     var res = new ArrayList<List<Integer>>();
 
     var edge = activeEdges.first();
-    boolean first = true;
     while (edge != null) {
-      var x = ptAsList(edge.x0, edge.y);
-      if (!first)
-        res.add(x);
-      first = false;
+      if (edge.x0 < 0)
+        continue;
+      res.add(ptAsList(edge.x0, edge.y));
       edge = edge.next;
     }
     return res;
