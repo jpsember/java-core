@@ -33,23 +33,34 @@ public class P218TheSkylineProblem extends LeetCode {
       row[2] = an[i++];
     }
 
-    var bn = extractNums(b);
     var result = getSkyline(bu);
     var ss = BasePrinter.toString(result);
     pr(extractNums(ss));
-    verify(extractNums(ss), bn);
+    var bn = extractPts(b);
+    verify(extractPts(ss), bn);
+  }
+
+  private static Object extractPts(String s) {
+    var n = extractNums(s);
+    checkArgument(n.length % 2 == 0);
+    var result = new ArrayList<List<Integer>>();
+    for (int i = 0; i < n.length; i += 2)
+      result.add(ptAsList(n[i], n[i + 1]));
+    return result;
   }
 
   private static void show(Collection<Edge> edges, Object... messages) {
     pr(BasePrinter.toString(messages));
     Edge prevEdge = null;
     for (var edge : edges) {
-      if (edge.prev != prevEdge) 
+      if (edge.prev != prevEdge)
         pr("*** link to prev is bad!");
-      if (edge.prev != null && edge.prev.next != edge)  
+      if (edge.prev != null && edge.prev.next != edge)
         pr("*** prev edge fwd link bad!");
+      if (edge.prev != null && edge.prev.x1 != edge.x0)
+        pr("*** prev edge doesn't meet current!");
       pr("...", edge);
-     prevEdge = edge;
+      prevEdge = edge;
     }
     if (prevEdge != null && prevEdge.next != null)
       pr("*** last edge has non null fwd link!");
@@ -102,13 +113,16 @@ public class P218TheSkylineProblem extends LeetCode {
   };
 
   public List<List<Integer>> getSkyline(int[][] buildings) {
-    SortedSet<Edge> activeEdges = new TreeSet<Edge>(EDGE_SORT_BY_LEFT);
     List<Edge> edges = new ArrayList<>();
     for (var b : buildings)
       edges.add(new Edge(b[0], b[1], b[2]));
     edges.sort(EDGE_SORT_BY_HEIGHT);
 
     pr("edges sorted by height:", INDENT, edges);
+
+    SortedSet<Edge> activeEdges = new TreeSet<Edge>(EDGE_SORT_BY_LEFT);
+    // Add a 'ground' edge
+    activeEdges.add(new Edge(0, Integer.MAX_VALUE, 0));
 
     for (var insertEdge : edges) {
       pr(VERT_SP, "inserting:", insertEdge);
@@ -123,14 +137,19 @@ public class P218TheSkylineProblem extends LeetCode {
           activeEdge = tail.first();
       }
       pr("...activeEdge:", activeEdge);
-      
+
+      Edge joinToLeft = null;
+      Edge joinToRight = null;
+
       if (activeEdge != null) {
         // Move backward, if possible, to rightmost edge strictly to left of this one
 
         while (true) {
           checkInf();
-          if (activeEdge.x1 < insertEdge.x0)
+          if (activeEdge.x1 < insertEdge.x0) {
+            joinToLeft = activeEdge;
             break;
+          }
           if (activeEdge.prev == null)
             break;
           activeEdge = activeEdge.prev;
@@ -138,54 +157,55 @@ public class P218TheSkylineProblem extends LeetCode {
         pr("...moved backward to strictly left, activeEdge:", activeEdge);
 
         while (true) {
-          pr("...merge loop, insert:",insertEdge,"active:",activeEdge);
-          if (activeEdge == null)
+          pr("...merge loop, insert:", insertEdge, "active:", activeEdge);
+          checkState(activeEdge != null);
+
+          if (activeEdge == null || activeEdge.x0 > insertEdge.x1) {
+            pr("...existing is null or strictly to right");
+            joinToRight = activeEdge;
             break;
+          }
 
           if (activeEdge.x1 < insertEdge.x0) {
             pr("...existing is strictly to left");
-            join(activeEdge, insertEdge);
-          } else if (activeEdge.x0 > insertEdge.x1) {
-            pr("...existing is strictly to right");
-            join(insertEdge, activeEdge);
-            break;
-
           } else {
-
             int splitLeft = insertEdge.x0 - activeEdge.x0;
             int splitRight = activeEdge.x1 - insertEdge.x1;
-            pr("...split to left :",splitLeft);
-            pr("...split to right:",splitRight);
+            pr("...split to left :", splitLeft);
+            pr("...split to right:", splitRight);
             if (splitLeft <= 0 && splitRight <= 0) {
               pr("......new edge subsumes active edge completely");
               activeEdges.remove(activeEdge);
             } else {
-
+              var oldActiveX1 = activeEdge.x1;
               if (splitLeft > 0) {
                 pr("......active edge overlaps and extends to left of new");
-                  activeEdge.x1 = insertEdge.x0;
-                join(activeEdge, insertEdge);
+                activeEdge.x1 = insertEdge.x0;
+                joinToLeft = activeEdge;
               }
               if (splitRight > 0) {
                 pr("......active edge overlaps and extends to right of new");
-                 if (splitLeft <= 0) {
-                   pr("......active edge does not extend to left of new");
-                   activeEdge.x0 = insertEdge.x1;
-                  join(insertEdge, activeEdge);
-
+                if (splitLeft <= 0) {
+                  pr("......active edge does not extend to left of new");
+                  activeEdge.x0 = insertEdge.x1;
+                  joinToRight = activeEdge;
                 } else {
                   pr("......active edge extends to both left and right of new");
-                   // The active edge is split on both left and right, so insert a new one for the right
-                  var activeRight = new Edge(insertEdge.x1, activeEdge.x1, activeEdge.y);
-                  join(insertEdge, activeRight);
+                  // The active edge is split on both left and right, so insert a new one for the right
+                  var activeRight = new Edge(insertEdge.x1, oldActiveX1, activeEdge.y);
+                  joinToRight = activeRight;
                   join(activeRight, activeEdge.next);
                   activeEdges.add(activeRight);
                 }
+                break;
               }
             }
           }
           activeEdge = activeEdge.next;
         }
+
+        join(joinToLeft, insertEdge);
+        join(insertEdge, joinToRight);
       }
       activeEdges.add(insertEdge);
     }
@@ -193,13 +213,12 @@ public class P218TheSkylineProblem extends LeetCode {
     var res = new ArrayList<List<Integer>>();
 
     var edge = activeEdges.first();
-    while (true) {
+    boolean first = true;
+    while (edge != null) {
       var x = ptAsList(edge.x0, edge.y);
-      res.add(x);
-      if (edge.next == null) {
-        res.add(ptAsList(edge.x1, 0));
-        break;
-      }
+      if (!first)
+        res.add(x);
+      first = false;
       edge = edge.next;
     }
     return res;
