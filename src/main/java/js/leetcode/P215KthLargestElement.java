@@ -25,21 +25,16 @@ public class P215KthLargestElement extends LeetCode {
   }
 
   public int findKthLargest(int[] nums, int k) {
-    // Construct auxilliary buffer
+    // Construct an auxilliary buffer. We will be copying a subset of the original array to this buffer,
+    // then switching to it for recursive calls.
     var auxBuff = new int[nums.length];
+
     return aux(nums, k, 0, nums.length, auxBuff);
   }
 
   private int aux(int[] nums, int k, int min, int max, int[] auxBuff) {
-    pr(VERT_SP, "aux; k:", k, "min:", min, "max:", max, subints(nums, min, max));
     int range = max - min;
-    checkState(range >= k);
-    checkInf(20);
-
     int pivot = nums[(min + max) / 2];
-    pr("pivot value:", pivot);
-
-    //    int[] auxBuff = new int[range];
     int loInd = 0;
     int hiInd = range;
 
@@ -54,8 +49,6 @@ public class P215KthLargestElement extends LeetCode {
     var hiCount = range - hiInd;
     var loCount = loInd;
     var pivotCount = range - loCount - hiCount;
-
-    pr("loCount:", loCount, "pivotCount:", pivotCount, "hiCount:", hiCount, "auxBuff:", auxBuff);
 
     if (k <= hiCount)
       return aux(auxBuff, k, hiInd, range, nums);
