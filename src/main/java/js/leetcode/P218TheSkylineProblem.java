@@ -3,9 +3,9 @@ package js.leetcode;
 import static js.base.Tools.*;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -54,28 +54,29 @@ public class P218TheSkylineProblem extends LeetCode {
   private static final boolean db = true;
 
   private static void db(Object... messages) {
-    if (db) {
-      pr(messages);
-    }
+//    if (db) {
+//      pr(messages);
+//    }
   }
 
-  private static void show(Collection<Edge> edges, Object... messages) {
-    if (db) {
-      pr(BasePrinter.toString(messages));
-      Edge prevEdge = null;
-      for (var edge : edges) {
-        if (edge.prev != prevEdge)
-          pr("*** link to prev is bad!");
-        if (edge.prev != null && edge.prev.next != edge)
-          pr("*** prev edge fwd link bad!");
-        if (edge.prev != null && edge.prev.x1 != edge.x0)
-          pr("*** prev edge doesn't meet current!");
-        pr("...", edge);
-        prevEdge = edge;
-      }
-      if (prevEdge != null && prevEdge.next != null)
-        pr("*** last edge has non null fwd link!");
-    }
+  private void show(Set<Edge> edges, Object... messages) {
+//    if (db) {
+//      pr(BasePrinter.toString(messages));
+//      Edge prevEdge = null;
+//      for (var edge : edges) {
+//
+//        if (edge.prev != prevEdge)
+//          pr("*** link to prev is bad!");
+//        if (edge.prev != null && edge.prev.next != edge)
+//          pr("*** prev edge fwd link bad!");
+//        if (edge.prev != null && edge.prev.x1 != edge.x0)
+//          pr("*** prev edge doesn't meet current!");
+//        pr("...", edge);
+//        prevEdge = edge;
+//      }
+//      if (prevEdge != null && prevEdge.next != null)
+//        pr("*** last edge has non null fwd link!");
+//    }
   }
 
   private static class Edge {
@@ -130,14 +131,14 @@ public class P218TheSkylineProblem extends LeetCode {
       edges.add(new Edge(b[0], b[1], b[2]));
     edges.sort(EDGE_SORT_BY_HEIGHT);
 
-    db("edges sorted by height:", INDENT, edges);
+    db("edges sorted by height:",   edges);
 
     SortedSet<Edge> activeEdges = new TreeSet<Edge>(EDGE_SORT_BY_LEFT);
     // Add a 'ground' edge
     activeEdges.add(new Edge(-1, Integer.MAX_VALUE, 0));
 
     for (var insertEdge : edges) {
-      db(VERT_SP, "inserting:", insertEdge);
+      db("inserting:", insertEdge);
       show(activeEdges, "prior to insert");
       Edge activeEdge = null;
       var head = activeEdges.headSet(insertEdge);
@@ -157,7 +158,6 @@ public class P218TheSkylineProblem extends LeetCode {
         // Move backward, if possible, to rightmost edge strictly to left of this one
 
         while (true) {
-          checkInf();
           if (activeEdge.x1 < insertEdge.x0) {
             joinToLeft = activeEdge;
             break;
@@ -170,10 +170,9 @@ public class P218TheSkylineProblem extends LeetCode {
 
         while (true) {
           db("...merge loop, insert:", insertEdge, "active:", activeEdge);
-          checkState(activeEdge != null);
 
-          if (activeEdge == null || activeEdge.x0 >= insertEdge.x1) {
-            db("...existing is null or strictly to right");
+          if (activeEdge.x0 >= insertEdge.x1) {
+            db("...existing is strictly to right");
             joinToRight = activeEdge;
             db(".......set join to right:", joinToRight);
             break;
@@ -222,9 +221,9 @@ public class P218TheSkylineProblem extends LeetCode {
           activeEdge = activeEdge.next;
         }
 
-        pr("...joining left...insert:", joinToLeft, insertEdge);
+        db("...joining left...insert:", joinToLeft, insertEdge);
         join(joinToLeft, insertEdge);
-        pr("...joining insert...right:", insertEdge, joinToRight);
+        db("...joining insert...right:", insertEdge, joinToRight);
         join(insertEdge, joinToRight);
       }
       activeEdges.add(insertEdge);
@@ -234,9 +233,9 @@ public class P218TheSkylineProblem extends LeetCode {
 
     var edge = activeEdges.first();
     while (edge != null) {
-      if (edge.x0 < 0)
-        continue;
-      res.add(ptAsList(edge.x0, edge.y));
+      if (edge.x0 >= 0) {
+        res.add(ptAsList(edge.x0, edge.y));
+      }
       edge = edge.next;
     }
     return res;

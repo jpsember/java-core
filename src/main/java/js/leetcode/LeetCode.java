@@ -56,12 +56,12 @@ public abstract class LeetCode {
   public void checkInf() {
     checkInf(120);
   }
-  
 
   public static void swap(int[] nums, int a, int b) {
     var tmp = nums[a];
     nums[a] = nums[b];
     nums[b] = tmp;
   }
+
   private int mInfiniteLoop;
 }
