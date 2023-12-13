@@ -102,13 +102,7 @@ public class P218TheSkylineProblem extends LeetCode {
       show(activeEdges, "prior to insert");
       Edge activeEdge = null;
       var head = activeEdges.headSet(insertEdge);
-      if (!head.isEmpty())
-        activeEdge = head.last();
-      else {
-        var tail = activeEdges.tailSet(insertEdge);
-        if (!tail.isEmpty())
-          activeEdge = tail.first();
-      }
+      activeEdge = head.last();
       db("...activeEdge:", activeEdge);
 
       Edge joinToLeft = null;
