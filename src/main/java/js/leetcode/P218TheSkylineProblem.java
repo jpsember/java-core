@@ -59,7 +59,7 @@ public class P218TheSkylineProblem extends LeetCode {
     return result;
   }
 
-  private static final boolean db = true;
+  private static final boolean db = false;
 
   private static void db(Object... messages) {
     if (db) {
@@ -91,7 +91,6 @@ public class P218TheSkylineProblem extends LeetCode {
     for (var b : buildings)
       edges.add(new Edge(b[0] + PT_OFFSET, b[1] + PT_OFFSET, b[2] + PT_OFFSET));
     edges.sort(EDGE_SORT_BY_HEIGHT);
-    db("edges sorted by height:", edges);
 
     // The active edges are maintained in a sorted order, by left edge
     SortedSet<Point> activePts = new TreeSet<Point>(POINT_SORT);
@@ -101,22 +100,18 @@ public class P218TheSkylineProblem extends LeetCode {
     activePts.add(new Point(PT_OFFSET - 1, PT_OFFSET));
     activePts.add(new Point(Integer.MAX_VALUE, PT_OFFSET));
 
-    // Outer loop: iterates over each new edge to be inserted into the active points set
-    //
-    var w0 = new Point(0, Integer.MIN_VALUE);
-    // todo("should we use offsetting in y as well?");
-    var w1 = new Point(0, Integer.MAX_VALUE);
+    var query0 = new Point(0, Integer.MIN_VALUE);
+    var query1 = new Point(0, Integer.MAX_VALUE);
 
     for (var newEdge : edges) {
-      db(VERT_SP, "inserting:", newEdge);
-      show(activePts, "prior to insert");
 
-      w0.x = newEdge.x0();
-      w1.x = newEdge.x1();
+      //db(VERT_SP, "inserting:", newEdge);
+      //show(activePts, "prior to insert");
 
-      var scan = activePts.tailSet(w0);
-      var leftPt = scan.first();
-      pr("tail set from:", w0, "ends with:", leftPt);
+      query0.x = newEdge.x0();
+      query1.x = newEdge.x1();
+
+      var leftPt = activePts.tailSet(query0).first();
 
       // We want to delete any points strictly between w0 and w1, but 
       // the second point we are inserting has a y-coordinate that is either
@@ -124,9 +119,8 @@ public class P218TheSkylineProblem extends LeetCode {
       // that of the last point preceding this range
       //
       Point rightPt = null;
-      if (POINT_SORT.compare(leftPt, w1) <= 0) {
-        var removePts = activePts.subSet(leftPt, w1);
-        pr("removing points:", removePts);
+      if (POINT_SORT.compare(leftPt, query1) <= 0) {
+        var removePts = activePts.subSet(leftPt, query1);
         if (!removePts.isEmpty())
           rightPt = removePts.last();
         removePts.clear();
@@ -135,25 +129,21 @@ public class P218TheSkylineProblem extends LeetCode {
       // If there were no points in the delete range, we must scan back to the last point
       // before the insertion region to determine the second new point's y coordinate
       if (rightPt == null)
-        rightPt = activePts.headSet(w0).last();
+        rightPt = activePts.headSet(query0).last();
 
       activePts.add(newEdge.pt);
       activePts.add(new Point(newEdge.x1(), rightPt.y));
-      show(activePts, "after insertion");
     }
 
-    todo("merge horizontal collinear");
-    show(activePts, "extracting");
+    //show(activePts, "extracting");
     var result = new ArrayList<List<Integer>>();
     {
       int prevPtY = Integer.MIN_VALUE;
-      //Point prevPt = null;
       for (var pt : activePts) {
         if (pt.x < PT_OFFSET || pt.x == Integer.MAX_VALUE)
           continue;
         var x = pt.x - PT_OFFSET;
         var y = pt.y - PT_OFFSET;
-        pr("...pt:", x, y);
         if (y != prevPtY)
           result.add(ptAsList(x, y));
         prevPtY = y;
@@ -163,8 +153,9 @@ public class P218TheSkylineProblem extends LeetCode {
   }
 
   // I offset the coordinates by a negative number to avoid 
-  // special code for dealing with points whose coordinates are exactly at Integer.MAX_VALUE
-  private static final int PT_OFFSET = -1; // -100;
+  // special code for dealing with points whose coordinates are exactly at Integer.MAX_VALUE.
+  // Choose a value that is visually pleasing.
+  private static final int PT_OFFSET = -100;
 
   private static ArrayList<Integer> ptAsList(int x, int y) {
     var result = new ArrayList<Integer>(2);
@@ -180,18 +171,6 @@ public class P218TheSkylineProblem extends LeetCode {
     public Edge(int left, int right, int height) {
       pt = new Point(left, height);
       width = right - left;
-      //      pr("built edge from left:", left, "right:", right, "height:", height, this);
-    }
-
-    @Override
-    public String toString() {
-      //      String x1str;
-      //      int x1 = pt.x + width;
-      //      if (x1 == Integer.MAX_VALUE)
-      //        x1str = "XX";
-      //      else
-      //        x1str = "" + x1;
-      return "(" + xs(x0()) + " " + xs(x1()) + ")y:" + pt.y;
     }
 
     public int x1() {
@@ -205,6 +184,12 @@ public class P218TheSkylineProblem extends LeetCode {
     public int y() {
       return pt.y;
     }
+
+    @Override
+    public String toString() {
+      return "(" + coordStr(x0()) + " " + coordStr(x1()) + ")y:" + pt.y;
+    }
+
   }
 
   private static Comparator<Point> POINT_SORT = new Comparator<Point>() {
@@ -238,18 +223,11 @@ public class P218TheSkylineProblem extends LeetCode {
 
     @Override
     public String toString() {
-      //      if (x >= Integer.MAX_VALUE - 10) {
-      //        int diff = Integer.MAX_VALUE - x;
-      //        if (diff == 0)
-      //          return "XX";
-      //        return "XX-" + diff;
-      //      }
-      return "(" + xs(x) + " " + xs(y) + ")";
+      return "(" + coordStr(x) + " " + coordStr(y) + ")";
     }
-
   }
 
-  private static String xs(int x) {
+  private static String coordStr(int x) {
     if (x >= Integer.MAX_VALUE - 10) {
       int diff = Integer.MAX_VALUE - x;
       if (diff == 0)
