@@ -18,11 +18,12 @@ public class P218TheSkylineProblem extends LeetCode {
   }
 
   public void run() {
-    x("[[1,2,1],[1,2,2],[1,2,3],[2,3,1],[2,3,2],[2,3,3]]","[[1,3],[3,0]]");
-    x("[[2,9,10],[3,7,15],[5,12,12],[15,20,10],[19,24,8]] ",
-        "  [[2,10],[3,15],[7,12],[12,0],[15,10],[20,8],[24,0]]");
-    x("[[0,2,3],[2,5,3]]", "[[0,3],[5,0]]");
-    x("[[0,2147483647,2147483647]]", "[[0,2147483647],[2147483647,0]]");
+   // x("3 5 7 4 9 12", "3 7 4 12 9 0");
+        x("[[1,2,1],[1,2,2],[1,2,3],[2,3,1],[2,3,2],[2,3,3]]", "[[1,3],[3,0]]");
+    //    x("[[2,9,10],[3,7,15],[5,12,12],[15,20,10],[19,24,8]] ",
+    //        "  [[2,10],[3,15],[7,12],[12,0],[15,10],[20,8],[24,0]]");
+    //    x("[[0,2,3],[2,5,3]]", "[[0,3],[5,0]]");
+    //    x("[[0,2147483647,2147483647]]", "[[0,2147483647],[2147483647,0]]");
   }
 
   private void x(String a, String b) {
@@ -52,153 +53,107 @@ public class P218TheSkylineProblem extends LeetCode {
     return result;
   }
 
-    private static final boolean db = true;
-  
-    private static void db(Object... messages) {
-      if (db) {
-        pr(messages);
-      }
+  private static final boolean db = true;
+
+  private static void db(Object... messages) {
+    if (db) {
+      pr(messages);
     }
-  
-    private void show(Set<Edge> edges, Object... messages) {
-      if (db) {
-        var sb = new StringBuilder();
-        sb.append(BasePrinter.toString(messages));
-        Edge prevEdge = null;
-        for (var edge : edges) {
-          if (edge.prev != prevEdge)
-            sb.append("*** link to prev is bad!");
-          if (edge.prev != null && edge.prev.next != edge)
-            sb.append("*** prev edge fwd link bad!");
-          if (edge.prev != null && edge.prev.x1 != edge.x0)
-            sb.append("*** prev edge doesn't meet current!");
+  }
+
+  private void show(Set<Point> points, Object... messages) {
+    if (db) {
+      var sb = new StringBuilder();
+      sb.append(BasePrinter.toString(messages));
+      Point prevPt = null;
+      for (var pt : points) {
+        if (prevPt != null) {
           sb.append("...");
-          sb.append(edge);
+          sb.append(new Edge(prevPt.x, pt.x, prevPt.y));
           sb.append(' ');
-          prevEdge = edge;
         }
-        if (prevEdge != null && prevEdge.next != null)
-          sb.append("*** last edge has non null fwd link!");
-        var s = sb.toString();
-        pr(s);
-        checkState(!s.contains("*** "));
+        prevPt = pt;
       }
+      sb.append(" >> ");
+      sb.append(points);
+      pr(sb);
     }
+  }
 
   public List<List<Integer>> getSkyline(int[][] buildings) {
     List<Edge> edges = new ArrayList<>();
     for (var b : buildings)
-      edges.add(new Edge(b[0] + EDGE_OFFSET, b[1] + EDGE_OFFSET, b[2]));
+      edges.add(new Edge(b[0] + PT_X_OFFSET, b[1] + PT_X_OFFSET, b[2]));
     edges.sort(EDGE_SORT_BY_HEIGHT);
     db("edges sorted by height:", edges);
 
     // The active edges are maintained in a sorted order, by left edge
-    SortedSet<Edge> activeEdges = new TreeSet<Edge>(EDGE_SORT_BY_LEFT);
+    SortedSet<Point> activePts = new TreeSet<Point>(POINT_SORT);
 
-    // Add a 'ground' edge that is at y=0 and will extend beyond the left and right of
+    // Add 'ground' points at y=0 that extend beyond the left and right of
     // any of the edges we'll be adding.
-    activeEdges.add(new Edge(EDGE_OFFSET - 1, Integer.MAX_VALUE, 0));
+    activePts.add(new Point(PT_X_OFFSET - 1, 0));
+    activePts.add(new Point(Integer.MAX_VALUE, 0));
 
-    // A work array for storing new edges
-    var edgeWork = new ArrayList<Edge>();
-
-    // Outer loop: iterates over each new edge to be inserted into the active edges set
+    // Outer loop: iterates over each new edge to be inserted into the active points set
     //
+    var workPt = new Point(0, -1);
+    todo("should we use offsetting in y as well?");
+    var workPt2 = new Point(0, Integer.MAX_VALUE);
+
     for (var newEdge : edges) {
-       db(VERT_SP, "inserting:", newEdge);
-             show(activeEdges, "prior to insert");
+      db(VERT_SP, "inserting:", newEdge);
+      show(activePts, "prior to insert");
 
-      // Iterate forward through edges that are affected by inserting the new one.
-      var oldEdge = activeEdges.headSet(newEdge).last();
-           db("...oldEdge:", oldEdge);
+      workPt.x = newEdge.pt.x;
+      workPt2.x = newEdge.x1();
 
-//      // Move back one additional edge in case the previous one is adjacent to the new one and collinear.
-//      if (oldEdge.prev != null) oldEdge = oldEdge.prev;
-//      
-      // Since the active edges are nonoverlapping, no edge to the left of oldEdge
-      // can be affected by the insertion.
+      //      
+      //      var edgePt0 = newEdge.pt;
+      //      var edgePt1 = workPt;
+      //      workPt.x = newEdge.x1();
+      //      workPt.y = edgePt0.y;
 
-      // These will be the edges immediately adjacent to the ones that were deleted by this insertion operation
-      Edge joinToLeft = oldEdge.prev;
-      Edge joinToRight = null;
+      var scan = activePts.tailSet(workPt);
+      checkState(!scan.isEmpty());
+      var leftPt = scan.first();
+      pr("tail set from:", workPt, "ends with:", leftPt);
 
-      edgeWork.clear();
-      boolean addedNew = false;
+      //      if (
+      //      scan = activePts.headSet(workPt2);
+      //      var rightPt = scan.last();
+      //      pr("tail set from:", workPt2, "ends with:", rightPt);
 
-      // Inner loop: iterate over edges affected by the insertion of the new edge
-      //
-      while (oldEdge != null) {
-
-//        // If this edge is collinear with the new edge, and intersecting it, merge them.
-//        // Due to the sort order, we know that this old edge will *not* extend past the right of the insert edge.
-//        if (collinear(oldEdge,newEdge)) {
-//                     db("********* merging collinear active edge:", oldEdge, newEdge);
-//          newEdge.x0 = Math.min(newEdge.x0, oldEdge.x0);
-//          newEdge.x1 = Math.max(newEdge.x1, oldEdge.x1);
-//          if (joinToLeft == null)
-//            joinToLeft = oldEdge.prev;
-//          activeEdges.remove(oldEdge);
-//                    db("moving oldEdge from:", oldEdge, "to next:", oldEdge.next);
-//          oldEdge = oldEdge.next;
-//          continue;
-//        }
-
-        // If edge overlaps new to left, add modified version 
-        if (oldEdge.x0 < newEdge.x0 && oldEdge.x1 >= newEdge.x0) {
-          edgeWork.add(new Edge(oldEdge.x0, newEdge.x0, oldEdge.y));
-          if (joinToLeft == null)
-            joinToLeft = oldEdge.prev;
-      activeEdges.remove(oldEdge);
-        }
-        // If edge overlaps new to right, or is strictly right, add new edge, and
-        // (if necessary) a modified version
-        if (oldEdge.x1 > newEdge.x1) {
-          // If we haven't yet added the new edge to the insertion list, do so
-          if (!addedNew) {
-            edgeWork.add(newEdge);
-            addedNew = true;
-          }
-          // If there is an overlap, add new "remainder" edge
-          if (oldEdge.x0 < newEdge.x1) {
-            if (joinToLeft == null)
-              joinToLeft = oldEdge.prev;
-          activeEdges.remove(oldEdge);
-            edgeWork.add(new Edge(newEdge.x1, oldEdge.x1, oldEdge.y));
-          } else {
-            joinToRight = oldEdge;
-            // We've moved into the region where the active edges are no longer affected
-            //db("set joinToRight to:", joinToRight);
-            break;
-          }
-        }
-
-         db("Moving to next old edge:", oldEdge.next);
-        oldEdge = oldEdge.next;
+      var rightPt = leftPt;
+      if (POINT_SORT.compare(leftPt, workPt2) <= 0) {
+        var removePts = activePts.subSet(leftPt, workPt2);
+        pr("removing points:", removePts);
+        if (!removePts.isEmpty())
+          rightPt = removePts.last();
+        removePts.clear();
       }
 
-       pr("edges in edgeWork:", edgeWork);
-      for (var edge : edgeWork) {
-        join(joinToLeft, edge);
-        joinToLeft = edge;
-        activeEdges.add(edge);
-      }
-      // join the last edge added to the joinToRight
-      join(edgeWork.get(edgeWork.size() - 1), joinToRight);
-       show(activeEdges, "...after insert");
+      activePts.add(newEdge.pt);
+      activePts.add(new Point(newEdge.x1(), rightPt.y));
+      show(activePts, "after insertion");
     }
 
+    todo("merge horizontal collinear");
+    show(activePts, "extracting");
     var result = new ArrayList<List<Integer>>();
-    for (var edge = activeEdges.first(); edge != null; edge = edge.next) {
-      if (edge.x0 >= EDGE_OFFSET)
-        result.add(ptAsList(edge.x0 - EDGE_OFFSET, edge.y));
+    for (var pt : activePts) {
+      if (pt.x >= PT_X_OFFSET && pt.x < Integer.MAX_VALUE) {
+        var disp = new Point(pt.x - PT_X_OFFSET, pt.y);
+        pr("...adding point:", disp);
+        result.add(ptAsList(pt.x - PT_X_OFFSET, pt.y));
+      }
     }
     return result;
   }
 
-  // I shift the edge x coordinates left by this amount to avoid
-  // special code for dealing with edges that are at the limits of
-  // the legal range (Integer.MAX_VALUE).
-  private static final int EDGE_OFFSET =  0; //-100;
+  // I shift the active points' x coordinates left by this amount to avoid
+  // special code for dealing with buildings whose right edges are at Integer.MAX_VALUE
+  private static final int PT_X_OFFSET = 0; // -100;
 
   private static ArrayList<Integer> ptAsList(int x, int y) {
     var result = new ArrayList<Integer>(2);
@@ -208,64 +163,89 @@ public class P218TheSkylineProblem extends LeetCode {
   }
 
   private static class Edge {
-    int x0, x1;
-    int y;
-    Edge prev, next;
+    Point pt;
+    int width;
 
     public Edge(int left, int right, int height) {
-      x0 = left;
-      x1 = right;
-      y = height;
+      pt = new Point(left, height);
+      width = right - left;
+      //      pr("built edge from left:", left, "right:", right, "height:", height, this);
     }
 
     @Override
     public String toString() {
-      String x1str;
-      if (x1 == Integer.MAX_VALUE)
-        x1str = "XX";
-      else
-        x1str = "" + x1;
-      return y + "{" + x0 + ".." + x1str + "}";
+      //      String x1str;
+      //      int x1 = pt.x + width;
+      //      if (x1 == Integer.MAX_VALUE)
+      //        x1str = "XX";
+      //      else
+      //        x1str = "" + x1;
+      return "(" + xs(x0()) + " " + xs(x1()) + ")y:" + pt.y;
     }
 
+    public int x1() {
+      return pt.x + width;
+    }
+
+    public int x0() {
+      return pt.x;
+    }
+
+    public int y() {
+      return pt.y;
+    }
   }
 
-  private void join(Edge a, Edge b) {
-    if (a != null)
-      a.next = b;
-    if (b != null)
-      b.prev = a;
-  }
-
-  private static boolean collinear(Edge a, Edge b) {
-    if (a.y != b.y)
-      return false;
-    if (a.x0 > b.x0)
-      return b.x1 >= a.x0;
-    else
-      return a.x1 >= b.x0;
-  }
-
-  private static Comparator<Edge> EDGE_SORT_BY_LEFT = new Comparator<Edge>() {
-    public int compare(Edge o1, Edge o2) {
-      int diff = Integer.compare(o1.x0, o2.x0);
-      if (diff == 0)
-        diff = Integer.compare(o1.x1, o2.x1);
-      if (diff == 0)
-        diff = Integer.compare(o1.y, o2.y);
-      return diff;
+  private static Comparator<Point> POINT_SORT = new Comparator<Point>() {
+    public int compare(Point p1, Point p2) {
+      int result = Integer.compare(p1.x, p2.x);
+      if (result == 0)
+        result = Integer.compare(p1.y, p2.y);
+      return result;
     }
   };
 
   private static Comparator<Edge> EDGE_SORT_BY_HEIGHT = new Comparator<Edge>() {
     public int compare(Edge o1, Edge o2) {
-      int diff = Integer.compare(o1.y, o2.y);
+      int diff = Integer.compare(o1.y(), o2.y());
       if (diff == 0)
-        Integer.compare(o1.x0, o2.x0);
+        Integer.compare(o1.x0(), o2.x0());
       if (diff == 0)
-        diff = Integer.compare(o1.x1, o2.x1);
+        diff = Integer.compare(o1.x1(), o2.x1());
       return diff;
     }
   };
+
+  private static class Point {
+    int x;
+    int y;
+
+    Point(int x, int y) {
+      this.x = x;
+      this.y = y;
+    }
+
+    @Override
+    public String toString() {
+      //      if (x >= Integer.MAX_VALUE - 10) {
+      //        int diff = Integer.MAX_VALUE - x;
+      //        if (diff == 0)
+      //          return "XX";
+      //        return "XX-" + diff;
+      //      }
+      return "(" + xs(x) + " " + xs(y) + ")";
+    }
+
+  }
+
+  private static String xs(int x) {
+    if (x >= Integer.MAX_VALUE - 10) {
+      int diff = Integer.MAX_VALUE - x;
+      if (diff == 0)
+        return "XX";
+      return "XX-" + diff;
+    }
+    return "" + x;
+  }
 
 }
