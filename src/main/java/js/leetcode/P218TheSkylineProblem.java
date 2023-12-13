@@ -108,76 +108,75 @@ public class P218TheSkylineProblem extends LeetCode {
       Edge joinToLeft = null;
       Edge joinToRight = null;
 
-      if (activeEdge != null) {
-        // Move backward, if possible, to rightmost edge strictly to left of this one
+      // Move backward, if possible, to rightmost edge strictly to left of this one
 
-        while (true) {
-          if (activeEdge.x1 < insertEdge.x0) {
-            joinToLeft = activeEdge;
-            break;
-          }
-          if (activeEdge.prev == null)
-            break;
-          activeEdge = activeEdge.prev;
+      while (true) {
+        if (activeEdge.x1 < insertEdge.x0) {
+          joinToLeft = activeEdge;
+          break;
         }
-        db("...moved backward to strictly left, activeEdge:", activeEdge);
+        if (activeEdge.prev == null)
+          break;
+        activeEdge = activeEdge.prev;
+      }
+      db("...moved backward to strictly left, activeEdge:", activeEdge);
 
-        while (true) {
-          db("...merge loop, insert:", insertEdge, "active:", activeEdge);
+      while (true) {
+        db("...merge loop, insert:", insertEdge, "active:", activeEdge);
 
-          if (activeEdge.x0 >= insertEdge.x1) {
-            db("...existing is strictly to right");
-            joinToRight = activeEdge;
-            db(".......set join to right:", joinToRight);
-            break;
-          }
+        if (activeEdge.x0 >= insertEdge.x1) {
+          db("...existing is strictly to right");
+          joinToRight = activeEdge;
+          db(".......set join to right:", joinToRight);
+          break;
+        }
 
-          if (activeEdge.x1 <= insertEdge.x0) {
-            db("...existing is strictly to left");
-            joinToLeft = activeEdge;
-            db(".......set join to left:", joinToLeft);
+        if (activeEdge.x1 <= insertEdge.x0) {
+          db("...existing is strictly to left");
+          joinToLeft = activeEdge;
+          db(".......set join to left:", joinToLeft);
+        } else {
+          int splitLeft = insertEdge.x0 - activeEdge.x0;
+          int splitRight = activeEdge.x1 - insertEdge.x1;
+
+          if (splitLeft <= 0 && splitRight <= 0) {
+            activeEdges.remove(activeEdge);
           } else {
-            int splitLeft = insertEdge.x0 - activeEdge.x0;
-            int splitRight = activeEdge.x1 - insertEdge.x1;
-
-            if (splitLeft <= 0 && splitRight <= 0) {
-              activeEdges.remove(activeEdge);
-            } else {
-              var oldActiveX1 = activeEdge.x1;
-              if (splitLeft > 0) {
-                db("......active edge overlaps and extends to left of new");
-                activeEdge.x1 = insertEdge.x0;
-                joinToLeft = activeEdge;
-                db(".......set join to left:", joinToLeft);
+            var oldActiveX1 = activeEdge.x1;
+            if (splitLeft > 0) {
+              db("......active edge overlaps and extends to left of new");
+              activeEdge.x1 = insertEdge.x0;
+              joinToLeft = activeEdge;
+              db(".......set join to left:", joinToLeft);
+            }
+            if (splitRight > 0) {
+              db("......active edge overlaps and extends to right of new");
+              if (splitLeft <= 0) {
+                db("......active edge does not extend to left of new");
+                activeEdge.x0 = insertEdge.x1;
+                joinToRight = activeEdge;
+                db(".......set join to right:", joinToRight);
+              } else {
+                db("......active edge extends to both left and right of new");
+                // The active edge is split on both left and right, so insert a new one for the right
+                var activeRight = new Edge(insertEdge.x1, oldActiveX1, activeEdge.y);
+                joinToRight = activeRight;
+                db(".......set join to right:", joinToRight);
+                join(activeRight, activeEdge.next);
+                activeEdges.add(activeRight);
               }
-              if (splitRight > 0) {
-                db("......active edge overlaps and extends to right of new");
-                if (splitLeft <= 0) {
-                  db("......active edge does not extend to left of new");
-                  activeEdge.x0 = insertEdge.x1;
-                  joinToRight = activeEdge;
-                  db(".......set join to right:", joinToRight);
-                } else {
-                  db("......active edge extends to both left and right of new");
-                  // The active edge is split on both left and right, so insert a new one for the right
-                  var activeRight = new Edge(insertEdge.x1, oldActiveX1, activeEdge.y);
-                  joinToRight = activeRight;
-                  db(".......set join to right:", joinToRight);
-                  join(activeRight, activeEdge.next);
-                  activeEdges.add(activeRight);
-                }
-                break;
-              }
+              break;
             }
           }
-          activeEdge = activeEdge.next;
         }
-
-        db("...joining left...insert:", joinToLeft, insertEdge);
-        join(joinToLeft, insertEdge);
-        db("...joining insert...right:", insertEdge, joinToRight);
-        join(insertEdge, joinToRight);
+        activeEdge = activeEdge.next;
       }
+
+      db("...joining left...insert:", joinToLeft, insertEdge);
+      join(joinToLeft, insertEdge);
+      db("...joining insert...right:", insertEdge, joinToRight);
+      join(insertEdge, joinToRight);
+
       activeEdges.add(insertEdge);
 
       // special case: if new edge is abutting an edge that is at the same height, merge them
