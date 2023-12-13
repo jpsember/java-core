@@ -19,15 +19,15 @@ public class P218TheSkylineProblem extends LeetCode {
 
   public void run() {
     x("[[0,2147483647,2147483647]]", "[[0,2147483647],[2147483647,0]]");
-    
-      x("[[1,2,1],[1,2,2],[1,2,3],[2,3,1],[2,3,2],[2,3,3]]", "[[1,3],[3,0]]");
 
-    x ("3 5 7 4 9 12", "3 7 4 12 9 0");
-    x ("[[1,2,1],[1,2,2],[1,2,3],[2,3,1],[2,3,2],[2,3,3]]", "[[1,3],[3,0]]");
+    x("[[1,2,1],[1,2,2],[1,2,3],[2,3,1],[2,3,2],[2,3,3]]", "[[1,3],[3,0]]");
+
+    x("3 5 7 4 9 12", "3 7 4 12 9 0");
+    x("[[1,2,1],[1,2,2],[1,2,3],[2,3,1],[2,3,2],[2,3,3]]", "[[1,3],[3,0]]");
     x("[[2,9,10],[3,7,15],[5,12,12],[15,20,10],[19,24,8]] ",
         "  [[2,10],[3,15],[7,12],[12,0],[15,10],[20,8],[24,0]]");
-    x ("[[0,2,3],[2,5,3]]", "[[0,3],[5,0]]");
-   }
+    x("[[0,2,3],[2,5,3]]", "[[0,3],[5,0]]");
+  }
 
   private void x2(Object... unused) {
   }
@@ -89,7 +89,7 @@ public class P218TheSkylineProblem extends LeetCode {
   public List<List<Integer>> getSkyline(int[][] buildings) {
     List<Edge> edges = new ArrayList<>();
     for (var b : buildings)
-      edges.add(new Edge(b[0] + PT_X_OFFSET, b[1] + PT_X_OFFSET, b[2]));
+      edges.add(new Edge(b[0] + PT_OFFSET, b[1] + PT_OFFSET, b[2] + PT_OFFSET));
     edges.sort(EDGE_SORT_BY_HEIGHT);
     db("edges sorted by height:", edges);
 
@@ -98,20 +98,20 @@ public class P218TheSkylineProblem extends LeetCode {
 
     // Add 'ground' points at y=0 that extend beyond the left and right of
     // any of the edges we'll be adding.
-    activePts.add(new Point(PT_X_OFFSET - 1, 0));
-    activePts.add(new Point(Integer.MAX_VALUE, 0));
+    activePts.add(new Point(PT_OFFSET - 1, PT_OFFSET));
+    activePts.add(new Point(Integer.MAX_VALUE, PT_OFFSET));
 
     // Outer loop: iterates over each new edge to be inserted into the active points set
     //
-    var w0 = new Point(0, -1);
-    todo("should we use offsetting in y as well?");
+    var w0 = new Point(0, Integer.MIN_VALUE);
+    // todo("should we use offsetting in y as well?");
     var w1 = new Point(0, Integer.MAX_VALUE);
 
     for (var newEdge : edges) {
       db(VERT_SP, "inserting:", newEdge);
       show(activePts, "prior to insert");
 
-      w0.x = newEdge.pt.x;
+      w0.x = newEdge.x0();
       w1.x = newEdge.x1();
 
       var scan = activePts.tailSet(w0);
@@ -146,25 +146,25 @@ public class P218TheSkylineProblem extends LeetCode {
     show(activePts, "extracting");
     var result = new ArrayList<List<Integer>>();
     {
-      Point prevPt = null;
+      int prevPtY = Integer.MIN_VALUE;
+      //Point prevPt = null;
       for (var pt : activePts) {
-        if (pt.x < PT_X_OFFSET || pt.x == Integer.MAX_VALUE)
+        if (pt.x < PT_OFFSET || pt.x == Integer.MAX_VALUE)
           continue;
-        var x = pt.x - PT_X_OFFSET;
-        var y = pt.y;
+        var x = pt.x - PT_OFFSET;
+        var y = pt.y - PT_OFFSET;
         pr("...pt:", x, y);
-        if (!(prevPt != null && y == prevPt.y)) {
+        if (y != prevPtY)
           result.add(ptAsList(x, y));
-        }
-        prevPt = pt;
+        prevPtY = y;
       }
     }
     return result;
   }
 
-  // I shift the active points' x coordinates left by this amount to avoid
-  // special code for dealing with buildings whose right edges are at Integer.MAX_VALUE
-  private static final int PT_X_OFFSET = 0; // -100;
+  // I offset the coordinates by a negative number to avoid 
+  // special code for dealing with points whose coordinates are exactly at Integer.MAX_VALUE
+  private static final int PT_OFFSET = -1; // -100;
 
   private static ArrayList<Integer> ptAsList(int x, int y) {
     var result = new ArrayList<Integer>(2);
