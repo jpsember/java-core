@@ -18,12 +18,18 @@ public class P218TheSkylineProblem extends LeetCode {
   }
 
   public void run() {
-   // x("3 5 7 4 9 12", "3 7 4 12 9 0");
-        x("[[1,2,1],[1,2,2],[1,2,3],[2,3,1],[2,3,2],[2,3,3]]", "[[1,3],[3,0]]");
-    //    x("[[2,9,10],[3,7,15],[5,12,12],[15,20,10],[19,24,8]] ",
-    //        "  [[2,10],[3,15],[7,12],[12,0],[15,10],[20,8],[24,0]]");
-    //    x("[[0,2,3],[2,5,3]]", "[[0,3],[5,0]]");
-    //    x("[[0,2147483647,2147483647]]", "[[0,2147483647],[2147483647,0]]");
+    x("[[0,2147483647,2147483647]]", "[[0,2147483647],[2147483647,0]]");
+    
+      x("[[1,2,1],[1,2,2],[1,2,3],[2,3,1],[2,3,2],[2,3,3]]", "[[1,3],[3,0]]");
+
+    x ("3 5 7 4 9 12", "3 7 4 12 9 0");
+    x ("[[1,2,1],[1,2,2],[1,2,3],[2,3,1],[2,3,2],[2,3,3]]", "[[1,3],[3,0]]");
+    x("[[2,9,10],[3,7,15],[5,12,12],[15,20,10],[19,24,8]] ",
+        "  [[2,10],[3,15],[7,12],[12,0],[15,10],[20,8],[24,0]]");
+    x ("[[0,2,3],[2,5,3]]", "[[0,3],[5,0]]");
+   }
+
+  private void x2(Object... unused) {
   }
 
   private void x(String a, String b) {
@@ -97,41 +103,39 @@ public class P218TheSkylineProblem extends LeetCode {
 
     // Outer loop: iterates over each new edge to be inserted into the active points set
     //
-    var workPt = new Point(0, -1);
+    var w0 = new Point(0, -1);
     todo("should we use offsetting in y as well?");
-    var workPt2 = new Point(0, Integer.MAX_VALUE);
+    var w1 = new Point(0, Integer.MAX_VALUE);
 
     for (var newEdge : edges) {
       db(VERT_SP, "inserting:", newEdge);
       show(activePts, "prior to insert");
 
-      workPt.x = newEdge.pt.x;
-      workPt2.x = newEdge.x1();
+      w0.x = newEdge.pt.x;
+      w1.x = newEdge.x1();
 
-      //      
-      //      var edgePt0 = newEdge.pt;
-      //      var edgePt1 = workPt;
-      //      workPt.x = newEdge.x1();
-      //      workPt.y = edgePt0.y;
-
-      var scan = activePts.tailSet(workPt);
-      checkState(!scan.isEmpty());
+      var scan = activePts.tailSet(w0);
       var leftPt = scan.first();
-      pr("tail set from:", workPt, "ends with:", leftPt);
+      pr("tail set from:", w0, "ends with:", leftPt);
 
-      //      if (
-      //      scan = activePts.headSet(workPt2);
-      //      var rightPt = scan.last();
-      //      pr("tail set from:", workPt2, "ends with:", rightPt);
-
-      var rightPt = leftPt;
-      if (POINT_SORT.compare(leftPt, workPt2) <= 0) {
-        var removePts = activePts.subSet(leftPt, workPt2);
+      // We want to delete any points strictly between w0 and w1, but 
+      // the second point we are inserting has a y-coordinate that is either
+      // that of the last point in this range, or if the range is empty,
+      // that of the last point preceding this range
+      //
+      Point rightPt = null;
+      if (POINT_SORT.compare(leftPt, w1) <= 0) {
+        var removePts = activePts.subSet(leftPt, w1);
         pr("removing points:", removePts);
         if (!removePts.isEmpty())
           rightPt = removePts.last();
         removePts.clear();
       }
+
+      // If there were no points in the delete range, we must scan back to the last point
+      // before the insertion region to determine the second new point's y coordinate
+      if (rightPt == null)
+        rightPt = activePts.headSet(w0).last();
 
       activePts.add(newEdge.pt);
       activePts.add(new Point(newEdge.x1(), rightPt.y));
@@ -141,11 +145,18 @@ public class P218TheSkylineProblem extends LeetCode {
     todo("merge horizontal collinear");
     show(activePts, "extracting");
     var result = new ArrayList<List<Integer>>();
-    for (var pt : activePts) {
-      if (pt.x >= PT_X_OFFSET && pt.x < Integer.MAX_VALUE) {
-        var disp = new Point(pt.x - PT_X_OFFSET, pt.y);
-        pr("...adding point:", disp);
-        result.add(ptAsList(pt.x - PT_X_OFFSET, pt.y));
+    {
+      Point prevPt = null;
+      for (var pt : activePts) {
+        if (pt.x < PT_X_OFFSET || pt.x == Integer.MAX_VALUE)
+          continue;
+        var x = pt.x - PT_X_OFFSET;
+        var y = pt.y;
+        pr("...pt:", x, y);
+        if (!(prevPt != null && y == prevPt.y)) {
+          result.add(ptAsList(x, y));
+        }
+        prevPt = pt;
       }
     }
     return result;
