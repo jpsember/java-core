@@ -111,6 +111,8 @@ public class P218TheSkylineProblem extends LeetCode {
     // A work array for storing new edges
     var edgeWork = new ArrayList<Edge>();
 
+    // Outer loop: iterates over each new edge to be inserted into the active edges set
+    //
     for (var newEdge : edges) {
       db(VERT_SP, "inserting:", newEdge);
       show(activeEdges, "prior to insert");
@@ -130,8 +132,9 @@ public class P218TheSkylineProblem extends LeetCode {
       edgeWork.clear();
       boolean addedNew = false;
 
+      // Inner loop: iterate over edges affected by the insertion of the new edge
+      //
       while (oldEdge != null) {
-        checkInf(20);
 
         // If this edge is collinear with the new edge, and intersecting it, merge them.
         // Due to the sort order, we know that this old edge will *not* extend past the right of the insert edge.
@@ -154,10 +157,12 @@ public class P218TheSkylineProblem extends LeetCode {
         // If edge overlaps new to right, or is strictly right, add new edge, and
         // (if necessary) a modified version
         if (oldEdge.x1 > newEdge.x1) {
+          // If we haven't yet added the new edge to the insertion list, do so
           if (!addedNew) {
             addWork(edgeWork, newEdge);
             addedNew = true;
           }
+          // If there is an overlap, add new "remainder" edge
           if (oldEdge.x0 < newEdge.x1) {
             activeEdges.remove(oldEdge);
             addWork(edgeWork, new Edge(newEdge.x1, oldEdge.x1, oldEdge.y));
