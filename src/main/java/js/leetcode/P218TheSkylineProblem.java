@@ -80,17 +80,22 @@ public class P218TheSkylineProblem extends LeetCode {
     }
   }
 
+  // I shift the edge x coordinates left by this amount to avoid
+  // special code for dealing with edges that are at the limits of
+  // the legal range (Integer.MAX_VALUE).
+  private static final int EDGE_OFFSET = -1;
+
   public List<List<Integer>> getSkyline(int[][] buildings) {
     List<Edge> edges = new ArrayList<>();
     for (var b : buildings)
-      edges.add(new Edge(b[0], b[1], b[2]));
+      edges.add(new Edge(b[0] + EDGE_OFFSET, b[1] + EDGE_OFFSET, b[2]));
     edges.sort(EDGE_SORT_BY_HEIGHT);
 
     db("edges sorted by height:", edges);
 
     SortedSet<Edge> activeEdges = new TreeSet<Edge>(EDGE_SORT_BY_LEFT);
     // Add a 'ground' edge
-    activeEdges.add(new Edge(-1, Integer.MAX_VALUE, 0));
+    activeEdges.add(new Edge(EDGE_OFFSET - 1, Integer.MAX_VALUE, 0));
 
     for (var insertEdge : edges) {
       db("inserting:", insertEdge);
@@ -140,11 +145,6 @@ public class P218TheSkylineProblem extends LeetCode {
           } else {
             int splitLeft = insertEdge.x0 - activeEdge.x0;
             int splitRight = activeEdge.x1 - insertEdge.x1;
-
-            // Special case, for a building extending to Integer.MAX_VALUE:
-            // If this is the rightmost 'ground' edge, retain it by setting splitRight to a positive value.
-            if (splitRight == 0 && activeEdge.y == 0 && activeEdge.x1 == Integer.MAX_VALUE)
-              splitRight = 1;
 
             if (splitLeft <= 0 && splitRight <= 0) {
               activeEdges.remove(activeEdge);
@@ -206,8 +206,8 @@ public class P218TheSkylineProblem extends LeetCode {
 
     var edge = activeEdges.first();
     while (edge != null) {
-      if (edge.x0 >= 0) {
-        res.add(ptAsList(edge.x0, edge.y));
+      if (edge.x0 >= EDGE_OFFSET) {
+        res.add(ptAsList(edge.x0 - EDGE_OFFSET, edge.y));
       }
       edge = edge.next;
     }
