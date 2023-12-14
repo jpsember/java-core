@@ -12,12 +12,38 @@ import java.util.TreeSet;
 import js.base.BasePrinter;
 
 /**
- * Works nicely.
+ * <pre>
  * 
- * It is a bit slower than my previous version, I suspect due to the efficiency
- * of being able to traverse the list via the prev/next pointers, but the
- * simplicity of this version is nicer.
+ *  Let Wn be the window of X[n-k+1],X[n-k+2],...,X[n], and Mn be the maximum value in this window.
+ *  
+ *  We define and maintain the subsequence Sn as follows:
+ *  
+ *  Base case:
+ *  
+ *  S1 = {X[1]}   
+ *  
+ *  Inductive case:
+ *  
+ *  Where Sn = {Xa, Xb, ..., Xh}, if X[n+1] > Xa, then
+ *     Sn+1 = {X[n+1]}
+ *  else
+ *     if Sn has k elements,
+ *       Sn+1 = {Xb, ..., Xh, X[n+1]}
+ *     else
+ *       Sn+1 = {Xa, Xb, ..., Xh, X[n+1]}
+ *  
+ *  Note that the subsequence S is always sorted from highest to lowest, and
+ *  the maximum element in the subsequence is the first element, which is also
+ *  the maximum element in the window Wn.
+ *  
+ *  The key intuition is: if the elements being examined are in strictly increasing order, then
+ *  only the most recent element needs to be kept in the window; otherwise, they can be attached
+ *  to the end of the window, and the window is thus in decreasing order.
  *
+ *  We can also use the array of nums itself to store the window.
+ * 
+ * 
+ * </pre>
  */
 public class P239SlidingWindowMaximum extends LeetCode {
 
@@ -61,7 +87,16 @@ public class P239SlidingWindowMaximum extends LeetCode {
   }
 
   public int[] maxSlidingWindow(int[] nums, int k) {
-    return slowMaxSlidingWindow(nums, k);
+    int windowStart = 0;
+    int windowEnd = 0;
+    
+    int[] result = new int[nums.length - k + 1];
+    
+    
+    for (int i = 0; i < nums.length; i++) {
+      int last
+    }
+    return result;
   }
 
 }
