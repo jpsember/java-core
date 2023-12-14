@@ -26,7 +26,7 @@ public class P282ExpressionAddOperators extends LeetCode {
   }
 
   public List<String> addOperators(String num, int target) {
-//    results = new ArrayList<String>();
+    //    results = new ArrayList<String>();
 
     var exprs = new ArrayList<Expr>();
     for (int i = 0; i < num.length(); i++) {
@@ -35,7 +35,7 @@ public class P282ExpressionAddOperators extends LeetCode {
     pr(exprs);
 
     var results = new ArrayList<String>();
-    var solutions = aux(target, exprs.get(0), exprs, 1);
+    var solutions = aux(target, exprs, 0);
     if (solutions != null) {
       for (var s : solutions)
         results.add(s.str);
@@ -65,26 +65,50 @@ public class P282ExpressionAddOperators extends LeetCode {
     return list;
   }
 
-  private List<Expr> aux(int target, Expr exp, List<Expr> rightExprs, int cursor) {
+  /**
+   * Search for a combination of expressions that equate to a target value
+   * 
+   * @param target
+   * @param exp
+   * @param rightExprs
+   * @param cursor
+   * @return
+   */
+  private List<Expr> aux(int target, List<Expr> exprs, int cursor) {
     List<Expr> results = null;
 
-    int remain = rightExprs.size() - cursor;
+    int remain = exprs.size() - cursor;
 
-    db("exp:", exp, "remaining:", rightExprs.subList(cursor, rightExprs.size()));
+    db("exprs:", exprs.subList(cursor, exprs.size()));
+
+    var exp = exprs.get(cursor);
 
     // Base case: only a single expr
-    if (remain == 0) {
+    if (remain == 1) {
       db("...final:", exp);
       if (exp.value == target) {
         db("......got solution!", exp.str);
         return addResult(results, exp);
-        //results.add(exp.str);
       }
       return results;
     }
 
-    var expNext = rightExprs.get(cursor);
+    // Try multiplying the first two together
+    
+    
+    var expNext = exprs.get(cursor+1);
+    
+    do {
+    long combinedVal = exp.value * (long) expNext.value;
+    if (!integer(combinedVal))
+      break;
+    var combined = new Expr(PRODUCT, exp.str + "*" + expNext.str, (int) combinedVal);
+    
+    results = addResults(results, aux(target, combined, rightExprs, cursor + 1));
+  } while (false);
 
+    
+    
     // Can we concatenate two strings of digits together?
     do {
       if (exp.precedence != DIGITS)
@@ -123,7 +147,7 @@ public class P282ExpressionAddOperators extends LeetCode {
         }
       }
     } while (false);
-    
+
     do {
       long auxTarget = target + (long) exp.value;
       if (!integer(auxTarget))
@@ -136,16 +160,16 @@ public class P282ExpressionAddOperators extends LeetCode {
         }
       }
     } while (false);
-    
-//    
-//    do {
-//      long combinedVal = exp.value - (long) expNext.value;
-//      if (!integer(combinedVal))
-//        break;
-//      var combined = new Expr(ADDSUB, exp.str + "-" + expNext.str, (int) combinedVal);
-//      aux(target, combined, rightExprs, cursor + 1);
-//    } while (false);
-return results;
+
+    //    
+    //    do {
+    //      long combinedVal = exp.value - (long) expNext.value;
+    //      if (!integer(combinedVal))
+    //        break;
+    //      var combined = new Expr(ADDSUB, exp.str + "-" + expNext.str, (int) combinedVal);
+    //      aux(target, combined, rightExprs, cursor + 1);
+    //    } while (false);
+    return results;
   }
 
   private static boolean integer(long val) {
