@@ -11,6 +11,14 @@ import java.util.TreeSet;
 
 import js.base.BasePrinter;
 
+/**
+ * Works nicely.
+ * 
+ * It is a bit slower than my previous version, I suspect due to the efficiency
+ * of being able to traverse the list via the prev/next pointers, but the
+ * simplicity of this version is nicer.
+ *
+ */
 public class P218TheSkylineProblem extends LeetCode {
 
   public static void main(String[] args) {
@@ -29,7 +37,7 @@ public class P218TheSkylineProblem extends LeetCode {
     x("[[0,2,3],[2,5,3]]", "[[0,3],[5,0]]");
   }
 
-  private void x2(Object... unused) {
+  /* private */ void x2(Object... unused) {
   }
 
   private void x(String a, String b) {
@@ -61,13 +69,13 @@ public class P218TheSkylineProblem extends LeetCode {
 
   private static final boolean db = false;
 
-  private static void db(Object... messages) {
+  /* private */ static void db(Object... messages) {
     if (db) {
       pr(messages);
     }
   }
 
-  private void show(Set<Point> points, Object... messages) {
+  /* private */ void show(Set<Point> points, Object... messages) {
     if (db) {
       var sb = new StringBuilder();
       sb.append(BasePrinter.toString(messages));
@@ -86,56 +94,38 @@ public class P218TheSkylineProblem extends LeetCode {
     }
   }
 
+  // ------------------------------------------------------------------
+
   public List<List<Integer>> getSkyline(int[][] buildings) {
     List<Edge> edges = new ArrayList<>();
     for (var b : buildings)
       edges.add(new Edge(b[0] + PT_OFFSET, b[1] + PT_OFFSET, b[2] + PT_OFFSET));
     edges.sort(EDGE_SORT_BY_HEIGHT);
 
-    // The active edges are maintained in a sorted order, by left edge
+    // The active points are maintained in a sorted order
     SortedSet<Point> activePts = new TreeSet<Point>(POINT_SORT);
 
     // Add 'ground' points at y=0 that extend beyond the left and right of
-    // any of the edges we'll be adding.
+    // any of the points we'll be adding.
     activePts.add(new Point(PT_OFFSET - 1, PT_OFFSET));
     activePts.add(new Point(Integer.MAX_VALUE, PT_OFFSET));
 
     var query0 = new Point(0, Integer.MIN_VALUE);
     var query1 = new Point(0, Integer.MAX_VALUE);
 
-    for (var newEdge : edges) {
+    for (var edge : edges) {
+      query0.x = edge.x0();
+      query1.x = edge.x1();
 
-      //db(VERT_SP, "inserting:", newEdge);
-      //show(activePts, "prior to insert");
+      // The y-coordinate of the point we will be inserting will be that
+      // of the last point preceding the end of the edge we are processing
+      var newY = activePts.headSet(query1).last().y;
+      activePts.subSet(query0, query1).clear();
 
-      query0.x = newEdge.x0();
-      query1.x = newEdge.x1();
-
-      var leftPt = activePts.tailSet(query0).first();
-
-      // We want to delete any points strictly between w0 and w1, but 
-      // the second point we are inserting has a y-coordinate that is either
-      // that of the last point in this range, or if the range is empty,
-      // that of the last point preceding this range
-      //
-      Point rightPt = null;
-      if (POINT_SORT.compare(leftPt, query1) <= 0) {
-        var removePts = activePts.subSet(leftPt, query1);
-        if (!removePts.isEmpty())
-          rightPt = removePts.last();
-        removePts.clear();
-      }
-
-      // If there were no points in the delete range, we must scan back to the last point
-      // before the insertion region to determine the second new point's y coordinate
-      if (rightPt == null)
-        rightPt = activePts.headSet(query0).last();
-
-      activePts.add(newEdge.pt);
-      activePts.add(new Point(newEdge.x1(), rightPt.y));
+      activePts.add(edge.pt);
+      activePts.add(new Point(edge.x1(), newY));
     }
 
-    //show(activePts, "extracting");
     var result = new ArrayList<List<Integer>>();
     {
       int prevPtY = Integer.MIN_VALUE;
