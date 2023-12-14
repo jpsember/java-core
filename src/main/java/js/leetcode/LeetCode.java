@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import js.data.DataUtil;
+import js.json.JSList;
 
 public abstract class LeetCode {
 
@@ -16,7 +17,12 @@ public abstract class LeetCode {
       result = "<null>";
     if (expected == null)
       expected = "<null>";
+
     checkState(result.equals(expected), "Got result:", INDENT, result, CR, "but expected:", CR, expected);
+  }
+
+  public void verify(int[] result, int[] expected) {
+    verify(JSList.with(result), JSList.with(expected));
   }
 
   public static String bitStr(long val) {
