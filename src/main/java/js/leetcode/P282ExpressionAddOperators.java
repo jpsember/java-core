@@ -25,9 +25,8 @@ public class P282ExpressionAddOperators extends LeetCode {
     verify(got, exp);
   }
 
-  public List<String> addOperators(String num, int tar) {
-    results = new ArrayList<String>();
-    target = tar;
+  public List<String> addOperators(String num, int target) {
+//    results = new ArrayList<String>();
 
     var exprs = new ArrayList<Expr>();
     for (int i = 0; i < num.length(); i++) {
@@ -35,29 +34,56 @@ public class P282ExpressionAddOperators extends LeetCode {
     }
     pr(exprs);
 
-    aux(exprs.get(0), exprs, 1);
+    var results = new ArrayList<String>();
+    var solutions = aux(target, exprs.get(0), exprs, 1);
+    if (solutions != null) {
+      for (var s : solutions)
+        results.add(s.str);
+    }
     return results;
   }
 
-  private List<String> results;
-  private int target;
+  //  private List<String> results;
 
-  private void aux(Expr exp, List<Expr> exprs, int cursor) {
-    int remain = exprs.size() - cursor;
+  private static List<Expr> addResult(List<Expr> list, Expr expr) {
+    if (list == null)
+      list = new ArrayList<>();
+    list.add(expr);
+    return list;
+  }
 
-    db("exp:", exp, "remaining:", exprs.subList(cursor, exprs.size()));
+  private static boolean nonEmpty(List<Expr> list) {
+    return list != null && !list.isEmpty();
+  }
+
+  private static List<Expr> addResults(List<Expr> list, List<Expr> exprs) {
+    if (nonEmpty(list)) {
+      if (list == null)
+        list = new ArrayList<>();
+      list.addAll(exprs);
+    }
+    return list;
+  }
+
+  private List<Expr> aux(int target, Expr exp, List<Expr> rightExprs, int cursor) {
+    List<Expr> results = null;
+
+    int remain = rightExprs.size() - cursor;
+
+    db("exp:", exp, "remaining:", rightExprs.subList(cursor, rightExprs.size()));
 
     // Base case: only a single expr
     if (remain == 0) {
       db("...final:", exp);
       if (exp.value == target) {
         db("......got solution!", exp.str);
-        results.add(exp.str);
+        return addResult(results, exp);
+        //results.add(exp.str);
       }
-      return;
+      return results;
     }
 
-    var expNext = exprs.get(cursor);
+    var expNext = rightExprs.get(cursor);
 
     // Can we concatenate two strings of digits together?
     do {
@@ -69,7 +95,7 @@ public class P282ExpressionAddOperators extends LeetCode {
       if (!integer(combinedVal))
         break;
       var combined = new Expr(DIGITS, exp.str + expNext.str, (int) combinedVal);
-      aux(combined, exprs, cursor + 1);
+      results = addResults(results, aux(target, combined, rightExprs, cursor + 1));
     } while (false);
 
     // Can we multiply two values together?
@@ -80,26 +106,46 @@ public class P282ExpressionAddOperators extends LeetCode {
       if (!integer(combinedVal))
         break;
       var combined = new Expr(PRODUCT, exp.str + "*" + expNext.str, (int) combinedVal);
-      aux(combined, exprs, cursor + 1);
+      results = addResults(results, aux(target, combined, rightExprs, cursor + 1));
     } while (false);
 
     // Can we add or subtract two values together?
 
     do {
-      long combinedVal = exp.value + (long) expNext.value;
-      if (!integer(combinedVal))
+      long auxTarget = target - (long) exp.value;
+      if (!integer(auxTarget))
         break;
-      var combined = new Expr(ADDSUB, exp.str + "+" + expNext.str, (int) combinedVal);
-      aux(combined, exprs, cursor + 1);
+      List<Expr> auxResults = aux((int) auxTarget, expNext, rightExprs, cursor + 1);
+      if (nonEmpty(auxResults)) {
+        for (var aux : auxResults) {
+          var combined = new Expr(ADDSUB, exp.str + "+" + aux, target);
+          results = addResult(results, combined);
+        }
+      }
     } while (false);
+    
     do {
-      long combinedVal = exp.value - (long) expNext.value;
-      if (!integer(combinedVal))
+      long auxTarget = target + (long) exp.value;
+      if (!integer(auxTarget))
         break;
-      var combined = new Expr(ADDSUB, exp.str + "-" + expNext.str, (int) combinedVal);
-      aux(combined, exprs, cursor + 1);
+      List<Expr> auxResults = aux((int) auxTarget, expNext, rightExprs, cursor + 1);
+      if (nonEmpty(auxResults)) {
+        for (var aux : auxResults) {
+          var combined = new Expr(ADDSUB, exp.str + "-" + aux, target);
+          results = addResult(results, combined);
+        }
+      }
     } while (false);
-
+    
+//    
+//    do {
+//      long combinedVal = exp.value - (long) expNext.value;
+//      if (!integer(combinedVal))
+//        break;
+//      var combined = new Expr(ADDSUB, exp.str + "-" + expNext.str, (int) combinedVal);
+//      aux(target, combined, rightExprs, cursor + 1);
+//    } while (false);
+return results;
   }
 
   private static boolean integer(long val) {
