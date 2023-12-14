@@ -4,6 +4,7 @@ import static js.base.Tools.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Random;
 
 import js.data.DataUtil;
 import js.json.JSList;
@@ -68,6 +69,19 @@ public abstract class LeetCode {
     nums[a] = nums[b];
     nums[b] = tmp;
   }
+
+  public Random rand() {
+    if (mRandom == null)
+      rand(1965);
+    return mRandom;
+  }
+
+  public Random rand(int seed) {
+    mRandom = new Random(seed);
+    return rand();
+  }
+
+  private Random mRandom;
 
   private int mInfiniteLoop;
 }
