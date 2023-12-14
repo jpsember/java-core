@@ -56,10 +56,8 @@ public class P239SlidingWindowMaximum extends LeetCode {
         v = v / 10;
       vals[i] = v;
     }
+    
     x(k, vals);
-  }
-
-  /* private */ void x2(Object... unused) {
   }
 
   private void x(int k, int[] nums) {

@@ -67,31 +67,22 @@ public class P218TheSkylineProblem extends LeetCode {
     return result;
   }
 
-  private static final boolean db = false;
-
-  /* private */ static void db(Object... messages) {
-    if (db) {
-      pr(messages);
-    }
-  }
-
   /* private */ void show(Set<Point> points, Object... messages) {
-    if (db) {
-      var sb = new StringBuilder();
-      sb.append(BasePrinter.toString(messages));
-      Point prevPt = null;
-      for (var pt : points) {
-        if (prevPt != null) {
-          sb.append("...");
-          sb.append(new Edge(prevPt.x, pt.x, prevPt.y));
-          sb.append(' ');
-        }
-        prevPt = pt;
+
+    var sb = new StringBuilder();
+    sb.append(BasePrinter.toString(messages));
+    Point prevPt = null;
+    for (var pt : points) {
+      if (prevPt != null) {
+        sb.append("...");
+        sb.append(new Edge(prevPt.x, pt.x, prevPt.y));
+        sb.append(' ');
       }
-      sb.append(" >> ");
-      sb.append(points);
-      pr(sb);
+      prevPt = pt;
     }
+    sb.append(" >> ");
+    sb.append(points);
+    pr(sb);
   }
 
   // ------------------------------------------------------------------

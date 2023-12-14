@@ -84,4 +84,8 @@ public abstract class LeetCode {
   private Random mRandom;
 
   private int mInfiniteLoop;
+
+  public static void db(Object... messages) {
+    pr(messages);
+  }
 }
