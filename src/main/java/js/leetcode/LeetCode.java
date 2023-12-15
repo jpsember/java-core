@@ -89,5 +89,6 @@ public abstract class LeetCode {
     pr(messages);
   }
 
+  public void xx(Object... messages) {
+  }
 }
-
