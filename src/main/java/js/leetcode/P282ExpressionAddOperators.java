@@ -34,14 +34,14 @@ public class P282ExpressionAddOperators extends LeetCode {
   public void run() {
     x(1051, 106, "105+1");
     // if (true) return;
-    x(105, 5, "1*0+5", "10-5");
+    xx(105, 5, "1*0+5", "10-5");
     xx(123, 6, "1*2*3", "1+2+3");
     //x(232, 8, "2*3+2", "2+3*2");
     //x(702, 2, "7*0+2");
     xx(735, 9, "7-3+5");
 
-    x(9999999999L, 1409865409);
-    x(123456789, 45, "1*2*3*4*5-6-78+9", "1*2*3*4+5+6-7+8+9", "1*2*3+4+5+6+7+8+9", "1*2*3+4+5-6*7+8*9",
+    xx(9999999999L, 1409865409);
+    xx(123456789, 45, "1*2*3*4*5-6-78+9", "1*2*3*4+5+6-7+8+9", "1*2*3+4+5+6+7+8+9", "1*2*3+4+5-6*7+8*9",
         "1*2*3+4-5*6+7*8+9", "1*2*3+4-5*6-7+8*9", "1*2*3-4*5+6*7+8+9", "1*2*3-4*5-6+7*8+9",
         "1*2*3-4*5-6-7+8*9", "1*2*3-45+67+8+9", "1*2*34+56-7-8*9", "1*2*34-5+6-7-8-9", "1*2+3*4-56+78+9",
         "1*2+3+4+5*6+7+8-9", "1*2+3+4-5+6*7+8-9", "1*2+3+4-5-6+7*8-9", "1*2+3+45+67-8*9", "1*2+3-45+6+7+8*9",
@@ -187,14 +187,15 @@ public class P282ExpressionAddOperators extends LeetCode {
     pr("proc suffix at pos:", suffixPos, suffixNode);
     if (suffixPos != 0) {
       suffixPos--;
+      procSuffix(new Expr(OPER_MULT, mDigitExprs[suffixPos], suffixNode), suffixPos);
       // If the old suffix is a concat, and is invalid, discard that value
       // since a leading zero will no longer be leading
       if (suffixNode.oper == OPER_CONCAT) {
         suffixNode.discardNaN();
+        pr("after discarding nan:", suffixNode);
       }
-      procSuffix(new Expr(OPER_MULT, mDigitExprs[suffixPos], suffixNode), suffixPos);
-
-      procSuffix(new Expr(OPER_CONCAT, mDigitExprs[suffixPos], suffixNode), suffixPos);
+      var x = new Expr(OPER_CONCAT, mDigitExprs[suffixPos], suffixNode);
+      procSuffix(x, suffixPos);
     }
   }
 
@@ -210,15 +211,13 @@ public class P282ExpressionAddOperators extends LeetCode {
     }
 
     public void discardNaN() {
-      if (value == null)
-        return;
-      if (Double.isNaN(value)) {
-        value = null;
-        if (child2 != null)
-          child2.discardNaN();
-      }
-      todo("do I need to discard NaN for children too?");
 
+      if (child1 == null || child2 == null)
+        return;
+      value = null;
+      child1.discardNaN();
+      child2.discardNaN();
+      todo("do I need to discard NaN for children too?");
     }
 
     public void render(StringBuilder sb) {
@@ -237,10 +236,28 @@ public class P282ExpressionAddOperators extends LeetCode {
         child2.render(sb);
     }
 
-    private double evaluate2() {
-      if (oper == OPER_CONCAT && child2 != null && child1 == DIGIT_EXP[0])
-        return Double.NaN;
-      return evaluate();
+    public void renderForDebug(StringBuilder sb) {
+      if (child1 == null) {
+        var value = evaluateDebug(true);
+        if (Double.isNaN(value))
+          sb.append("**NaN**");
+        else
+          sb.append((char) ('0' + (int) value));
+        return;
+      }
+      child1.renderForDebug(sb);
+      if (oper != OPER_CONCAT)
+        sb.append("*-+".charAt(oper - 1));
+      if (child2 != null)
+        child2.renderForDebug(sb);
+    }
+
+    private double evaluateConcat() {
+      if (value != null)
+        return value;
+      digitCount = child1.digitCount + child2.digitCount;
+      value = child1.evaluateConcat() * powers10[child2.digitCount] + child2.evaluate();
+      return value;
     }
 
     public double evaluate() {
@@ -249,34 +266,61 @@ public class P282ExpressionAddOperators extends LeetCode {
       double val;
       switch (oper) {
       default: // OPER_CONCAT:
-        todo("avoid invalidating concat so quickly");
-      // If the left child is the digit 0, we shouldn't attempt a concatenation.
-      // Set the value to NaN so any expression using this will not be a solution.
-      //        if (child1 == DIGIT_EXP[0]) {
-      //          val = Double.NaN;
-      //        } else 
-      {
-        digitCount = child1.digitCount + child2.digitCount;
-        val = child1.evaluate() * powers10[child2.digitCount] + child2.evaluate();
-      }
+        //  If the left child is the digit 0, we shouldn't attempt a concatenation.
+        //  Set the value to NaN so any expression using this will not be a solution.
+        if (child1 == DIGIT_EXP[0]) {
+          val = Double.NaN;
+        } else {
+          digitCount = child1.digitCount + child2.digitCount;
+          val = child1.evaluateConcat() * powers10[child2.digitCount] + child2.evaluate();
+        }
         break;
       case OPER_MULT:
-        val = child1.evaluate2() * child2.evaluate2();
+        val = child1.evaluate() * child2.evaluate();
         break;
       case OPER_ADD:
-        val = child1.evaluate2() + child2.evaluate2();
+        val = child1.evaluate() + child2.evaluate();
         break;
       case OPER_SUB:
-        val = child1.evaluate2() - child2.evaluate2();
+        val = child1.evaluate() - child2.evaluate();
         break;
       }
 
       if (val < Integer.MIN_VALUE || val > Integer.MAX_VALUE)
         val = Double.NaN;
       value = val;
-      //      if (value.isNaN())
-      //        pr("*** stored NaN for oper:", oper, "id:", debugId);
       return value;
+    }
+
+    public double evaluateDebug(boolean checkLeadingZero) {
+      double val;
+      switch (oper) {
+      default: // OPER_CONCAT:
+        //  If the left child is the digit 0, we shouldn't attempt a concatenation.
+        //  Set the value to NaN so any expression using this will not be a solution.
+        if (checkLeadingZero && child1 == DIGIT_EXP[0]) {
+          val = Double.NaN;
+        } else {
+          if (child1 == null && child2 == null) {
+            return value;
+          }
+          digitCount = child1.digitCount + child2.digitCount;
+          val = child1.evaluateDebug(false) * powers10[child2.digitCount] + child2.evaluateDebug(false);
+        }
+        break;
+      case OPER_MULT:
+        val = child1.evaluateDebug(true) * child2.evaluateDebug(true);
+        break;
+      case OPER_ADD:
+        val = child1.evaluateDebug(true) + child2.evaluateDebug(true);
+        break;
+      case OPER_SUB:
+        val = child1.evaluateDebug(true) - child2.evaluateDebug(true);
+        break;
+      }
+      if (val < Integer.MIN_VALUE || val > Integer.MAX_VALUE)
+        val = Double.NaN;
+      return val;
     }
 
     // Store the value as a double, so it has the precision to check for overflow, but
@@ -292,14 +336,14 @@ public class P282ExpressionAddOperators extends LeetCode {
     public String toString() {
       var sb = new StringBuilder();
       sb.append("{\"");
-      render(sb);
+      renderForDebug(sb);
       sb.append("\" ");
       if (child1 != null) {
-        evaluate();
-        if (Double.isNaN(value))
+        var val = evaluateDebug(true);
+        if (Double.isNaN(val))
           sb.append("**NaN**");
         else
-          sb.append(value);
+          sb.append(val);
       }
       sb.append("id:" + debugId);
       sb.append(" }");
