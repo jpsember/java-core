@@ -15,6 +15,7 @@ public class P282ExpressionAddOperators extends LeetCode {
   }
 
   public void run() {
+    x(105,5,"1*0+5","10-5");
     x(123, 6, "1*2*3", "1+2+3");
     //x(232, 8, "2*3+2", "2+3*2");
     //x(702, 2, "7*0+2");
@@ -181,11 +182,10 @@ public class P282ExpressionAddOperators extends LeetCode {
       default:
         throw new IllegalStateException();
       case OPER_CONCAT:
-        // If the left child is the digit 0, the value is that of the right child.
-        // This avoids leading zeros.
+        // If the left child is the digit 0, we shouldn't attempt a concatenation.
+        // Set the value to NaN so any expression using this will not be a solution.
         if (child1 == DIGIT_EXP[0]) {
-          val = child2.evaluate();
-          digitCount = child2.digitCount;
+          val = Double.NaN;
         } else {
           digitCount = child1.digitCount + child2.digitCount;
           val = child1.evaluate() * powers10[child2.digitCount] + child2.evaluate();
