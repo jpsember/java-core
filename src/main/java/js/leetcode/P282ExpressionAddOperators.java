@@ -3,7 +3,6 @@ package js.leetcode;
 import static js.base.Tools.*;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -95,23 +94,7 @@ public class P282ExpressionAddOperators extends LeetCode {
     verify(got, exp);
   }
 
-  private static String[] operNames = { "CONCAT", "MULT", "SUB", "ADD" };
-
-  private static String dbOper(int oper) {
-    return operNames[oper];
-  }
-
-  /* private */ static String dbOper(Collection<Integer> ops) {
-    var sb = new StringBuilder("[ ");
-    for (var x : ops) {
-      sb.append(dbOper(x));
-      sb.append(' ');
-    }
-    sb.append(']');
-    return sb.toString();
-  }
-
-  private List<String> SLOWaddOperators(String num, int target) {
+  /* private */ List<String> SLOWaddOperators(String num, int target) {
     var digitExprs = new Expr[num.length()];
     for (int i = 0; i < num.length(); i++)
       digitExprs[i] = DIGIT_EXP[num.charAt(i) - '0'];
@@ -167,7 +150,6 @@ public class P282ExpressionAddOperators extends LeetCode {
   // ------------------------------------------------------------------
 
   public List<String> addOperators(String num, int target) {
-    // if (true) return SLOWaddOperators(num, target);
     memoMap.clear();
     mDigitExprs = new Expr[num.length()];
     for (int i = 0; i < num.length(); i++)
@@ -371,37 +353,33 @@ public class P282ExpressionAddOperators extends LeetCode {
     }
 
     public double evaluate() {
-      if (value != null)
-        return value;
-      double val;
-      switch (oper) {
-      default: // OPER_CONCAT:
-      {
-        // Evaluate the children FIRST, so their digit counts are valid
-        var v1 = child1.evaluate();
-        var v2 = child2.evaluate();
-        if (child2.digitCount == 0) {
-          halt("wtf, digit count is zero for:", INDENT, child2);
+      if (value == null) {
+        double val;
+        switch (oper) {
+        default: // OPER_CONCAT:
+        {
+          // Evaluate the children FIRST, so their digit counts are valid
+          var v1 = child1.evaluate();
+          var v2 = child2.evaluate();
+          digitCount = child1.digitCount + child2.digitCount;
+          val = v1 * powers10[child2.digitCount] + v2;
         }
-        checkState(child2.digitCount != 0);
-        digitCount = child1.digitCount + child2.digitCount;
-        val = v1 * powers10[child2.digitCount] + v2;
-      }
-        break;
-      case OPER_MULT:
-        val = child1.evaluate2() * child2.evaluate2();
-        break;
-      case OPER_ADD:
-        val = child1.evaluate2() + child2.evaluate2();
-        break;
-      case OPER_SUB:
-        val = child1.evaluate2() - child2.evaluate2();
-        break;
-      }
+          break;
+        case OPER_MULT:
+          val = child1.evaluate2() * child2.evaluate2();
+          break;
+        case OPER_ADD:
+          val = child1.evaluate2() + child2.evaluate2();
+          break;
+        case OPER_SUB:
+          val = child1.evaluate2() - child2.evaluate2();
+          break;
+        }
 
-      if (val < Integer.MIN_VALUE || val > Integer.MAX_VALUE)
-        val = Double.NaN;
-      value = val;
+        if (val < Integer.MIN_VALUE || val > Integer.MAX_VALUE)
+          val = Double.NaN;
+        value = val;
+      }
       return value;
     }
 
