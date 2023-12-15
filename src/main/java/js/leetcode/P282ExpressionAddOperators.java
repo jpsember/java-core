@@ -15,7 +15,7 @@ public class P282ExpressionAddOperators extends LeetCode {
   public void run() {
     // x(123, 6, "1*2*3", "1+2+3");
     //x(232, 8, "2*3+2", "2+3*2");
-    x(12345, 24, "2*3+2");
+    x(223434, 24, "2+2*3+4+3*4","2+2*3+4*3+4");
   }
 
   private void x(int num, int target, String... results) {
@@ -74,6 +74,7 @@ public class P282ExpressionAddOperators extends LeetCode {
         var a = args.pop();
         var oper = ops.pop();
         var c = applyOperation(oper, a, b);
+        if (c == null) return;
         args.push(c);
       }
       ops.push(operator);
@@ -84,6 +85,7 @@ public class P282ExpressionAddOperators extends LeetCode {
       var a = args.pop();
       var oper = ops.pop();
       var c = applyOperation(oper, a, b);
+      if (c == null) return;
       args.push(c);
     }
     var finalArg = args.pop();
