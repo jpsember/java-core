@@ -6,8 +6,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Stack;
 
+/**
+ * Ok, it works, but is again 5% of accepted solutions.
+ * 
+ * I think I need some memoization with recursive calls, based on the intuition
+ * that +/- operations are lowest precedence and thus good 'splitting' points
+ *
+ */
 public class P282ExpressionAddOperators extends LeetCode {
 
   public static void main(String[] args) {
@@ -15,7 +21,7 @@ public class P282ExpressionAddOperators extends LeetCode {
   }
 
   public void run() {
-    x(105,5,"1*0+5","10-5");
+    x(105, 5, "1*0+5", "10-5");
     x(123, 6, "1*2*3", "1+2+3");
     //x(232, 8, "2*3+2", "2+3*2");
     //x(702, 2, "7*0+2");
