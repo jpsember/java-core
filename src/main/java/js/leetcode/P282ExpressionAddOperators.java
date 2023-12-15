@@ -21,7 +21,7 @@ public class P282ExpressionAddOperators extends LeetCode {
     xx(735, 9, "7-3+5");
 
     x(9999999999L, 1409865409);
-     x(123456789, 45, "1*2*3*4*5-6-78+9", "1*2*3*4+5+6-7+8+9", "1*2*3+4+5+6+7+8+9", "1*2*3+4+5-6*7+8*9",
+    x(123456789, 45, "1*2*3*4*5-6-78+9", "1*2*3*4+5+6-7+8+9", "1*2*3+4+5+6+7+8+9", "1*2*3+4+5-6*7+8*9",
         "1*2*3+4-5*6+7*8+9", "1*2*3+4-5*6-7+8*9", "1*2*3-4*5+6*7+8+9", "1*2*3-4*5-6+7*8+9",
         "1*2*3-4*5-6-7+8*9", "1*2*3-45+67+8+9", "1*2*34+56-7-8*9", "1*2*34-5+6-7-8-9", "1*2+3*4-56+78+9",
         "1*2+3+4+5*6+7+8-9", "1*2+3+4-5+6*7+8-9", "1*2+3+4-5-6+7*8-9", "1*2+3+45+67-8*9", "1*2+3-45+6+7+8*9",
@@ -93,78 +93,58 @@ public class P282ExpressionAddOperators extends LeetCode {
   // ------------------------------------------------------------------
 
   public List<String> addOperators(String num, int target) {
-
-    targetValue = target;
-    digitExprList = new ArrayList<Expr>();
+    var digitExprList = new Expr[num.length()];
     for (int i = 0; i < num.length(); i++)
-      digitExprList.add(DIGIT_EXP[num.charAt(i) - '0']);
-    results = new ArrayList<Expr>();
-
-    // There is an operation between each adjacent pair of expressions
-    int[] operCodes = new int[num.length() - 1];
-    aux(operCodes, 0);
+      digitExprList[i] = DIGIT_EXP[num.charAt(i) - '0'];
 
     List<String> stringResults = new ArrayList<>();
-    {
-      var sb = new StringBuilder();
-      for (var exp : results) {
-        sb.setLength(0);
-        exp.render(sb);
-        stringResults.add(sb.toString());
+    var sb = new StringBuilder();
+
+    int operCount = num.length() - 1;
+    int operBitsMax = (1 << (operCount * 2));
+
+    Stack<Expr> args = new Stack<>();
+    Stack<Integer> ops = new Stack<>();
+
+    for (int operCodes = 0; operCodes < operBitsMax; operCodes++) {
+      int exprCursor = 0;
+      args.clear();
+      ops.clear();
+      args.push(digitExprList[exprCursor++]);
+
+      var accum = operCodes;
+      for (int operIndex = 0; operIndex < operCount; operIndex++) {
+        var operator = accum & 0x3;
+        while (!ops.empty() && ops.peek() <= operator) {
+          var b = args.pop();
+          var a = args.pop();
+          var oper = ops.pop();
+          var c = new Expr(oper, a, b);
+          args.push(c);
+        }
+        ops.push(operator);
+        args.push(digitExprList[exprCursor++]);
+        accum >>= 2;
       }
-    }
-    return stringResults;
-  }
 
-  private int targetValue;
-  // Expressions for each of the digits in the original string
-  private List<Expr> digitExprList;
-  private List<Expr> results;
-
-  private Stack<Expr> args = new Stack<>();
-  private Stack<Integer> ops = new Stack<>();
-
-  private void aux(int[] codes, int cursor) {
-    if (cursor < codes.length) {
-      for (int i = OPER_CONCAT; i < OPER_TOTAL; i++) {
-        codes[cursor] = i;
-        aux(codes, cursor + 1);
-      }
-      return;
-    }
-
-    int exprCursor = 0;
-    args.clear();
-    ops.clear();
-    args.push(digitExprList.get(exprCursor++));
-
-    for (var operator : codes) {
-      while (!ops.empty() && ops.peek() <= operator) {
+      while (!ops.empty()) {
         var b = args.pop();
         var a = args.pop();
         var oper = ops.pop();
         var c = new Expr(oper, a, b);
         args.push(c);
       }
-      ops.push(operator);
-      args.push(digitExprList.get(exprCursor++));
+      var expr = args.pop();
+      if (expr.evaluate() == target) {
+        sb.setLength(0);
+        expr.render(sb);
+        stringResults.add(sb.toString());
+      }
     }
-    while (!ops.empty()) {
-      var b = args.pop();
-      var a = args.pop();
-      var oper = ops.pop();
-      var c = new Expr(oper, a, b);
-      if (c == null)
-        return;
-      args.push(c);
-    }
-    var finalArg = args.pop();
-    if (finalArg.evaluate() == targetValue)
-      results.add(finalArg);
-
+    return stringResults;
   }
 
-  private static final int OPER_CONCAT = 0, OPER_MULT = 1, OPER_SUB = 2, OPER_ADD = 3, OPER_TOTAL = 4;
+  private static final int OPER_CONCAT = 0, OPER_MULT = 1, OPER_SUB = 2, OPER_ADD = 3;
 
   private static class Expr {
 
