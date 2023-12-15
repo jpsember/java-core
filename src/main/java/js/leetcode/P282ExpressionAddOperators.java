@@ -3,8 +3,10 @@ package js.leetcode;
 import static js.base.Tools.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 public class P282ExpressionAddOperators extends LeetCode {
 
@@ -25,25 +27,102 @@ public class P282ExpressionAddOperators extends LeetCode {
     verify(got, exp);
   }
 
-  public List<String> addOperators(String num, int target) {
-    //    results = new ArrayList<String>();
+  //  private static  int evaluate(Expr e) {
+  //    if (e.value != null) return e.value;
+  //    long value = Long.MAX_VALUE;
+  //switch (e.oper) {
+  //default:throw new IllegalStateException();
+  //
+  //case OPER_CONCAT:
+  //{var left = e.child1;
+  //var right = e.child2;
+  //if (!left.buildValue()) break;
+  //if (!right.buildValue()) break;
+  //  if (left.str.charAt(0) == '0')
+  //    break;
+  // value = left.value * powers10[left.str.length()] + right.value;
+  // break;
+  //  case OPER_MULT:
+  //    var left = e.child1;
+  //    var right = e.child2;
+  //    if (!left.buildValue()) break;
+  //    if (!right.buildValue()) break;
+  //  value = left.value * right.value;
+  //  break;
+  //  }
 
+  private void aux(int target, List<String> results, Expr expr, List<Expr> exprs, int cursor) {
+    if (cursor == exprs.size()) {
+      if (expr.buildValue() && expr.evaluate() == target) {
+        results.add(expr.str);
+      }
+      return;
+    }
+
+    var expr2 = exprs.get(cursor);
+
+    var combined = concat(expr, expr2);
+    if (combined != null)
+      aux(target, results, combined, exprs, cursor + 1);
+
+    combined = productExpr(expr, expr2);
+    combined.evaluate();
+    pr("built product expr:", combined);
+    aux(target, results, combined, exprs, cursor + 1);
+
+    combined = additionExpr(expr, expr2);
+    //new Expr(ADDSUB, expr.str + "+" + expr2.str, 0);
+    aux(target, results, combined, exprs, cursor + 1);
+    combined = subtractionExpr(expr, expr2);
+    //new Expr(ADDSUB, expr.str + "-" + expr2.str, 0);
+    aux(target, results, combined, exprs, cursor + 1);
+  }
+
+  private Expr productExpr(Expr a, Expr b) {
+    Expr p = new Expr();
+    p.precedence = PRODUCT;
+    p.oper = OPER_MULT;
+    p.child1 = a;
+    p.child2 = b;
+    return p;
+  }
+
+  private Expr subtractionExpr(Expr a, Expr b) {
+    Expr p = new Expr();
+    p.precedence = ADDSUB;
+    p.oper = OPER_SUB;
+    p.child1 = a;
+    p.child2 = b;
+    return p;
+  }
+
+  private Expr additionExpr(Expr a, Expr b) {
+    Expr p = new Expr();
+    p.precedence = ADDSUB;
+    p.oper = OPER_ADD;
+    p.child1 = a;
+    p.child2 = b;
+    return p;
+  }
+
+  public List<String> slowAdOperators(String num, int target) {
+    //  var results = new ArrayList<String>();
     var exprs = new ArrayList<Expr>();
     for (int i = 0; i < num.length(); i++) {
-      exprs.add(new Expr(DIGITS, num.substring(i, i + 1), num.charAt(i) - '0'));
+      exprs.add(DIGIT_EXP[num.charAt(i) - '0']);
     }
     pr(exprs);
 
     var results = new ArrayList<String>();
-    var solutions = aux(target, exprs, 0);
-    if (solutions != null) {
-      for (var s : solutions)
-        results.add(s.str);
-    }
+    aux(target, results, exprs.get(0), exprs, 1);
+
     return results;
+
   }
 
-  //  private List<String> results;
+  public List<String> addOperators(String num, int target) {
+    return slowAdOperators(num, target);
+  }
 
   private static List<Expr> addResult(List<Expr> list, Expr expr) {
     if (list == null)
@@ -65,111 +144,140 @@ public class P282ExpressionAddOperators extends LeetCode {
     return list;
   }
 
-  /**
-   * Search for a combination of expressions that equate to a target value
-   * 
-   * @param target
-   * @param exp
-   * @param rightExprs
-   * @param cursor
-   * @return
-   */
-  private List<Expr> aux(int target, List<Expr> exprs, int cursor) {
-    List<Expr> results = null;
+  private static long buildKey(int targetValue, int cursorStart, int cursorEnd, int precedence) {
+    // cursor start: 4
+    // cursor end:   4
+    // precedence:   2
+    // target:       32
+    // 
+    long key = cursorStart | (cursorEnd << 4) | (precedence << (4 + 4)) | (targetValue << (4 + 4 + 2));
+    return key;
+  }
 
-    int remain = exprs.size() - cursor;
+  private Map<Long, List<Expr>> mExprMap = new HashMap<>();
 
-    db("exprs:", exprs.subList(cursor, exprs.size()));
+  //  /**
+  //   * Search for a combination of expressions that equate to a target value
+  //   */
+  //  private List<Expr> aux(int target, int cursorStart, int cursorEnd, int precedence, List<Expr> exprs) {
+  //    db("aux target:", target, "cursor:", cursorStart, "..", cursorEnd, "prec:", precedence);
+  //
+  //    var key = buildKey(target, cursorStart, cursorEnd, precedence);
+  //
+  //    List<Expr> results = mExprMap.get(key);
+  //    if (results != null)
+  //      return results;
+  //
+  //    int size = cursorEnd - cursorStart;
+  //
+  //    db("exprs:", exprs.subList(cursorStart, cursorEnd));
+  //
+  //    var exp = exprs.get(cursorEnd - 1);
+  //
+  //    // Base case: only a single expr
+  //    if (size == 1) {
+  //      db("...final:", exp);
+  //      if (exp.value == target) {
+  //        db("......got solution!", exp.str);
+  //        results = addResult(results, exp);
+  //      }
+  //    } else {
+  //      // Consider concatenating the rightmost two digits together
+  //      var expNext = exprs.get(cursorEnd - 2);
+  //      var concat = concat(expNext, exp);
+  //      // Try multiplying the first two together
+  //
+  //      var expNext = exprs.get(cursor + 1);
+  //
+  //      do {
+  //        long combinedVal = exp.value * (long) expNext.value;
+  //        if (!integer(combinedVal))
+  //          break;
+  //        var combined = new Expr(PRODUCT, exp.str + "*" + expNext.str, (int) combinedVal);
+  //
+  //        results = addResults(results, aux(target, combined, rightExprs, cursor + 1));
+  //      } while (false);
+  //
+  //      // Can we concatenate two strings of digits together?
+  //      do {
+  //        if (exp.precedence != DIGITS)
+  //          break;
+  //        if (exp.str.charAt(0) == '0')
+  //          break;
+  //        long combinedVal = exp.value * powers10[expNext.str.length()] + expNext.value;
+  //        if (!integer(combinedVal))
+  //          break;
+  //        var combined = new Expr(DIGITS, exp.str + expNext.str, (int) combinedVal);
+  //        results = addResults(results, aux(target, combined, rightExprs, cursor + 1));
+  //      } while (false);
+  //
+  //      // Can we multiply two values together?
+  //      do {
+  //        if (exp.precedence >= ADDSUB || expNext.precedence >= ADDSUB)
+  //          break;
+  //        long combinedVal = exp.value * (long) expNext.value;
+  //        if (!integer(combinedVal))
+  //          break;
+  //        var combined = new Expr(PRODUCT, exp.str + "*" + expNext.str, (int) combinedVal);
+  //        results = addResults(results, aux(target, combined, rightExprs, cursor + 1));
+  //      } while (false);
+  //
+  //      // Can we add or subtract two values together?
+  //
+  //      do {
+  //        long auxTarget = target - (long) exp.value;
+  //        if (!integer(auxTarget))
+  //          break;
+  //        List<Expr> auxResults = aux((int) auxTarget, expNext, rightExprs, cursor + 1);
+  //        if (nonEmpty(auxResults)) {
+  //          for (var aux : auxResults) {
+  //            var combined = new Expr(ADDSUB, exp.str + "+" + aux, target);
+  //            results = addResult(results, combined);
+  //          }
+  //        }
+  //      } while (false);
+  //
+  //      do {
+  //        long auxTarget = target + (long) exp.value;
+  //        if (!integer(auxTarget))
+  //          break;
+  //        List<Expr> auxResults = aux((int) auxTarget, expNext, rightExprs, cursor + 1);
+  //        if (nonEmpty(auxResults)) {
+  //          for (var aux : auxResults) {
+  //            var combined = new Expr(ADDSUB, exp.str + "-" + aux, target);
+  //            results = addResult(results, combined);
+  //          }
+  //        }
+  //      } while (false);
+  //
+  //      //    
+  //      //    do {
+  //      //      long combinedVal = exp.value - (long) expNext.value;
+  //      //      if (!integer(combinedVal))
+  //      //        break;
+  //      //      var combined = new Expr(ADDSUB, exp.str + "-" + expNext.str, (int) combinedVal);
+  //      //      aux(target, combined, rightExprs, cursor + 1);
+  //      //    } while (false);
+  //      return results;
+  //    }
+  //  }
 
-    var exp = exprs.get(cursor);
-
-    // Base case: only a single expr
-    if (remain == 1) {
-      db("...final:", exp);
-      if (exp.value == target) {
-        db("......got solution!", exp.str);
-        return addResult(results, exp);
-      }
-      return results;
-    }
-
-    // Try multiplying the first two together
-    
-    
-    var expNext = exprs.get(cursor+1);
-    
+  private Expr concat(Expr left, Expr right) {
+    Expr result = null;
     do {
-    long combinedVal = exp.value * (long) expNext.value;
-    if (!integer(combinedVal))
-      break;
-    var combined = new Expr(PRODUCT, exp.str + "*" + expNext.str, (int) combinedVal);
-    
-    results = addResults(results, aux(target, combined, rightExprs, cursor + 1));
-  } while (false);
-
-    
-    
-    // Can we concatenate two strings of digits together?
-    do {
-      if (exp.precedence != DIGITS)
+      if (left.precedence != DIGITS || right.precedence != DIGITS)
         break;
-      if (exp.str.charAt(0) == '0')
+      if (left.str.charAt(0) == '0')
         break;
-      long combinedVal = exp.value * powers10[expNext.str.length()] + expNext.value;
+      long combinedVal = left.value * powers10[left.str.length()] + right.value;
       if (!integer(combinedVal))
         break;
-      var combined = new Expr(DIGITS, exp.str + expNext.str, (int) combinedVal);
-      results = addResults(results, aux(target, combined, rightExprs, cursor + 1));
+      result = new Expr();
+      result.precedence = DIGITS;
+      result.str = left.str + right.str;
+      result.value = (int) combinedVal;
     } while (false);
-
-    // Can we multiply two values together?
-    do {
-      if (exp.precedence >= ADDSUB || expNext.precedence >= ADDSUB)
-        break;
-      long combinedVal = exp.value * (long) expNext.value;
-      if (!integer(combinedVal))
-        break;
-      var combined = new Expr(PRODUCT, exp.str + "*" + expNext.str, (int) combinedVal);
-      results = addResults(results, aux(target, combined, rightExprs, cursor + 1));
-    } while (false);
-
-    // Can we add or subtract two values together?
-
-    do {
-      long auxTarget = target - (long) exp.value;
-      if (!integer(auxTarget))
-        break;
-      List<Expr> auxResults = aux((int) auxTarget, expNext, rightExprs, cursor + 1);
-      if (nonEmpty(auxResults)) {
-        for (var aux : auxResults) {
-          var combined = new Expr(ADDSUB, exp.str + "+" + aux, target);
-          results = addResult(results, combined);
-        }
-      }
-    } while (false);
-
-    do {
-      long auxTarget = target + (long) exp.value;
-      if (!integer(auxTarget))
-        break;
-      List<Expr> auxResults = aux((int) auxTarget, expNext, rightExprs, cursor + 1);
-      if (nonEmpty(auxResults)) {
-        for (var aux : auxResults) {
-          var combined = new Expr(ADDSUB, exp.str + "-" + aux, target);
-          results = addResult(results, combined);
-        }
-      }
-    } while (false);
-
-    //    
-    //    do {
-    //      long combinedVal = exp.value - (long) expNext.value;
-    //      if (!integer(combinedVal))
-    //        break;
-    //      var combined = new Expr(ADDSUB, exp.str + "-" + expNext.str, (int) combinedVal);
-    //      aux(target, combined, rightExprs, cursor + 1);
-    //    } while (false);
-    return results;
+    return result;
   }
 
   private static boolean integer(long val) {
@@ -187,25 +295,115 @@ public class P282ExpressionAddOperators extends LeetCode {
   }
 
   private static final int DIGITS = 0, PRODUCT = 1, ADDSUB = 2;
+  private static final int OPER_NONE = 0, OPER_CONCAT = 1, OPER_MULT = 2, OPER_ADD = 3, OPER_SUB = 4;
 
   private static class Expr {
     int precedence;
     String str;
-    int value;
+    Integer value;
+    Expr child1, child2;
+    int oper;
+    boolean invalidValue;
 
-    Expr(int precedence, String str, int value) {
-      this.precedence = precedence;
-      this.str = str;
-      this.value = value;
-    }
+    //    Expr(int precedence, String str, int value) {
+    //      this.precedence = precedence;
+    //      this.str = str;
+    //      this.value = value;
+    //    }
 
     private static String[] name = { "DIG", " X ", "+/-", };
 
     @Override
     public String toString() {
-      return "{\"" + str + "\" " + value + " " + name[precedence] + "}";
+      return "{\"" + str + "\" " + value + (invalidValue ? "! " : " ") + name[precedence] + "}";
     }
 
+    public boolean buildValue() {
+      evaluate();
+      checkState(!invalidValue, "failed to build value for:", oper);
+      return !invalidValue;
+    }
+
+    public int evaluate() {
+      if (value != null)
+        return value;
+      pr("evaluating:", this, "oper:", oper);
+      long vl = Long.MAX_VALUE;
+      switch (oper) {
+      default:
+        throw new IllegalStateException("oper:" + oper);
+
+      case OPER_CONCAT: {
+        var left = child1;
+        var right = child2;
+        if (!left.buildValue())
+          break;
+        if (!right.buildValue())
+          break;
+        if (left.str.charAt(0) == '0')
+          break;
+        vl = left.evaluate() * powers10[left.str.length()] + right.evaluate();
+        str = left.str + right.str;
+      }
+        break;
+      case OPER_MULT: {
+        var left = child1;
+        var right = child2;
+        if (!left.buildValue())
+          break;
+        if (!right.buildValue())
+          break;
+        vl = left.evaluate() * right.evaluate();
+        str = left.str + "*" + right.str;
+      }
+        break;
+
+      case OPER_ADD: {
+        var left = child1;
+        var right = child2;
+        if (!left.buildValue())
+          break;
+        if (!right.buildValue())
+          break;
+        vl = left.evaluate() + right.evaluate();
+        str = left.str + "+" + right.str;
+      }
+        break;
+      case OPER_SUB: {
+        var left = child1;
+        var right = child2;
+        if (!left.buildValue())
+          break;
+        if (!right.buildValue())
+          break;
+        vl = left.evaluate() - right.evaluate();
+        str = left.str + "-" + right.str;
+      }
+        break;
+      }
+      if (integer(vl)) {
+        value = (int) vl;
+      } else {
+        value = Integer.MIN_VALUE;
+        invalidValue = true;
+      }
+
+      pr("...evaluated;", this);
+      checkState(!invalidValue);
+      return value;
+    }
+  }
+
+  private static final Expr[] DIGIT_EXP;
+  static {
+    DIGIT_EXP = new Expr[10];
+    for (int i = 0; i < 10; i++) {
+      var e = new Expr();
+      e.precedence = DIGITS;
+      e.str = Character.toString('0' + i);
+      e.value = i;
+      DIGIT_EXP[i] = e;
+    }
   }
 
 }
