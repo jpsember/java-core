@@ -34,15 +34,15 @@ public class P282ExpressionAddOperators extends LeetCode {
   }
 
   public void run() {
+
     x(1051, 106, "105+1");
-    // if (true) return;
     x(105, 5, "1*0+5", "10-5");
     x(123, 6, "1*2*3", "1+2+3");
-    //x(232, 8, "2*3+2", "2+3*2");
-    //x(702, 2, "7*0+2");
-    xx(735, 9, "7-3+5");
+    x(232, 8, "2*3+2", "2+3*2");
+    x(702, 2, "7*0+2");
+    x(735, 9, "7-3+5");
 
-    xx(9999999999L, 1409865409);
+    x(9999999999L, 1409865409);
     xx(123456789, 45, "1*2*3*4*5-6-78+9", "1*2*3*4+5+6-7+8+9", "1*2*3+4+5+6+7+8+9", "1*2*3+4+5-6*7+8*9",
         "1*2*3+4-5*6+7*8+9", "1*2*3+4-5*6-7+8*9", "1*2*3-4*5+6*7+8+9", "1*2*3-4*5-6+7*8+9",
         "1*2*3-4*5-6-7+8*9", "1*2*3-45+67+8+9", "1*2*34+56-7-8*9", "1*2*34-5+6-7-8-9", "1*2+3*4-56+78+9",
@@ -68,7 +68,6 @@ public class P282ExpressionAddOperators extends LeetCode {
         "12*3-4-5-6+7+8+9", "12*3-4-56+78-9", "12+3*4+5+6-7+8+9", "12+3*45-6-7-89", "12+3+4-56-7+89",
         "12+3-4*5+67-8-9", "12+3-45+6+78-9", "12+34-5-6-7+8+9", "12-3*4*5+6+78+9", "12-3*4-5+67-8-9",
         "12-3+4*5+6-7+8+9", "12-3+4+56-7-8-9", "12-3-4+5*6-7+8+9", "12-3-4-56+7+89", "12-3-45-6+78+9");
-    //  x(223434, 24, "2+2*3+4+3*4", "2+2*3+4*3+4");
   }
 
   private void x(long numExpr, int target, String... results) {
@@ -112,7 +111,7 @@ public class P282ExpressionAddOperators extends LeetCode {
     return sb.toString();
   }
 
-  /* private */ List<String> SLOWaddOperators(String num, int target) {
+  private List<String> SLOWaddOperators(String num, int target) {
     var digitExprs = new Expr[num.length()];
     for (int i = 0; i < num.length(); i++)
       digitExprs[i] = DIGIT_EXP[num.charAt(i) - '0'];
@@ -167,36 +166,37 @@ public class P282ExpressionAddOperators extends LeetCode {
 
   // ------------------------------------------------------------------
 
-  private Expr[] mDigitExprs;
-
-  private Map<Long, List<String>> memoMap = new HashMap<>();
-  
   public List<String> addOperators(String num, int target) {
-    List<String> results = new ArrayList<>();
+    // if (true) return SLOWaddOperators(num, target);
     memoMap.clear();
-    
-    var targetD = (double) target;
     mDigitExprs = new Expr[num.length()];
     for (int i = 0; i < num.length(); i++)
       mDigitExprs[i] = DIGIT_EXP[num.charAt(i) - '0'];
+    return auxAddOperators(target, mDigitExprs.length);
+  }
 
-    //    pr("num:", num);
+  private List<String> auxAddOperators(int target, int exprCount) {
+    long key = (target & 0x7fffffff) | (((long) exprCount) << 32);
+    var results = memoMap.get(key);
+    if (results != null)
+      return results;
+
+    results = new ArrayList<>();
+    double targetD = target;
 
     // Generate suffixes
 
     // We will generate n suffix sets, each set built on the last i digits.
     // In each suffix set, we have every possible way of combining the i digits
     // into concatenated groups.
-    for (int suffixPos = mDigitExprs.length - 1; suffixPos >= 0; suffixPos--) {
+    for (int suffixPos = exprCount - 1; suffixPos >= 0; suffixPos--) {
       var set = buildSuffixSet(suffixPos);
 
       // For each element of this set, recursively see if we can combine the prefix
       // digit sequence with an ADD or SUBTRACT sequence to reach the target.
       for (var suffixExpr : set) {
         var suffixValueD = suffixExpr.evaluate();
-
         String suffixString = null;
-
         if (suffixPos == 0) {
           if (suffixValueD == targetD) {
             suffixString = renderIfNec(suffixString, suffixExpr);
@@ -231,18 +231,18 @@ public class P282ExpressionAddOperators extends LeetCode {
         }
       }
     }
-    todo("support memoization");
+    memoMap.put(key, results);
     return results;
-    //    halt();
-    //    return SLOWaddOperators(num, target);
   }
 
   private String renderIfNec(String str, Expr expr) {
     if (str == null) {
-      str = renderExprToWork(expr);
+      var sb = sbWork;
+      sb.setLength(0);
+      expr.render(sb);
+      str = sb.toString();
     }
     return str;
-
   }
 
   private static boolean fitsWithinInt(double x) {
@@ -255,64 +255,39 @@ public class P282ExpressionAddOperators extends LeetCode {
     // and we want to generate all 2^k such subsets.
     int exprEnd = mDigitExprs.length;
     int exprTotal = exprEnd - exprIndex;
-
-    //    pr("# digits:", exprEnd);
-    //    pr("building suffix set for start index", exprIndex);
-
     int choiceCount = exprTotal - 1;
     int setSize = 1 << choiceCount;
-
-    //    pr("choiceCount:", choiceCount);
-    //    pr("set size:", setSize);
-
     var output = new ArrayList<Expr>(setSize);
-
     elementLoop: for (int i = 0; i < setSize; i++) {
       var bitFlags = i;
       Expr prevExpr = null;
-
       int mergeStart = 0;
-
       for (int j = 0; j <= choiceCount; j++, bitFlags >>= 1) {
         int mergeCursor = j + 1;
         if (j == choiceCount || ((bitFlags & 1) == 1)) {
-          // Merge expressions
           var newExpr = concatenateSequence(mergeStart + exprIndex, mergeCursor + exprIndex);
           // If this is not a legal concatenation sequence, skip this element of the set
           if (Double.isNaN(newExpr.evaluate2())) {
-            //pr("....not a valid concatenation sequence; skipping this set element:", INDENT, newExpr);
             continue elementLoop;
           }
-          if (prevExpr != null) {
+          if (prevExpr != null)
             newExpr = new Expr(OPER_MULT, prevExpr, newExpr);
-          }
           prevExpr = newExpr;
           mergeStart = mergeCursor;
         }
       }
-      if (!Double.isNaN(prevExpr.evaluate())) {
+      if (!Double.isNaN(prevExpr.evaluate()))
         output.add(prevExpr);
-      }
     }
     return output;
   }
 
   private Expr concatenateSequence(int digitStart, int digitEnd) {
-    // We must concatenate so that the leading digit is a leaf node
+    // We must concatenate so that the leading digit is a leaf node, for leading zero detection to work 
     var expr = mDigitExprs[digitEnd - 1];
-    for (int i = digitEnd - 2; i >= digitStart; i--) {
+    for (int i = digitEnd - 2; i >= digitStart; i--)
       expr = new Expr(OPER_CONCAT, mDigitExprs[i], expr);
-    }
     return expr;
-  }
-
-  private StringBuilder sbWork = new StringBuilder();
-
-  private String renderExprToWork(Expr expr) {
-    var sb = sbWork;
-    sb.setLength(0);
-    expr.render(sb);
-    return sb.toString();
   }
 
   private List<String> auxAddOperators(Expr[] digitExprs, int digitTotal, int target) {
@@ -365,14 +340,9 @@ public class P282ExpressionAddOperators extends LeetCode {
     return stringResults;
   }
 
-  private void procSuffix(Expr suffixNode, int suffixPos) {
-    if (suffixPos != 0) {
-      suffixPos--;
-      procSuffix(new Expr(OPER_MULT, mDigitExprs[suffixPos], suffixNode), suffixPos);
-      var x = new Expr(OPER_CONCAT, mDigitExprs[suffixPos], suffixNode);
-      procSuffix(x, suffixPos);
-    }
-  }
+  private Expr[] mDigitExprs;
+  private Map<Long, List<String>> memoMap = new HashMap<>();
+  private StringBuilder sbWork = new StringBuilder();
 
   private static final int OPER_CONCAT = 0, OPER_MULT = 1, OPER_SUB = 2, OPER_ADD = 3;
 
@@ -382,13 +352,6 @@ public class P282ExpressionAddOperators extends LeetCode {
       oper = operation;
       child1 = a;
       child2 = b;
-      alert("extra checking");
-      if (oper == OPER_CONCAT) {
-        if (a != null)
-          checkArgument(a.oper == OPER_CONCAT);
-        if (b != null)
-          checkArgument(b.oper == OPER_CONCAT);
-      }
     }
 
     public void render(StringBuilder sb) {
@@ -442,15 +405,11 @@ public class P282ExpressionAddOperators extends LeetCode {
       return value;
     }
 
-    // A special form of evaluate() that returns NaN if this is an OPER_CONCAT that has a leading zero
+    // A special form of evaluate() that returns NaN if this is an OPER_CONCAT that has a leading zero.
+    // This only works if the LEFT child is a the single leading digit!
     private double evaluate2() {
       evaluate();
       if (oper == OPER_CONCAT) {
-        if (child1 != null) {
-          if (child1.child2 != null) {
-            badArg("concatenation doesn't have leaf node on left!", INDENT, this);
-          }
-        }
         if (child2 != null && child1 == DIGIT_EXP[0])
           return Double.NaN;
 
