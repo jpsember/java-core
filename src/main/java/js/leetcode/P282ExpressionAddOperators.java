@@ -5,6 +5,7 @@ import static js.base.Tools.*;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Stack;
 
 public class P282ExpressionAddOperators extends LeetCode {
 
@@ -15,7 +16,7 @@ public class P282ExpressionAddOperators extends LeetCode {
   public void run() {
     // x(123, 6, "1*2*3", "1+2+3");
     //x(232, 8, "2*3+2", "2+3*2");
-    x(223434, 24, "2+2*3+4+3*4","2+2*3+4*3+4");
+    x(223434, 24, "2+2*3+4+3*4", "2+2*3+4*3+4");
   }
 
   private void x(int num, int target, String... results) {
@@ -26,80 +27,79 @@ public class P282ExpressionAddOperators extends LeetCode {
     verify(got, exp);
   }
 
-  public List<String> slowAdOperators(String num, int target) {
-    slowTarget = target;
-    //  var results = new ArrayList<String>();
+  public List<String> addOperators(String num, int target) {
+    targetValue = target;
     var exprs = new ArrayList<Expr>();
     for (int i = 0; i < num.length(); i++) {
       exprs.add(DIGIT_EXP[num.charAt(i) - '0']);
     }
     pr(exprs);
 
-    slowExprs = exprs;
-    slowResults = new ArrayList<String>();
+    exprList = exprs;
+    results = new ArrayList<String>();
 
     int[] operCodes = new int[exprs.size() - 1];
-    slowAux(operCodes, 0);
-
-    return slowResults;
+    aux(operCodes, 0);
+    return results;
   }
 
-  private List<Expr> slowExprs;
-  private List<String> slowResults;
-  private int slowTarget;
+  private List<Expr> exprList;
+  private List<String> results;
+  private int targetValue;
 
-  private void slowAux(int[] codes, int cursor) {
+  private void aux(int[] codes, int cursor) {
     if (cursor == codes.length) {
-      slowEvaluate(codes);
+      evaluate(codes);
     } else {
       for (int i = OPER_CONCAT; i <= OPER_SUB; i++) {
         codes[cursor] = i;
-        slowAux(codes, cursor + 1);
+        aux(codes, cursor + 1);
       }
     }
   }
 
-  private void slowEvaluate(int[] operCodes) {
+  private void evaluate(int[] operCodes) {
     var args = new Stack<Expr>();
 
     var ops = new Stack<Integer>();
 
     int orandCursor = 0;
 
-    args.push(slowExprs.get(orandCursor++));
+    args.push(exprList.get(orandCursor++));
 
     for (var operator : operCodes) {
-      while (ops.nonEmpty() && ops.peek() <= operator) {
+      while (!ops.empty() && ops.peek() <= operator) {
         var b = args.pop();
         var a = args.pop();
         var oper = ops.pop();
         var c = applyOperation(oper, a, b);
-        if (c == null) return;
+        if (c == null)
+          return;
         args.push(c);
       }
       ops.push(operator);
-      args.push(slowExprs.get(orandCursor++));
+      args.push(exprList.get(orandCursor++));
     }
-    while (ops.nonEmpty()) {
+    while (!ops.empty()) {
       var b = args.pop();
       var a = args.pop();
       var oper = ops.pop();
       var c = applyOperation(oper, a, b);
-      if (c == null) return;
+      if (c == null)
+        return;
       args.push(c);
     }
     var finalArg = args.pop();
-    if (finalArg.buildValue() && finalArg.evaluate() == slowTarget) {
-      slowResults.add(finalArg.str);
+    if (finalArg.buildValue() && finalArg.evaluate() == targetValue) {
+      results.add(finalArg.str);
     }
-
   }
 
   private Expr applyOperation(int oper, Expr a, Expr b) {
     Expr c;
     switch (oper) {
     case OPER_CONCAT:
-      c = concat(a, b);
+      c = concatExpr(a, b);
       break;
     case OPER_MULT:
       c = productExpr(a, b);
@@ -143,11 +143,7 @@ public class P282ExpressionAddOperators extends LeetCode {
     return p;
   }
 
-  public List<String> addOperators(String num, int target) {
-    return slowAdOperators(num, target);
-  }
-
-  private Expr concat(Expr left, Expr right) {
+  private Expr concatExpr(Expr left, Expr right) {
     Expr result = null;
     do {
       if (left.precedence != DIGITS || right.precedence != DIGITS)
@@ -206,7 +202,7 @@ public class P282ExpressionAddOperators extends LeetCode {
     public int evaluate() {
       if (value != null)
         return value;
-      pr("evaluating:", this, "oper:", oper);
+      db("evaluating:", this, "oper:", oper);
       long vl = Long.MAX_VALUE;
       switch (oper) {
       default:
@@ -267,7 +263,7 @@ public class P282ExpressionAddOperators extends LeetCode {
         invalidValue = true;
       }
 
-      pr("...evaluated;", this);
+      db("...evaluated;", this);
       checkState(!invalidValue);
       return value;
     }

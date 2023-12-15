@@ -70,9 +70,9 @@ public class P239SlidingWindowMaximum extends LeetCode {
     verify(result, exp);
   }
 
-  private void x(int k, String a) {
-    x(k, extractNums(a));
-  }
+//  private void x(int k, String a) {
+//    x(k, extractNums(a));
+//  }
 
   /* private */ int[] slowMaxSlidingWindow(int[] nums, int k) {
     int[] result = new int[nums.length - (k - 1)];
