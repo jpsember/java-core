@@ -4,8 +4,10 @@ import static js.base.Tools.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Ok, it works, but is again 5% of accepted solutions.
@@ -167,18 +169,18 @@ public class P282ExpressionAddOperators extends LeetCode {
 
   private Expr[] mDigitExprs;
 
+  private Map<Long, List<String>> memoMap = new HashMap<>();
+  
   public List<String> addOperators(String num, int target) {
-    if (false && alert("doing slow"))
-      return SLOWaddOperators(num, target);
-
     List<String> results = new ArrayList<>();
-
+    memoMap.clear();
+    
     var targetD = (double) target;
     mDigitExprs = new Expr[num.length()];
     for (int i = 0; i < num.length(); i++)
       mDigitExprs[i] = DIGIT_EXP[num.charAt(i) - '0'];
 
-    pr("num:", num);
+    //    pr("num:", num);
 
     // Generate suffixes
 
@@ -254,14 +256,14 @@ public class P282ExpressionAddOperators extends LeetCode {
     int exprEnd = mDigitExprs.length;
     int exprTotal = exprEnd - exprIndex;
 
-//    pr("# digits:", exprEnd);
-//    pr("building suffix set for start index", exprIndex);
+    //    pr("# digits:", exprEnd);
+    //    pr("building suffix set for start index", exprIndex);
 
     int choiceCount = exprTotal - 1;
     int setSize = 1 << choiceCount;
 
-//    pr("choiceCount:", choiceCount);
-//    pr("set size:", setSize);
+    //    pr("choiceCount:", choiceCount);
+    //    pr("set size:", setSize);
 
     var output = new ArrayList<Expr>(setSize);
 
