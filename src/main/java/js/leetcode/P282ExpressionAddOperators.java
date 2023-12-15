@@ -15,7 +15,7 @@ public class P282ExpressionAddOperators extends LeetCode {
   }
 
   public void run() {
-    // x(123, 6, "1*2*3", "1+2+3");
+    x(123, 6, "1*2*3", "1+2+3");
     //x(232, 8, "2*3+2", "2+3*2");
     //x(702, 2, "7*0+2");
     xx(735, 9, "7-3+5");
@@ -80,7 +80,7 @@ public class P282ExpressionAddOperators extends LeetCode {
     return operNames[oper];
   }
 
-  private static String dbOper(Collection<Integer> ops) {
+  /* private */ static String dbOper(Collection<Integer> ops) {
     var sb = new StringBuilder("[ ");
     for (var x : ops) {
       sb.append(dbOper(x));
@@ -99,16 +99,27 @@ public class P282ExpressionAddOperators extends LeetCode {
       exprs.add(DIGIT_EXP[num.charAt(i) - '0']);
 
     exprList = exprs;
-    results = new ArrayList<String>();
+    results = new ArrayList<Expr>();
 
     // There is an operation between each adjacent pair of expressions
     int[] operCodes = new int[exprs.size() - 1];
     aux(operCodes, 0);
-    return results;
+
+    List<String> stringResults = new ArrayList<>();
+    {
+      var sb = new StringBuilder();
+      for (var exp : results) {
+        sb.setLength(0);
+        exp.render(sb);
+        stringResults.add(sb.toString());
+      }
+    }
+    return stringResults;
   }
 
   private List<Expr> exprList;
-  private List<String> results;
+  //  private List<String> results;
+  private List<Expr> results;
   private int targetValue;
 
   private Stack<Expr> args = new Stack<>();
@@ -149,9 +160,9 @@ public class P282ExpressionAddOperators extends LeetCode {
       args.push(c);
     }
     var finalArg = args.pop();
-    if (finalArg.buildValue() && finalArg.evaluate() == targetValue) {
-      results.add(finalArg.str);
-    }
+    if (finalArg.buildValue() && finalArg.evaluate() == targetValue)
+      results.add(finalArg);
+
   }
 
   private static boolean integer(long val) {
@@ -171,15 +182,23 @@ public class P282ExpressionAddOperators extends LeetCode {
   private static final int OPER_CONCAT = 0, OPER_MULT = 1, OPER_SUB = 2, OPER_ADD = 3, OPER_TOTAL = 4;
 
   private static class Expr {
-    String str;
     Integer value;
     Expr child1, child2;
     int oper;
     boolean invalidValue;
+    int digitCount;
 
     @Override
     public String toString() {
-      return "{\"" + str + "\" " + value + (invalidValue ? "! }" : " }");
+      var sb = new StringBuilder();
+      sb.append("{\"");
+      render(sb);
+      sb.append("\" ");
+      if (child1 != null) {
+        sb.append(value);
+      }
+      sb.append(" }");
+      return sb.toString();
     }
 
     public boolean buildValue() {
@@ -191,10 +210,21 @@ public class P282ExpressionAddOperators extends LeetCode {
       oper = operation;
       child1 = a;
       child2 = b;
-      // For debug purposes, evaluate immediately
-      if (oper >= 0) {//true || operation == OPER_CONCAT) {
-        evaluate();
+    }
+
+    private static final char operChars[] = { 0, '*', '-', '+', };
+
+    public void render(StringBuilder sb) {
+      if (child1 == null) {
+        sb.append((char) ('0' + value));
+        return;
       }
+      child1.render(sb);
+      char c = operChars[oper];
+      if (c != 0)
+        sb.append(c);
+      if (child2 != null)
+        child2.render(sb);
     }
 
     public int evaluate() {
@@ -203,7 +233,7 @@ public class P282ExpressionAddOperators extends LeetCode {
       long vl = Long.MAX_VALUE;
       switch (oper) {
       default:
-        throw new IllegalStateException("oper:" + oper);
+        throw new IllegalStateException();
 
       case OPER_CONCAT: {
         var left = child1;
@@ -212,12 +242,13 @@ public class P282ExpressionAddOperators extends LeetCode {
           break;
         if (!right.buildValue())
           break;
-        if (left.str.charAt(0) == '0')
+        if (left == DIGIT_EXP[0])
           break;
-        vl = left.evaluate() * powers10[right.str.length()] + right.evaluate();
-        str = left.str + right.str;
+        vl = left.evaluate() * powers10[right.digitCount] + right.evaluate();
+        digitCount = left.digitCount + right.digitCount;
       }
         break;
+
       case OPER_MULT: {
         var left = child1;
         var right = child2;
@@ -226,7 +257,6 @@ public class P282ExpressionAddOperators extends LeetCode {
         if (!right.buildValue())
           break;
         vl = left.evaluate() * right.evaluate();
-        str = left.str + "*" + right.str;
       }
         break;
 
@@ -238,7 +268,6 @@ public class P282ExpressionAddOperators extends LeetCode {
         if (!right.buildValue())
           break;
         vl = left.evaluate() + right.evaluate();
-        str = left.str + "+" + right.str;
       }
         break;
       case OPER_SUB: {
@@ -249,7 +278,6 @@ public class P282ExpressionAddOperators extends LeetCode {
         if (!right.buildValue())
           break;
         vl = left.evaluate() - right.evaluate();
-        str = left.str + "-" + right.str;
       }
         break;
       }
@@ -270,7 +298,7 @@ public class P282ExpressionAddOperators extends LeetCode {
     DIGIT_EXP = new Expr[10];
     for (int i = 0; i < 10; i++) {
       var e = new Expr(-1, null, null);
-      e.str = Character.toString('0' + i);
+      e.digitCount = 1;
       e.value = i;
       DIGIT_EXP[i] = e;
     }
