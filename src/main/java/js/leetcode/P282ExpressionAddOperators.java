@@ -18,9 +18,9 @@ public class P282ExpressionAddOperators extends LeetCode {
     // x(123, 6, "1*2*3", "1+2+3");
     //x(232, 8, "2*3+2", "2+3*2");
     //x(702, 2, "7*0+2");
-   xx(735, 9, "7-3+5");
+    xx(735, 9, "7-3+5");
 
-     x(123456789, 45, "1*2*3*4*5-6-78+9", "1*2*3*4+5+6-7+8+9", "1*2*3+4+5+6+7+8+9", "1*2*3+4+5-6*7+8*9",
+    x(123456789, 45, "1*2*3*4*5-6-78+9", "1*2*3*4+5+6-7+8+9", "1*2*3+4+5+6+7+8+9", "1*2*3+4+5-6*7+8*9",
         "1*2*3+4-5*6+7*8+9", "1*2*3+4-5*6-7+8*9", "1*2*3-4*5+6*7+8+9", "1*2*3-4*5-6+7*8+9",
         "1*2*3-4*5-6-7+8*9", "1*2*3-45+67+8+9", "1*2*34+56-7-8*9", "1*2*34-5+6-7-8-9", "1*2+3*4-56+78+9",
         "1*2+3+4+5*6+7+8-9", "1*2+3+4-5+6*7+8-9", "1*2+3+4-5-6+7*8-9", "1*2+3+45+67-8*9", "1*2+3-45+6+7+8*9",
@@ -72,6 +72,24 @@ public class P282ExpressionAddOperators extends LeetCode {
 
     verify(got, exp);
   }
+
+  private static String[] operNames = { "CONCAT", "MULT", "SUB", "ADD" };
+
+  private static String dbOper(int oper) {
+    return operNames[oper];
+  }
+
+  private static String dbOper(Collection<Integer> ops) {
+    var sb = new StringBuilder("[ ");
+    for (var x : ops) {
+      sb.append(dbOper(x));
+      sb.append(' ');
+    }
+    sb.append(']');
+    return sb.toString();
+  }
+
+  // ------------------------------------------------------------------
 
   public List<String> addOperators(String num, int target) {
     targetValue = target;
@@ -140,22 +158,6 @@ public class P282ExpressionAddOperators extends LeetCode {
     if (finalArg.buildValue() && finalArg.evaluate() == targetValue) {
       results.add(finalArg.str);
     }
-  }
-
-  private static String[] operNames = { "CONCAT", "MULT", "SUB", "ADD" };
-
-  private static String dbOper(int oper) {
-    return operNames[oper];
-  }
-
-  private static String dbOper(Collection<Integer> ops) {
-    var sb = new StringBuilder("[ ");
-    for (var x : ops) {
-      sb.append(dbOper(x));
-      sb.append(' ');
-    }
-    sb.append(']');
-    return sb.toString();
   }
 
   private static boolean integer(long val) {
