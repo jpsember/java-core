@@ -160,13 +160,9 @@ public class P282ExpressionAddOperators extends LeetCode {
       args.push(c);
     }
     var finalArg = args.pop();
-    if (finalArg.buildValue() && finalArg.evaluate() == targetValue)
+    if (finalArg.evaluate() == targetValue)
       results.add(finalArg);
 
-  }
-
-  private static boolean integer(long val) {
-    return val >= Integer.MIN_VALUE && val <= Integer.MAX_VALUE;
   }
 
   private static final long powers10[];
@@ -182,10 +178,9 @@ public class P282ExpressionAddOperators extends LeetCode {
   private static final int OPER_CONCAT = 0, OPER_MULT = 1, OPER_SUB = 2, OPER_ADD = 3, OPER_TOTAL = 4;
 
   private static class Expr {
-    Integer value;
+    Double dvalue;
     Expr child1, child2;
     int oper;
-    boolean invalidValue;
     int digitCount;
 
     @Override
@@ -195,15 +190,13 @@ public class P282ExpressionAddOperators extends LeetCode {
       render(sb);
       sb.append("\" ");
       if (child1 != null) {
-        sb.append(value);
+        if (Double.isNaN(dvalue))
+          sb.append("**NaN**");
+        else
+          sb.append(dvalue);
       }
       sb.append(" }");
       return sb.toString();
-    }
-
-    public boolean buildValue() {
-      evaluate();
-      return !invalidValue;
     }
 
     public Expr(int operation, Expr a, Expr b) {
@@ -216,7 +209,10 @@ public class P282ExpressionAddOperators extends LeetCode {
 
     public void render(StringBuilder sb) {
       if (child1 == null) {
-        sb.append((char) ('0' + value));
+        if (Double.isNaN(dvalue))
+          sb.append("**NaN**");
+        else
+          sb.append((char) ('0' + dvalue.intValue()));
         return;
       }
       child1.render(sb);
@@ -227,10 +223,12 @@ public class P282ExpressionAddOperators extends LeetCode {
         child2.render(sb);
     }
 
-    public int evaluate() {
-      if (value != null)
-        return value;
-      long vl = Long.MAX_VALUE;
+    public double evaluate() {
+      if (dvalue != null)
+        return dvalue;
+
+      double val;
+
       switch (oper) {
       default:
         throw new IllegalStateException();
@@ -238,57 +236,47 @@ public class P282ExpressionAddOperators extends LeetCode {
       case OPER_CONCAT: {
         var left = child1;
         var right = child2;
-        if (!left.buildValue())
-          break;
-        if (!right.buildValue())
-          break;
-        if (left == DIGIT_EXP[0])
-          break;
-        vl = left.evaluate() * powers10[right.digitCount] + right.evaluate();
-        digitCount = left.digitCount + right.digitCount;
+        if (left == DIGIT_EXP[0]) {
+          val = right.evaluate();
+          digitCount = right.digitCount;
+        } else {
+          digitCount = left.digitCount + right.digitCount;
+          val = left.evaluate() * powers10[right.digitCount] + right.evaluate();
+        }
       }
         break;
 
       case OPER_MULT: {
         var left = child1;
         var right = child2;
-        if (!left.buildValue())
-          break;
-        if (!right.buildValue())
-          break;
-        vl = left.evaluate() * right.evaluate();
+        val = left.evaluate() * right.evaluate();
       }
         break;
 
       case OPER_ADD: {
         var left = child1;
         var right = child2;
-        if (!left.buildValue())
-          break;
-        if (!right.buildValue())
-          break;
-        vl = left.evaluate() + right.evaluate();
+        val = left.evaluate() + right.evaluate();
       }
         break;
       case OPER_SUB: {
         var left = child1;
         var right = child2;
-        if (!left.buildValue())
-          break;
-        if (!right.buildValue())
-          break;
-        vl = left.evaluate() - right.evaluate();
+        val = left.evaluate() - right.evaluate();
       }
         break;
       }
-      if (integer(vl)) {
-        value = (int) vl;
-      } else {
-        value = Integer.MIN_VALUE;
-        invalidValue = true;
-      }
+      //      if (integer(vl)) {
+      //        value = (int) vl;
+      //      } else {
+      //        value = Integer.MIN_VALUE;
+      //        invalidValue = true;
+      //      }
 
-      return value;
+      if (val < Integer.MIN_VALUE || val > Integer.MAX_VALUE)
+        val = Double.NaN;
+      dvalue = val;
+      return dvalue;
     }
 
   }
@@ -299,7 +287,7 @@ public class P282ExpressionAddOperators extends LeetCode {
     for (int i = 0; i < 10; i++) {
       var e = new Expr(-1, null, null);
       e.digitCount = 1;
-      e.value = i;
+      e.dvalue = (double) i;
       DIGIT_EXP[i] = e;
     }
   }
