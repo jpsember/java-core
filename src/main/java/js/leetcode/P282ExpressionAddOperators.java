@@ -21,7 +21,7 @@ public class P282ExpressionAddOperators extends LeetCode {
     xx(735, 9, "7-3+5");
 
     x(9999999999L, 1409865409);
-    xx(123456789, 45, "1*2*3*4*5-6-78+9", "1*2*3*4+5+6-7+8+9", "1*2*3+4+5+6+7+8+9", "1*2*3+4+5-6*7+8*9",
+     x(123456789, 45, "1*2*3*4*5-6-78+9", "1*2*3*4+5+6-7+8+9", "1*2*3+4+5+6+7+8+9", "1*2*3+4+5-6*7+8*9",
         "1*2*3+4-5*6+7*8+9", "1*2*3+4-5*6-7+8*9", "1*2*3-4*5+6*7+8+9", "1*2*3-4*5-6+7*8+9",
         "1*2*3-4*5-6-7+8*9", "1*2*3-45+67+8+9", "1*2*34+56-7-8*9", "1*2*34-5+6-7-8-9", "1*2+3*4-56+78+9",
         "1*2+3+4+5*6+7+8-9", "1*2+3+4-5+6*7+8-9", "1*2+3+4-5-6+7*8-9", "1*2+3+45+67-8*9", "1*2+3-45+6+7+8*9",
@@ -93,16 +93,15 @@ public class P282ExpressionAddOperators extends LeetCode {
   // ------------------------------------------------------------------
 
   public List<String> addOperators(String num, int target) {
-    targetValue = target;
-    var exprs = new ArrayList<Expr>();
-    for (int i = 0; i < num.length(); i++)
-      exprs.add(DIGIT_EXP[num.charAt(i) - '0']);
 
-    exprList = exprs;
+    targetValue = target;
+    digitExprList = new ArrayList<Expr>();
+    for (int i = 0; i < num.length(); i++)
+      digitExprList.add(DIGIT_EXP[num.charAt(i) - '0']);
     results = new ArrayList<Expr>();
 
     // There is an operation between each adjacent pair of expressions
-    int[] operCodes = new int[exprs.size() - 1];
+    int[] operCodes = new int[num.length() - 1];
     aux(operCodes, 0);
 
     List<String> stringResults = new ArrayList<>();
@@ -117,10 +116,10 @@ public class P282ExpressionAddOperators extends LeetCode {
     return stringResults;
   }
 
-  private List<Expr> exprList;
-  //  private List<String> results;
-  private List<Expr> results;
   private int targetValue;
+  // Expressions for each of the digits in the original string
+  private List<Expr> digitExprList;
+  private List<Expr> results;
 
   private Stack<Expr> args = new Stack<>();
   private Stack<Integer> ops = new Stack<>();
@@ -137,7 +136,7 @@ public class P282ExpressionAddOperators extends LeetCode {
     int exprCursor = 0;
     args.clear();
     ops.clear();
-    args.push(exprList.get(exprCursor++));
+    args.push(digitExprList.get(exprCursor++));
 
     for (var operator : codes) {
       while (!ops.empty() && ops.peek() <= operator) {
@@ -148,7 +147,7 @@ public class P282ExpressionAddOperators extends LeetCode {
         args.push(c);
       }
       ops.push(operator);
-      args.push(exprList.get(exprCursor++));
+      args.push(digitExprList.get(exprCursor++));
     }
     while (!ops.empty()) {
       var b = args.pop();
@@ -165,39 +164,9 @@ public class P282ExpressionAddOperators extends LeetCode {
 
   }
 
-  private static final long powers10[];
-  static {
-    powers10 = new long[10 + 1];
-    long x = 1;
-    for (int i = 0; i <= 10; i++) {
-      powers10[i] = x;
-      x *= 10;
-    }
-  }
-
   private static final int OPER_CONCAT = 0, OPER_MULT = 1, OPER_SUB = 2, OPER_ADD = 3, OPER_TOTAL = 4;
 
   private static class Expr {
-    Double dvalue;
-    Expr child1, child2;
-    int oper;
-    int digitCount;
-
-    @Override
-    public String toString() {
-      var sb = new StringBuilder();
-      sb.append("{\"");
-      render(sb);
-      sb.append("\" ");
-      if (child1 != null) {
-        if (Double.isNaN(dvalue))
-          sb.append("**NaN**");
-        else
-          sb.append(dvalue);
-      }
-      sb.append(" }");
-      return sb.toString();
-    }
 
     public Expr(int operation, Expr a, Expr b) {
       oper = operation;
@@ -209,10 +178,10 @@ public class P282ExpressionAddOperators extends LeetCode {
 
     public void render(StringBuilder sb) {
       if (child1 == null) {
-        if (Double.isNaN(dvalue))
+        if (Double.isNaN(value))
           sb.append("**NaN**");
         else
-          sb.append((char) ('0' + dvalue.intValue()));
+          sb.append((char) ('0' + value.intValue()));
         return;
       }
       child1.render(sb);
@@ -224,70 +193,73 @@ public class P282ExpressionAddOperators extends LeetCode {
     }
 
     public double evaluate() {
-      if (dvalue != null)
-        return dvalue;
-
+      if (value != null)
+        return value;
       double val;
-
       switch (oper) {
       default:
         throw new IllegalStateException();
-
-      case OPER_CONCAT: {
-        var left = child1;
-        var right = child2;
-        if (left == DIGIT_EXP[0]) {
-          val = right.evaluate();
-          digitCount = right.digitCount;
+      case OPER_CONCAT:
+        // If the left child is the digit 0, the value is that of the right child.
+        // This avoids leading zeros.
+        if (child1 == DIGIT_EXP[0]) {
+          val = child2.evaluate();
+          digitCount = child2.digitCount;
         } else {
-          digitCount = left.digitCount + right.digitCount;
-          val = left.evaluate() * powers10[right.digitCount] + right.evaluate();
+          digitCount = child1.digitCount + child2.digitCount;
+          val = child1.evaluate() * powers10[child2.digitCount] + child2.evaluate();
         }
-      }
         break;
-
-      case OPER_MULT: {
-        var left = child1;
-        var right = child2;
-        val = left.evaluate() * right.evaluate();
-      }
+      case OPER_MULT:
+        val = child1.evaluate() * child2.evaluate();
         break;
-
-      case OPER_ADD: {
-        var left = child1;
-        var right = child2;
-        val = left.evaluate() + right.evaluate();
-      }
+      case OPER_ADD:
+        val = child1.evaluate() + child2.evaluate();
         break;
-      case OPER_SUB: {
-        var left = child1;
-        var right = child2;
-        val = left.evaluate() - right.evaluate();
-      }
+      case OPER_SUB:
+        val = child1.evaluate() - child2.evaluate();
         break;
       }
-      //      if (integer(vl)) {
-      //        value = (int) vl;
-      //      } else {
-      //        value = Integer.MIN_VALUE;
-      //        invalidValue = true;
-      //      }
-
       if (val < Integer.MIN_VALUE || val > Integer.MAX_VALUE)
         val = Double.NaN;
-      dvalue = val;
-      return dvalue;
+      value = val;
+      return value;
+    }
+
+    // Store the value as a double, so it has the precision to check for overflow, but
+    // also so that we can set invalid values to 'NaN' and have such values naturally propagate
+    // up to parent nodes
+    Double value;
+    Expr child1, child2;
+    int oper;
+    int digitCount;
+
+    @Override
+    public String toString() {
+      var sb = new StringBuilder();
+      sb.append("{\"");
+      render(sb);
+      sb.append("\" ");
+      if (child1 != null) {
+        if (Double.isNaN(value))
+          sb.append("**NaN**");
+        else
+          sb.append(value);
+      }
+      sb.append(" }");
+      return sb.toString();
     }
 
   }
 
-  private static final Expr[] DIGIT_EXP;
+  private static final Expr[] DIGIT_EXP = new Expr[10];
+  private static final double powers10[] = { 1, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10 };
+
   static {
-    DIGIT_EXP = new Expr[10];
     for (int i = 0; i < 10; i++) {
       var e = new Expr(-1, null, null);
       e.digitCount = 1;
-      e.dvalue = (double) i;
+      e.value = (double) i;
       DIGIT_EXP[i] = e;
     }
   }
