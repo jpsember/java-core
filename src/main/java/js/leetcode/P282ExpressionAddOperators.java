@@ -34,7 +34,7 @@ public class P282ExpressionAddOperators extends LeetCode {
   public void run() {
     x(1051, 106, "105+1");
     // if (true) return;
-     x(105, 5, "1*0+5", "10-5");
+    x(105, 5, "1*0+5", "10-5");
     x(123, 6, "1*2*3", "1+2+3");
     //x(232, 8, "2*3+2", "2+3*2");
     //x(702, 2, "7*0+2");
@@ -171,20 +171,199 @@ public class P282ExpressionAddOperators extends LeetCode {
     if (false && alert("doing slow"))
       return SLOWaddOperators(num, target);
 
+    List<String> results = new ArrayList<>();
+
+    var targetD = (double) target;
     mDigitExprs = new Expr[num.length()];
     for (int i = 0; i < num.length(); i++)
       mDigitExprs[i] = DIGIT_EXP[num.charAt(i) - '0'];
 
     pr("num:", num);
+
     // Generate suffixes
-    int suffixPos = mDigitExprs.length - 1;
-    var suffix = mDigitExprs[suffixPos];
-    procSuffix(suffix, suffixPos);
-    return SLOWaddOperators(num, target);
+
+    // We will generate n suffix sets, each set built on the last i digits.
+    // In each suffix set, we have every possible way of combining the i digits
+    // into concatenated groups.
+    for (int suffixPos = mDigitExprs.length - 1; suffixPos >= 0; suffixPos--) {
+      var set = buildSuffixSet(suffixPos);
+
+      // For each element of this set, recursively see if we can combine the prefix
+      // digit sequence with an ADD or SUBTRACT sequence to reach the target.
+      for (var suffixExpr : set) {
+        var suffixValueD = suffixExpr.evaluate();
+
+        String suffixString = null;
+
+        if (suffixPos == 0) {
+          if (suffixValueD == targetD) {
+            suffixString = renderIfNec(suffixString, suffixExpr);
+            results.add(suffixString);
+          }
+        } else {
+          do {
+            double targ1 = targetD - suffixValueD;
+            if (!fitsWithinInt(targ1))
+              break;
+            var auxResults = auxAddOperators(mDigitExprs, suffixPos, (int) targ1);
+            if (auxResults.isEmpty())
+              break;
+            suffixString = renderIfNec(suffixString, suffixExpr);
+            for (var prefixStr : auxResults) {
+              results.add(prefixStr + '+' + suffixString);
+            }
+          } while (false);
+
+          do {
+            var targ2 = targetD + suffixValueD;
+            if (!fitsWithinInt(targ2))
+              break;
+            var auxResults = auxAddOperators(mDigitExprs, suffixPos, (int) targ2);
+            if (auxResults.isEmpty())
+              break;
+            suffixString = renderIfNec(suffixString, suffixExpr);
+            for (var prefixStr : auxResults) {
+              results.add(prefixStr + '-' + suffixString);
+            }
+          } while (false);
+        }
+      }
+    }
+    todo("support memoization");
+    return results;
+    //    halt();
+    //    return SLOWaddOperators(num, target);
+  }
+
+  private String renderIfNec(String str, Expr expr) {
+    if (str == null) {
+      str = renderExprToWork(expr);
+    }
+    return str;
+
+  }
+
+  private static boolean fitsWithinInt(double x) {
+    return (x >= Integer.MIN_VALUE && x <= Integer.MAX_VALUE);
+  }
+
+  private List<Expr> buildSuffixSet(int exprIndex) {
+    // There are d = (n-exprIndex) digits to examine.
+    // There are k = (d-1) choices of whether to concatenate each pair of digits,
+    // and we want to generate all 2^k such subsets.
+    int exprEnd = mDigitExprs.length;
+    int exprTotal = exprEnd - exprIndex;
+
+//    pr("# digits:", exprEnd);
+//    pr("building suffix set for start index", exprIndex);
+
+    int choiceCount = exprTotal - 1;
+    int setSize = 1 << choiceCount;
+
+//    pr("choiceCount:", choiceCount);
+//    pr("set size:", setSize);
+
+    var output = new ArrayList<Expr>(setSize);
+
+    elementLoop: for (int i = 0; i < setSize; i++) {
+      var bitFlags = i;
+      Expr prevExpr = null;
+
+      int mergeStart = 0;
+
+      for (int j = 0; j <= choiceCount; j++, bitFlags >>= 1) {
+        int mergeCursor = j + 1;
+        if (j == choiceCount || ((bitFlags & 1) == 1)) {
+          // Merge expressions
+          var newExpr = concatenateSequence(mergeStart + exprIndex, mergeCursor + exprIndex);
+          // If this is not a legal concatenation sequence, skip this element of the set
+          if (Double.isNaN(newExpr.evaluate2())) {
+            //pr("....not a valid concatenation sequence; skipping this set element:", INDENT, newExpr);
+            continue elementLoop;
+          }
+          if (prevExpr != null) {
+            newExpr = new Expr(OPER_MULT, prevExpr, newExpr);
+          }
+          prevExpr = newExpr;
+          mergeStart = mergeCursor;
+        }
+      }
+      if (!Double.isNaN(prevExpr.evaluate())) {
+        output.add(prevExpr);
+      }
+    }
+    return output;
+  }
+
+  private Expr concatenateSequence(int digitStart, int digitEnd) {
+    // We must concatenate so that the leading digit is a leaf node
+    var expr = mDigitExprs[digitEnd - 1];
+    for (int i = digitEnd - 2; i >= digitStart; i--) {
+      expr = new Expr(OPER_CONCAT, mDigitExprs[i], expr);
+    }
+    return expr;
+  }
+
+  private StringBuilder sbWork = new StringBuilder();
+
+  private String renderExprToWork(Expr expr) {
+    var sb = sbWork;
+    sb.setLength(0);
+    expr.render(sb);
+    return sb.toString();
+  }
+
+  private List<String> auxAddOperators(Expr[] digitExprs, int digitTotal, int target) {
+    List<String> stringResults = new ArrayList<>();
+    var sb = new StringBuilder();
+
+    int operCount = digitTotal - 1;
+    int operBitsMax = (1 << (operCount * 2));
+
+    // Stacks for operations and arguments
+    var args = new Expr[digitTotal];
+    var ops = new int[operCount];
+
+    for (int operCodes = 0; operCodes < operBitsMax; operCodes++) {
+      int cargs = 1; // argument stack size
+      args[0] = digitExprs[0];
+
+      int cops = 0; // operation stack size
+
+      var accum = operCodes;
+      for (int operIndex = 0;; operIndex++) {
+        // The last iteration acts as if there is a very low precedence operation coming up,
+        // so any stacked operations are evaluated
+        var operator = Integer.MAX_VALUE;
+        if (operIndex < operCount)
+          operator = accum & 0x3;
+
+        // If stacked operator (+ arguments) has higher precedence (i.e., a lower index), evaluate it
+        while (cops != 0 && ops[cops - 1] <= operator) {
+          var c = new Expr(ops[cops - 1], args[cargs - 2], args[cargs - 1]);
+          cargs--;
+          args[cargs - 1] = c;
+          cops--;
+        }
+        if (operIndex == operCount)
+          break;
+
+        ops[cops++] = operator;
+        args[cargs++] = digitExprs[operIndex + 1];
+        accum >>= 2;
+      }
+
+      var expr = args[0];
+      if (expr.evaluate() == target) {
+        sb.setLength(0);
+        expr.render(sb);
+        stringResults.add(sb.toString());
+      }
+    }
+    return stringResults;
   }
 
   private void procSuffix(Expr suffixNode, int suffixPos) {
-    pr("proc suffix at pos:", suffixPos, suffixNode);
     if (suffixPos != 0) {
       suffixPos--;
       procSuffix(new Expr(OPER_MULT, mDigitExprs[suffixPos], suffixNode), suffixPos);
@@ -201,6 +380,13 @@ public class P282ExpressionAddOperators extends LeetCode {
       oper = operation;
       child1 = a;
       child2 = b;
+      alert("extra checking");
+      if (oper == OPER_CONCAT) {
+        if (a != null)
+          checkArgument(a.oper == OPER_CONCAT);
+        if (b != null)
+          checkArgument(b.oper == OPER_CONCAT);
+      }
     }
 
     public void render(StringBuilder sb) {
@@ -225,23 +411,48 @@ public class P282ExpressionAddOperators extends LeetCode {
       double val;
       switch (oper) {
       default: // OPER_CONCAT:
+      {
+        // Evaluate the children FIRST, so their digit counts are valid
+        var v1 = child1.evaluate();
+        var v2 = child2.evaluate();
+        if (child2.digitCount == 0) {
+          halt("wtf, digit count is zero for:", INDENT, child2);
+        }
+        checkState(child2.digitCount != 0);
         digitCount = child1.digitCount + child2.digitCount;
-        val = child1.evaluate() * powers10[child2.digitCount] + child2.evaluate();
+        val = v1 * powers10[child2.digitCount] + v2;
+      }
         break;
       case OPER_MULT:
-        val = child1.evaluate() * child2.evaluate();
+        val = child1.evaluate2() * child2.evaluate2();
         break;
       case OPER_ADD:
-        val = child1.evaluate() + child2.evaluate();
+        val = child1.evaluate2() + child2.evaluate2();
         break;
       case OPER_SUB:
-        val = child1.evaluate() - child2.evaluate();
+        val = child1.evaluate2() - child2.evaluate2();
         break;
       }
 
       if (val < Integer.MIN_VALUE || val > Integer.MAX_VALUE)
         val = Double.NaN;
       value = val;
+      return value;
+    }
+
+    // A special form of evaluate() that returns NaN if this is an OPER_CONCAT that has a leading zero
+    private double evaluate2() {
+      evaluate();
+      if (oper == OPER_CONCAT) {
+        if (child1 != null) {
+          if (child1.child2 != null) {
+            badArg("concatenation doesn't have leaf node on left!", INDENT, this);
+          }
+        }
+        if (child2 != null && child1 == DIGIT_EXP[0])
+          return Double.NaN;
+
+      }
       return value;
     }
 
