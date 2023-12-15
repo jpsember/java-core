@@ -102,37 +102,40 @@ public class P282ExpressionAddOperators extends LeetCode {
     int operCount = num.length() - 1;
     int operBitsMax = (1 << (operCount * 2));
 
-    Stack<Expr> args = new Stack<>();
-    Stack<Integer> ops = new Stack<>();
+    // Stacks for operations and arguments
+    var args = new Expr[num.length()];
+    var ops = new int[operCount];
 
     for (int operCodes = 0; operCodes < operBitsMax; operCodes++) {
-      args.clear();
-      ops.clear();
-      args.push(digitExprs[0]);
+      int cargs = 1; // argument stack size
+      args[0] = digitExprs[0];
+
+      int cops = 0; // operation stack size
 
       var accum = operCodes;
-      for (int operIndex = 0; operIndex < operCount; operIndex++) {
-        var operator = accum & 0x3;
-        while (!ops.empty() && ops.peek() <= operator) {
-          var b = args.pop();
-          var a = args.pop();
-          var oper = ops.pop();
-          var c = new Expr(oper, a, b);
-          args.push(c);
+      for (int operIndex = 0;; operIndex++) {
+        // The last iteration acts as if there is a very low precedence operation coming up,
+        // so any stacked operations are evaluated
+        var operator = Integer.MAX_VALUE;
+        if (operIndex < operCount)
+          operator = accum & 0x3;
+
+        // If stacked operator (+ arguments) has higher precedence (i.e., a lower index), evaluate it
+        while (cops != 0 && ops[cops - 1] <= operator) {
+          var c = new Expr(ops[cops - 1], args[cargs - 2], args[cargs - 1]);
+          cargs--;
+          args[cargs - 1] = c;
+          cops--;
         }
-        ops.push(operator);
-        args.push(digitExprs[operIndex + 1]);
+        if (operIndex == operCount)
+          break;
+
+        ops[cops++] = operator;
+        args[cargs++] = digitExprs[operIndex + 1];
         accum >>= 2;
       }
 
-      while (!ops.empty()) {
-        var b = args.pop();
-        var a = args.pop();
-        var oper = ops.pop();
-        var c = new Expr(oper, a, b);
-        args.push(c);
-      }
-      var expr = args.pop();
+      var expr = args[0];
       if (expr.evaluate() == target) {
         sb.setLength(0);
         expr.render(sb);
