@@ -108,9 +108,7 @@ public class P282ExpressionAddOperators extends LeetCode {
     return sb.toString();
   }
 
-  // ------------------------------------------------------------------
-
-  public List<String> addOperators(String num, int target) {
+  /*private*/ List<String> SLOWaddOperators(String num, int target) {
     var digitExprs = new Expr[num.length()];
     for (int i = 0; i < num.length(); i++)
       digitExprs[i] = DIGIT_EXP[num.charAt(i) - '0'];
@@ -161,6 +159,13 @@ public class P282ExpressionAddOperators extends LeetCode {
       }
     }
     return stringResults;
+  }
+
+
+  // ------------------------------------------------------------------
+
+  public List<String> addOperators(String num, int target) {
+    return SLOWaddOperators(num, target);
   }
 
   private static final int OPER_CONCAT = 0, OPER_MULT = 1, OPER_SUB = 2, OPER_ADD = 3;
