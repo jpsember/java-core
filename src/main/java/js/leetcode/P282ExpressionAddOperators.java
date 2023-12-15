@@ -12,7 +12,18 @@ import java.util.List;
  * 
  * I think I need some memoization with recursive calls, based on the intuition
  * that +/- operations are lowest precedence and thus good 'splitting' points
- *
+ * 
+ * How about this:
+ * 
+ * Work from the right. Consider a string of digits S=s1s2...sn.
+ * 
+ * This can be expressed as [s1s2...sn-1] OP [sn]
+ * 
+ * If OP = + or - then we recursively look for expressions in [s1...n-1] that
+ * evaluate to target-sn, or target+sn resp.
+ * 
+ * If OP is concatenation, then we recursively look for expressions in
+ * [s1...n-2] that evaluate to corresponding variations of [sn-1sn].
  */
 public class P282ExpressionAddOperators extends LeetCode {
 
@@ -162,8 +173,6 @@ public class P282ExpressionAddOperators extends LeetCode {
       child2 = b;
     }
 
-    private static final char operChars[] = { 0, '*', '-', '+', };
-
     public void render(StringBuilder sb) {
       if (child1 == null) {
         if (Double.isNaN(value))
@@ -173,9 +182,8 @@ public class P282ExpressionAddOperators extends LeetCode {
         return;
       }
       child1.render(sb);
-      char c = operChars[oper];
-      if (c != 0)
-        sb.append(c);
+      if (oper != OPER_CONCAT)
+        sb.append("*-+".charAt(oper - 1));
       if (child2 != null)
         child2.render(sb);
     }
@@ -185,9 +193,7 @@ public class P282ExpressionAddOperators extends LeetCode {
         return value;
       double val;
       switch (oper) {
-      default:
-        throw new IllegalStateException();
-      case OPER_CONCAT:
+      default: // OPER_CONCAT:
         // If the left child is the digit 0, we shouldn't attempt a concatenation.
         // Set the value to NaN so any expression using this will not be a solution.
         if (child1 == DIGIT_EXP[0]) {
@@ -244,7 +250,7 @@ public class P282ExpressionAddOperators extends LeetCode {
 
   static {
     for (int i = 0; i < 10; i++) {
-      var e = new Expr(-1, null, null);
+      var e = new Expr(OPER_CONCAT, null, null);
       e.digitCount = 1;
       e.value = (double) i;
       DIGIT_EXP[i] = e;
