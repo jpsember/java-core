@@ -20,7 +20,8 @@ public class P282ExpressionAddOperators extends LeetCode {
     //x(702, 2, "7*0+2");
     xx(735, 9, "7-3+5");
 
-    x(123456789, 45, "1*2*3*4*5-6-78+9", "1*2*3*4+5+6-7+8+9", "1*2*3+4+5+6+7+8+9", "1*2*3+4+5-6*7+8*9",
+    x(9999999999L, 1409865409);
+    xx(123456789, 45, "1*2*3*4*5-6-78+9", "1*2*3*4+5+6-7+8+9", "1*2*3+4+5+6+7+8+9", "1*2*3+4+5-6*7+8*9",
         "1*2*3+4-5*6+7*8+9", "1*2*3+4-5*6-7+8*9", "1*2*3-4*5+6*7+8+9", "1*2*3-4*5-6+7*8+9",
         "1*2*3-4*5-6-7+8*9", "1*2*3-45+67+8+9", "1*2*34+56-7-8*9", "1*2*34-5+6-7-8-9", "1*2+3*4-56+78+9",
         "1*2+3+4+5*6+7+8-9", "1*2+3+4-5+6*7+8-9", "1*2+3+4-5-6+7*8-9", "1*2+3+45+67-8*9", "1*2+3-45+6+7+8*9",
@@ -48,11 +49,11 @@ public class P282ExpressionAddOperators extends LeetCode {
     //  x(223434, 24, "2+2*3+4+3*4", "2+2*3+4*3+4");
   }
 
-  private void x(int num, int target, String... results) {
-    var res = addOperators(Integer.toString(num), target);
+  private void x(long numExpr, int target, String... results) {
+    var res = addOperators(Long.toString(numExpr), target);
     var exp = new HashSet<String>(arrayList(results));
     var got = new HashSet<String>(res);
-    pr("Number:", num, "Target:", target, INDENT, got);
+    pr("Number:", numExpr, "Target:", target, INDENT, got);
 
     {
       var compare = new HashSet<String>(exp);
@@ -96,7 +97,6 @@ public class P282ExpressionAddOperators extends LeetCode {
     var exprs = new ArrayList<Expr>();
     for (int i = 0; i < num.length(); i++)
       exprs.add(DIGIT_EXP[num.charAt(i) - '0']);
-    db(exprs);
 
     exprList = exprs;
     results = new ArrayList<String>();
@@ -123,33 +123,27 @@ public class P282ExpressionAddOperators extends LeetCode {
       return;
     }
 
-    db(VERT_SP, "evaluating expression");
     int exprCursor = 0;
     args.clear();
     ops.clear();
     args.push(exprList.get(exprCursor++));
-    db("arg stack:", args);
 
     for (var operator : codes) {
       while (!ops.empty() && ops.peek() <= operator) {
-        db("...stacked oper has higher precedence:", dbOper(ops.peek()), "than current:", dbOper(operator));
         var b = args.pop();
         var a = args.pop();
         var oper = ops.pop();
         var c = new Expr(oper, a, b);
-        db("...applied operation:", dbOper(oper), "to:", a, "and:", b, INDENT, "result:", c);
         args.push(c);
       }
       ops.push(operator);
       args.push(exprList.get(exprCursor++));
-      db("...pushed operator, expr;", INDENT, dbOper(ops), CR, args);
     }
     while (!ops.empty()) {
       var b = args.pop();
       var a = args.pop();
       var oper = ops.pop();
       var c = new Expr(oper, a, b);
-      db("...applied operation:", dbOper(oper), "to:", a, "and:", b, INDENT, "result:", c);
       if (c == null)
         return;
       args.push(c);
