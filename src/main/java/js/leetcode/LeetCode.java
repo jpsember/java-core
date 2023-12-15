@@ -88,4 +88,26 @@ public abstract class LeetCode {
   public static void db(Object... messages) {
     pr(messages);
   }
+
+}
+
+class Stack<T> extends ArrayList<T> {
+
+  public boolean nonEmpty() {
+    return !isEmpty();
+  }
+
+  public void push(T item) {
+    add(item);
+  }
+
+  public T pop() {
+    return remove(size() - 1);
+  }
+
+  public T peek() {
+    if (isEmpty())
+      return null;
+    return get(size() - 1);
+  }
 }

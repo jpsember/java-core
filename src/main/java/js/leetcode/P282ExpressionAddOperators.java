@@ -27,31 +27,121 @@ public class P282ExpressionAddOperators extends LeetCode {
     verify(got, exp);
   }
 
-  //  private static  int evaluate(Expr e) {
-  //    if (e.value != null) return e.value;
-  //    long value = Long.MAX_VALUE;
-  //switch (e.oper) {
-  //default:throw new IllegalStateException();
-  //
-  //case OPER_CONCAT:
-  //{var left = e.child1;
-  //var right = e.child2;
-  //if (!left.buildValue()) break;
-  //if (!right.buildValue()) break;
-  //  if (left.str.charAt(0) == '0')
-  //    break;
-  // value = left.value * powers10[left.str.length()] + right.value;
-  // break;
-  //  case OPER_MULT:
-  //    var left = e.child1;
-  //    var right = e.child2;
-  //    if (!left.buildValue()) break;
-  //    if (!right.buildValue()) break;
-  //  value = left.value * right.value;
-  //  break;
-  //  }
+  public List<String> slowAdOperators(String num, int target) {
+    slowTarget = target;
+    //  var results = new ArrayList<String>();
+    var exprs = new ArrayList<Expr>();
+    for (int i = 0; i < num.length(); i++) {
+      exprs.add(DIGIT_EXP[num.charAt(i) - '0']);
+    }
+    pr(exprs);
 
-  private void aux(int target, List<String> results, Expr expr, List<Expr> exprs, int cursor) {
+    slowExprs = exprs;
+    slowResults = new ArrayList<String>();
+
+    int[] operCodes = new int[exprs.size() - 1];
+    slowAux(operCodes, 0);
+
+    return slowResults;
+    //    slowAux(target, results, exprs.get(0), exprs, 1);
+    //    return results;
+  }
+
+  private List<Expr> slowExprs;
+  private List<String> slowResults;
+  private int slowTarget;
+
+  private void slowAux(int[] codes, int cursor) {
+    if (cursor == codes.length) {
+      slowEvaluate(codes);
+    } else {
+      for (int i = OPER_CONCAT; i <= OPER_SUB; i++) {
+        codes[cursor] = i;
+        slowAux(codes, cursor + 1);
+      }
+    }
+  }
+
+  private void slowEvaluate(int[] operCodes) {
+    var args = new Stack<Expr>();
+
+    var ops = new Stack<Integer>();
+
+    int orandCursor = 0;
+    int otorCursor = 0;
+
+    args.push(slowExprs.get(orandCursor++));
+
+    for (var operator : operCodes) {
+      while (ops.nonEmpty() && ops.peek() <= operator) {
+        var b = args.pop();
+        var a = args.pop();
+        var oper = ops.pop();
+        var c = applyOperation(oper, a, b);
+        //        Expr c;
+        //        switch (oper) {
+        //        case OPER_CONCAT:
+        //          c = concat(a, b);
+        //          break;
+        //        case OPER_MULT:
+        //          c = productExpr(a, b);
+        //          break;
+        //        case OPER_ADD:
+        //          c = additionExpr(a, b);
+        //          break;
+        //        case OPER_SUB:
+        //          c = subtractionExpr(a, b);
+        //          break;
+        //        default:
+        //          throw badArg();
+        //        }
+        args.push(c);
+      }
+      ops.push(operator);
+      args.push(slowExprs.get(orandCursor++));
+      //       
+      //      var operand = slowExprs.get(i);
+      //      operandStack.add(operand);
+      //      int operCode = operCodes[i];
+
+    }
+    checkState(ops.size() <= 2);
+    while (ops.nonEmpty()) {
+      var b = args.pop();
+      var a = args.pop();
+      var oper = ops.pop();
+      var c = applyOperation(oper, a, b);
+      args.push(c);
+    }
+    var finalArg = args.pop();
+    if (finalArg.buildValue() && finalArg.evaluate() == slowTarget) {
+      slowResults.add(finalArg.str);
+    }
+
+  }
+
+  private Expr applyOperation(int oper, Expr a, Expr b) {
+    Expr c;
+    switch (oper) {
+    case OPER_CONCAT:
+      c = concat(a, b);
+      break;
+    case OPER_MULT:
+      c = productExpr(a, b);
+      break;
+    case OPER_ADD:
+      c = additionExpr(a, b);
+      break;
+    case OPER_SUB:
+      c = subtractionExpr(a, b);
+      break;
+    default:
+      throw badArg();
+    }
+    return c;
+  }
+
+  private void slowAux(int target, List<String> results, Expr expr, List<Expr> exprs, int cursor) {
     if (cursor == exprs.size()) {
       if (expr.buildValue() && expr.evaluate() == target) {
         results.add(expr.str);
@@ -63,19 +153,19 @@ public class P282ExpressionAddOperators extends LeetCode {
 
     var combined = concat(expr, expr2);
     if (combined != null)
-      aux(target, results, combined, exprs, cursor + 1);
+      slowAux(target, results, combined, exprs, cursor + 1);
 
     combined = productExpr(expr, expr2);
     combined.evaluate();
     pr("built product expr:", combined);
-    aux(target, results, combined, exprs, cursor + 1);
+    slowAux(target, results, combined, exprs, cursor + 1);
 
     combined = additionExpr(expr, expr2);
     //new Expr(ADDSUB, expr.str + "+" + expr2.str, 0);
-    aux(target, results, combined, exprs, cursor + 1);
+    slowAux(target, results, combined, exprs, cursor + 1);
     combined = subtractionExpr(expr, expr2);
     //new Expr(ADDSUB, expr.str + "-" + expr2.str, 0);
-    aux(target, results, combined, exprs, cursor + 1);
+    slowAux(target, results, combined, exprs, cursor + 1);
   }
 
   private Expr productExpr(Expr a, Expr b) {
@@ -103,21 +193,6 @@ public class P282ExpressionAddOperators extends LeetCode {
     p.child1 = a;
     p.child2 = b;
     return p;
-  }
-
-  public List<String> slowAdOperators(String num, int target) {
-    //  var results = new ArrayList<String>();
-    var exprs = new ArrayList<Expr>();
-    for (int i = 0; i < num.length(); i++) {
-      exprs.add(DIGIT_EXP[num.charAt(i) - '0']);
-    }
-    pr(exprs);
-
-    var results = new ArrayList<String>();
-    aux(target, results, exprs.get(0), exprs, 1);
-
-    return results;
-
   }
 
   public List<String> addOperators(String num, int target) {
