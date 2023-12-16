@@ -16,15 +16,34 @@ import java.util.Map;
  * 
  * How about this:
  * 
- * Work from the right. Consider a string of digits S=s1s2...sn.
+ * For input S=s1s2..sn:
  * 
- * This can be expressed as [s1s2...sn-1] OP [sn]
+ * Construct suffixes of length 1...n that have the structure:
  * 
- * If OP = + or - then we recursively look for expressions in [s1...n-1] that
- * evaluate to target-sn, or target+sn resp.
+ * d{OP}d{OP}d{OP}...{OP}d
  * 
- * If OP is concatenation, then we recursively look for expressions in
- * [s1...n-2] that evaluate to corresponding variations of [sn-1sn].
+ * Where OP is either concatenation or multiplication.
+ * 
+ * Observe that every nonempty input S will have a nonempty suffix of this form.
+ * 
+ * For a given suffix length y, we construct the set of possible suffixes. Then,
+ * evaluating each of the suffixes, we look at the structure of the remaining
+ * prefix. It has the form
+ * 
+ * d{OP}d{OP}...{OP}d
+ * 
+ * where OP can be concatenation, multiplication, +, or -.
+ * 
+ * The connector between the prefix and suffix must be either + or -. We
+ * recursively solve for the prefix given the target derived from the operation
+ * and the suffix. This returns a (possibly empty) set of valid prefixes. For
+ * each of these, we concatenate the suffix and add it to the output.
+ * 
+ * We use memoization to speed up the recursive calls.
+ * 
+ * The reason why we can't include + and - in the suffixes is because the
+ * precedence of those operations means we can't know the value of the suffix,
+ * and hence what value to search for recursively.
  */
 public class P282ExpressionAddOperators extends LeetCode {
 
