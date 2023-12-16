@@ -61,7 +61,10 @@ public class P282ExpressionAddOperators extends LeetCode {
     y(735, 9);
 
     y(9999999999L, 1409865409);
-    y(123456789, 45);
+    yy(123456789, 45);
+  }
+
+  private void yy(Object... unused) {
   }
 
   private void y(long numExpr, int target) {
@@ -153,62 +156,67 @@ public class P282ExpressionAddOperators extends LeetCode {
   }
 
   private List<String> auxAddOperators(int target, int exprCount) {
+    // If log10 target exceeds the expression count (digit count), we can't possibly satisfy it
+    if (powers10[exprCount + 1] < Math.abs(target))
+      return sEmptyList;
+
     long key = (target & 0x7fffffff) | (((long) exprCount) << 32);
     var results = memoMap.get(key);
-    if (results != null)
-      return results;
+    if (results == null) {
 
-    results = new ArrayList<>();
-    double targetD = target;
+      results = new ArrayList<>();
+      double targetD = target;
 
-    // Generate suffixes
+      // Generate suffixes
 
-    // We will generate n suffix sets, each set built on the last i digits.
-    // In each suffix set, we have every possible way of combining the i digits
-    // into concatenated groups.
-    for (int suffixPos = exprCount - 1; suffixPos >= 0; suffixPos--) {
-      var set = buildSuffixSet(suffixPos);
+      // We will generate n suffix sets, each set built on the last i digits.
+      // In each suffix set, we have every possible way of combining the i digits
+      // into concatenated groups.
+      for (int suffixPos = exprCount - 1; suffixPos >= 0; suffixPos--) {
+        var set = buildSuffixSet(suffixPos, exprCount);
 
-      // For each element of this set, recursively see if we can combine the prefix
-      // digit sequence with an ADD or SUBTRACT sequence to reach the target.
-      for (var suffixExpr : set) {
-        var suffixValueD = suffixExpr.evaluate();
-        String suffixString = null;
-        if (suffixPos == 0) {
-          if (suffixValueD == targetD) {
-            suffixString = renderIfNec(suffixString, suffixExpr);
-            results.add(suffixString);
+        // For each element of this set, recursively see if we can combine the prefix
+        // digit sequence with an ADD or SUBTRACT sequence to reach the target.
+        for (var suffixExpr : set) {
+          var suffixValueD = suffixExpr.evaluate();
+          String suffixString = null;
+          if (suffixPos == 0) {
+            if (suffixValueD == targetD) {
+              suffixString = renderIfNec(suffixString, suffixExpr);
+              results.add(suffixString);
+            }
+          } else {
+            do {
+              double targ1 = targetD - suffixValueD;
+              if (!fitsWithinInt(targ1))
+                break;
+              var auxResults = auxAddOperators((int) targ1, suffixPos);
+              if (auxResults.isEmpty())
+                break;
+              suffixString = renderIfNec(suffixString, suffixExpr);
+              for (var prefixStr : auxResults) {
+                results.add(prefixStr + '+' + suffixString);
+              }
+            } while (false);
+
+            do {
+              var targ2 = targetD + suffixValueD;
+              if (!fitsWithinInt(targ2))
+                break;
+              var auxResults = auxAddOperators((int) targ2, suffixPos);
+              if (auxResults.isEmpty())
+                break;
+              suffixString = renderIfNec(suffixString, suffixExpr);
+              for (var prefixStr : auxResults) {
+                results.add(prefixStr + '-' + suffixString);
+              }
+            } while (false);
           }
-        } else {
-          do {
-            double targ1 = targetD - suffixValueD;
-            if (!fitsWithinInt(targ1))
-              break;
-            var auxResults = auxAddOperators(mDigitExprs, suffixPos, (int) targ1);
-            if (auxResults.isEmpty())
-              break;
-            suffixString = renderIfNec(suffixString, suffixExpr);
-            for (var prefixStr : auxResults) {
-              results.add(prefixStr + '+' + suffixString);
-            }
-          } while (false);
-
-          do {
-            var targ2 = targetD + suffixValueD;
-            if (!fitsWithinInt(targ2))
-              break;
-            var auxResults = auxAddOperators(mDigitExprs, suffixPos, (int) targ2);
-            if (auxResults.isEmpty())
-              break;
-            suffixString = renderIfNec(suffixString, suffixExpr);
-            for (var prefixStr : auxResults) {
-              results.add(prefixStr + '-' + suffixString);
-            }
-          } while (false);
         }
       }
+      memoMap.put(key, results);
+      db("......storing memo:", key, results);
     }
-    memoMap.put(key, results);
     return results;
   }
 
@@ -226,11 +234,10 @@ public class P282ExpressionAddOperators extends LeetCode {
     return (x >= Integer.MIN_VALUE && x <= Integer.MAX_VALUE);
   }
 
-  private List<Expr> buildSuffixSet(int exprIndex) {
+  private List<Expr> buildSuffixSet(int exprIndex, int exprEnd) {
     // There are d = (n-exprIndex) digits to examine.
     // There are k = (d-1) choices of whether to concatenate each pair of digits,
     // and we want to generate all 2^k such subsets.
-    int exprEnd = mDigitExprs.length;
     int exprTotal = exprEnd - exprIndex;
     int choiceCount = exprTotal - 1;
     int setSize = 1 << choiceCount;
@@ -244,9 +251,8 @@ public class P282ExpressionAddOperators extends LeetCode {
         if (j == choiceCount || ((bitFlags & 1) == 1)) {
           var newExpr = concatenateSequence(mergeStart + exprIndex, mergeCursor + exprIndex);
           // If this is not a legal concatenation sequence, skip this element of the set
-          if (Double.isNaN(newExpr.evaluate2())) {
+          if (Double.isNaN(newExpr.evaluate2()))
             continue elementLoop;
-          }
           if (prevExpr != null)
             newExpr = new Expr(OPER_MULT, prevExpr, newExpr);
           prevExpr = newExpr;
@@ -266,60 +272,6 @@ public class P282ExpressionAddOperators extends LeetCode {
       expr = new Expr(OPER_CONCAT, mDigitExprs[i], expr);
     return expr;
   }
-
-  private List<String> auxAddOperators(Expr[] digitExprs, int digitTotal, int target) {
-    List<String> stringResults = new ArrayList<>();
-    var sb = new StringBuilder();
-
-    int operCount = digitTotal - 1;
-    int operBitsMax = (1 << (operCount * 2));
-
-    // Stacks for operations and arguments
-    var args = new Expr[digitTotal];
-    var ops = new int[operCount];
-
-    for (int operCodes = 0; operCodes < operBitsMax; operCodes++) {
-      int cargs = 1; // argument stack size
-      args[0] = digitExprs[0];
-
-      int cops = 0; // operation stack size
-
-      var accum = operCodes;
-      for (int operIndex = 0;; operIndex++) {
-        // The last iteration acts as if there is a very low precedence operation coming up,
-        // so any stacked operations are evaluated
-        var operator = Integer.MAX_VALUE;
-        if (operIndex < operCount)
-          operator = accum & 0x3;
-
-        // If stacked operator (+ arguments) has higher precedence (i.e., a lower index), evaluate it
-        while (cops != 0 && ops[cops - 1] <= operator) {
-          var c = new Expr(ops[cops - 1], args[cargs - 2], args[cargs - 1]);
-          cargs--;
-          args[cargs - 1] = c;
-          cops--;
-        }
-        if (operIndex == operCount)
-          break;
-
-        ops[cops++] = operator;
-        args[cargs++] = digitExprs[operIndex + 1];
-        accum >>= 2;
-      }
-
-      var expr = args[0];
-      if (expr.evaluate() == target) {
-        sb.setLength(0);
-        expr.render(sb);
-        stringResults.add(sb.toString());
-      }
-    }
-    return stringResults;
-  }
-
-  private Expr[] mDigitExprs;
-  private Map<Long, List<String>> memoMap = new HashMap<>();
-  private StringBuilder sbWork = new StringBuilder();
 
   private static final int OPER_CONCAT = 0, OPER_MULT = 1, OPER_SUB = 2, OPER_ADD = 3;
 
@@ -385,7 +337,6 @@ public class P282ExpressionAddOperators extends LeetCode {
       if (oper == OPER_CONCAT) {
         if (child2 != null && child1 == DIGIT_EXP[0])
           return Double.NaN;
-
       }
       return value;
     }
@@ -417,8 +368,12 @@ public class P282ExpressionAddOperators extends LeetCode {
 
   }
 
+  private static List<String> sEmptyList = new ArrayList<>(0);
   private static final Expr[] DIGIT_EXP = new Expr[10];
-  private static final double powers10[] = { 1, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10 };
+  private static final double powers10[] = { 1, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10, 1e11 };
+  private Expr[] mDigitExprs;
+  private Map<Long, List<String>> memoMap = new HashMap<>();
+  private StringBuilder sbWork = new StringBuilder();
 
   static {
     for (int i = 0; i < 10; i++) {
