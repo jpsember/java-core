@@ -22,35 +22,6 @@ public class NQueensII extends LeetCode {
     verify(c, exp);
   }
 
-  private static final int N = 10;
-
-  private static int countQueens(long n) {
-    int count = 0;
-    for (int i = 0; i < N; i++) {
-      if ((n & (1 << i)) != 0)
-        count++;
-    }
-    return count;
-  }
-
-  private static final long[][] squareFlags = new long[N][N];
-
-  static {
-    for (int y = 0; y < N; y++) {
-      var row = squareFlags[y];
-      for (int x = 0; x < N; x++) {
-        final int OFF_COL = 0;
-        final int OFF_ROW = OFF_COL + N;
-        final int OFF_DIAG1 = OFF_ROW + N;
-        final int OFF_DIAG2 = OFF_DIAG1 + N * 2 - 1;
-        row[x] = (1L << (OFF_COL + x)) //
-            | (1L << (OFF_ROW + y)) //
-            | (1L << (OFF_DIAG1 + x + y)) //
-            | (1L << (OFF_DIAG2 + x - y + N - 1));
-      }
-    }
-  }
-
   public int totalNQueens(int n) {
     Map<Long, Integer> prevSizeMap = new HashMap<>();
     Map<Long, Integer> nextSizeMap = new HashMap<>();
@@ -65,7 +36,6 @@ public class NQueensII extends LeetCode {
       db(VERT_SP, "size", m);
 
       // Look through all the entries for map from m-1
-      pr("prev map size:", prevSizeMap.size());
       for (var ent : prevSizeMap.entrySet()) {
         long used = ent.getKey();
         int queenCount = countQueens(used);
@@ -96,10 +66,10 @@ public class NQueensII extends LeetCode {
             var newQueenCount = queenCount + 1;
 
             nextSizeMap.put(used | sf, variants);
-            pr("found spot for queen #", newQueenCount, "at:", x, y);
+            db("found spot for queen #", newQueenCount, "at:", x, y);
             if (newQueenCount == m) {
               currentVariantTotal += variants;
-              pr("...variants now", currentVariantTotal);
+              db("...variants now", currentVariantTotal);
             }
             // See if we can place an additional queen for an m solution
             if (newQueenCount + 1 == m) {
@@ -130,5 +100,30 @@ public class NQueensII extends LeetCode {
       db("total for n=", m, "is", currentVariantTotal);
     }
     return currentVariantTotal;
+  }
+
+  private static int countQueens(long n) {
+    // We only need to look at the first N bits
+    return Integer.bitCount(((int) n) & ((1 << N) - 1));
+  }
+
+  private static final int N = 10;
+
+  private static final long[][] squareFlags = new long[N][N];
+
+  static {
+    for (int y = 0; y < N; y++) {
+      var row = squareFlags[y];
+      for (int x = 0; x < N; x++) {
+        final int OFF_COL = 0;
+        final int OFF_ROW = OFF_COL + N;
+        final int OFF_DIAG1 = OFF_ROW + N;
+        final int OFF_DIAG2 = OFF_DIAG1 + N * 2 - 1;
+        row[x] = (1L << (OFF_COL + x)) //
+            | (1L << (OFF_ROW + y)) //
+            | (1L << (OFF_DIAG1 + x + y)) //
+            | (1L << (OFF_DIAG2 + x - y + N - 1));
+      }
+    }
   }
 }
