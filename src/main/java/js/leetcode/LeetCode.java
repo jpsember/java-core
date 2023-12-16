@@ -28,7 +28,7 @@ public abstract class LeetCode {
 
   public static String bitStr(long val) {
     var s = "";
-    for (int i = 0; i <= 31; i++) {
+    for (int i = 0; i <= 63; i++) {
       long bit = 1L << i;
       s = (((val & bit) != 0) ? "1" : "0") + s;
       if (val < (bit << 1))
