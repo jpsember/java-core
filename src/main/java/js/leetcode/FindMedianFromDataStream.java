@@ -16,24 +16,22 @@ public class FindMedianFromDataStream extends LeetCode {
 
   public void run() {
     xx("[\"MedianFinder\", \"addNum\", \"addNum\", \"findMedian\", \"addNum\", \"findMedian\"]\n",
-        "[[], [1], [2], [], [3], []]", "[null, null, null, 1.5, null, 2.0]");
+        "[[], [1], [2], [], [3], []]");
 
     x("[\"MedianFinder\",\"addNum\",\"findMedian\",\"addNum\",\"findMedian\",\"addNum\",\"findMedian\",\"addNum\",\"findMedian\",\"addNum\",\"findMedian\",\"addNum\",\"findMedian\",\"addNum\",\"findMedian\",\"addNum\",\"findMedian\",\"addNum\",\"findMedian\",\"addNum\",\"findMedian\",\"addNum\",\"findMedian\",\"addNum\",\"findMedian\",\"addNum\",\"findMedian\",\"addNum\",\"findMedian\",\"addNum\",\"findMedian\",\"addNum\",\"findMedian\",\"addNum\",\"findMedian\",\"addNum\",\"findMedian\",\"addNum\",\"findMedian\",\"addNum\",\"findMedian\",\"addNum\",\"findMedian\"]",
-        "[[],[12],[],[10],[],[13],[],[11],[],[5],[],[15],[],[1],[],[11],[],[6],[],[17],[],[14],[],[8],[],[17],[],[6],[],[4],[],[16],[],[8],[],[10],[],[2],[],[12],[],[0],[]]",
-        "[null,null,12.00000,null,11.00000,null,12.00000,null,11.50000,null,11.00000,null,11.50000,null,11.00000,null,11.00000,null,11.00000,null,11.00000,null,11.00000,null,11.00000,null,11.00000,null,11.00000,null,11.00000,null,11.00000,null,11.00000,null,10.50000,null,10.00000,null,10.50000,null,10.00000]");
+        "[[],[12],[],[10],[],[13],[],[11],[],[5],[],[15],[],[1],[],[11],[],[6],[],[17],[],[14],[],[8],[],[17],[],[6],[],[4],[],[16],[],[8],[],[10],[],[2],[],[12],[],[0],[]]");
   }
 
-  private void x(String cmdStr, String argStr, String expStr) {
+  private void x(String cmdStr, String argStr) {
     var cmdList = new JSList(cmdStr);
     var argsList = new JSList(argStr);
-    var expectedList = new JSList(expStr);
 
     var resultList = list();
 
     var expList = list();
-    
+
     MedianFinder m = null;
-    MedianFinder s  = null;
+    MedianFinder s = null;
     int i = INIT_INDEX;
     for (var cmd : cmdList.asStringArray()) {
       i++;
@@ -46,8 +44,7 @@ public class FindMedianFromDataStream extends LeetCode {
         m = new MedianFinder();
         s = new SlowMedianFinder();
         break;
-      case "addNum":
-      {
+      case "addNum": {
         var num = argsList.getList(i).getInt(0);
         m.addNum(num);
         s.addNum(num);
@@ -62,7 +59,6 @@ public class FindMedianFromDataStream extends LeetCode {
       expList.addUnsafe(output2);
     }
     pr(resultList);
-    pr(expList);
     verify(resultList, expList);
   }
 
@@ -71,31 +67,6 @@ public class FindMedianFromDataStream extends LeetCode {
   // ----------------------------------------------
 
   class MedianFinder {
-
-    @Override
-    public String toString() {
-      var m = map();
-      m.put("", "MedianFinder");
-      m.put("pop", population);
-      var ls = list();
-      if (medianEnt != null) {
-        m.put("median entry", medianEnt.toString());
-        var e = medianEnt;
-        while (e.prev != null)
-          e = e.prev;
-        while (true) {
-          ls.add(e.toString());
-          if (e.next == null)
-            break;
-          checkState(e.next.prev == e);
-          e = e.next;
-        }
-      }
-      if (population != 0)
-        m.put("median", findMedian());
-      m.put("entries", ls);
-      return m.prettyPrint();
-    }
 
     public MedianFinder() {
       mMap = new TreeMap<>();
@@ -108,13 +79,9 @@ public class FindMedianFromDataStream extends LeetCode {
     }
 
     public void addNum(int num) {
-
       pr(VERT_SP, "addNum:", num);
-
       var tail = mMap.tailMap(num);
-
       var ent = tail.get(tail.firstKey());
-
       if (ent.value != num) {
         var newEnt = new Ent(num);
         join(ent.prev, newEnt);
@@ -137,35 +104,66 @@ public class FindMedianFromDataStream extends LeetCode {
       // Get order of the left median value (which is equal to the right value if the population is odd)
       int mi = (population - 1) >> 1;
       if (mi < medianOrd) {
+        pr("...moving median entry LEFT, since pop is now:", population, "and old median order is:",
+            medianOrd);
         var n = medianEnt.prev;
         medianOrd -= n.frequency;
         medianEnt = n;
       } else if (mi >= medianOrd + medianEnt.frequency) {
-        var n = medianEnt.next;
+        pr("...moving median entry RIGHT, since pop is now:", population, "and old median order is:",
+            medianOrd);
         medianOrd += medianEnt.frequency;
+        var n = medianEnt.next;
         medianEnt = n;
       }
-
-      pr(VERT_SP, "added:", num, "pop:", population, "median entry val:", medianEnt.value, "freq:",
-          medianEnt.frequency, "medianOrd:", medianOrd);
-      pr(this.toString());
+      pr(this);
     }
 
     public double findMedian() {
       var leftValue = medianEnt.value;
       // Get order of the left median value (which is equal to the right value if the population is odd)
-      int mi = (population - 1) >> 1;
-      var medord = medianOrd + mi;
+      var leftOrder = (population - 1) >> 1;
 
       boolean odd = (population & 1) != 0;
       var rightValue = leftValue;
 
-      int rightorder = medord + (odd ? 0 : 1);
-      if (rightorder >= medord + medianEnt.frequency)
+      int rightOrder = leftOrder + (odd ? 0 : 1);
+      if (rightOrder >= medianOrd + medianEnt.frequency) {
         rightValue = medianEnt.next.value;
+        pr(VERT_SP, DASHES, "right value lies in next entry! pop:", population, "odd:", odd, "medianOrd:",
+            medianOrd, "leftOrder:", leftOrder, "rightOrder:", rightOrder);
+      }
       pr("leftValue:", leftValue, "odd:", odd, "rightValue:", rightValue);
 
       return (leftValue + rightValue) / 2.0;
+    }
+
+    @Override
+    public String toString() {
+      var m = map();
+      m.put("", "MedianFinder");
+      m.put("pop", population);
+      var ls = list();
+      if (medianEnt != null) {
+        m.put("median entry", medianEnt.toString());
+        var e = medianEnt;
+        while (e.prev != null)
+          e = e.prev;
+        while (true) {
+          if (!(e.prev == null || e.next == null))
+            ls.add(e.toString());
+          if (e.next == null)
+            break;
+          checkState(e.next.prev == e);
+          e = e.next;
+        }
+      }
+      if (population != 0) {
+        m.put("median", findMedian());
+        m.put("median ord", medianOrd);
+      }
+      m.put("entries", ls);
+      return m.prettyPrint();
     }
 
     private static class Ent {
