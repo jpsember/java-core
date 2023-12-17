@@ -135,10 +135,16 @@ public class FindMedianFromDataStream extends LeetCode {
           }
         }
       }
-      if (ent != null && ent.value == num) {
-        pr(DASHES, "median heuristic worked:", ent);
-        ent = null;
+      if (ent != null) {
+        if (ent.value == num) {
+          pr(DASHES, "median heuristic worked:", ent);
+          ent = null;
+        }
       }
+
+      // If we ran out of steps without finding the target, abandon the heuristic
+      if (ent != null && ent.value != num)
+        ent = null;
 
       if (ent == null) {
         var tail = mMap.tailMap(num);
