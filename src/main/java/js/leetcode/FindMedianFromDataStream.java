@@ -62,6 +62,28 @@ public class FindMedianFromDataStream extends LeetCode {
     verify(resultList, expList);
   }
 
+  class SlowMedianFinder extends MedianFinder {
+
+    public SlowMedianFinder() {
+
+    }
+
+    public void addNum(int num) {
+      vals.add(num);
+    }
+
+    public double findMedian() {
+      vals.sort(null);
+      int i = vals.size() / 2;
+      int j = i;
+      if (vals.size() % 2 == 0)
+        j--;
+      return (vals.get(i) + vals.get(j)) / 2.0;
+    }
+
+    private List<Integer> vals = new ArrayList<>();
+  }
+
   private static //
 
   // ----------------------------------------------
@@ -75,19 +97,49 @@ public class FindMedianFromDataStream extends LeetCode {
       join(minEnt, maxEnt);
       mMap.put(minEnt.value, minEnt);
       mMap.put(maxEnt.value, maxEnt);
-      pr("constructed", this);
     }
 
     public void addNum(int num) {
-      pr(VERT_SP, "addNum:", num);
-      var tail = mMap.tailMap(num);
-      var ent = tail.get(tail.firstKey());
-      if (ent.value != num) {
-        var newEnt = new Ent(num);
-        join(ent.prev, newEnt);
-        join(newEnt, ent);
-        ent = newEnt;
-        mMap.put(num, ent);
+      db(VERT_SP, "addNum:", num);
+
+      // Locate map entry that contains this number, or the insertion position
+      // if it is not in the map.
+
+      // This is probably the slowest step... as a heuristic, search from the median entry
+      // for n steps before giving up and querying the tree
+
+      var ent = medianEnt;
+      if (ent != null) {
+        final int maxSteps = 12;
+        for (int i = 0; i < maxSteps; i++) {
+          if (ent.value == num)
+            break;
+          if (ent.value > num) {
+            if (ent.prev.value < num) {
+              ent = null;
+              break;
+            }
+            ent = ent.prev;
+          } else {
+            if (ent.next.value > num) {
+              ent = null;
+              break;
+            }
+            ent = ent.next;
+          }
+        }
+      }
+
+      if (ent == null) {
+        var tail = mMap.tailMap(num);
+        ent = tail.get(tail.firstKey());
+        if (ent.value != num) {
+          var newEnt = new Ent(num);
+          join(ent.prev, newEnt);
+          join(newEnt, ent);
+          ent = newEnt;
+          mMap.put(num, ent);
+        }
       }
       ent.frequency++;
       if (medianEnt == null) {
@@ -97,26 +149,25 @@ public class FindMedianFromDataStream extends LeetCode {
       population++;
 
       // Adjust median
-      if (num < medianEnt.value) {
+      if (num < medianEnt.value)
         medianOrd++;
-      }
 
       // Get order of the left median value (which is equal to the right value if the population is odd)
       int mi = (population - 1) >> 1;
       if (mi < medianOrd) {
-        pr("...moving median entry LEFT, since pop is now:", population, "and old median order is:",
+        db("...moving median entry LEFT, since pop is now:", population, "and old median order is:",
             medianOrd);
         var n = medianEnt.prev;
         medianOrd -= n.frequency;
         medianEnt = n;
       } else if (mi >= medianOrd + medianEnt.frequency) {
-        pr("...moving median entry RIGHT, since pop is now:", population, "and old median order is:",
+        db("...moving median entry RIGHT, since pop is now:", population, "and old median order is:",
             medianOrd);
         medianOrd += medianEnt.frequency;
         var n = medianEnt.next;
         medianEnt = n;
       }
-      pr(this);
+      db(this);
     }
 
     public double findMedian() {
@@ -128,13 +179,8 @@ public class FindMedianFromDataStream extends LeetCode {
       var rightValue = leftValue;
 
       int rightOrder = leftOrder + (odd ? 0 : 1);
-      if (rightOrder >= medianOrd + medianEnt.frequency) {
+      if (rightOrder >= medianOrd + medianEnt.frequency)
         rightValue = medianEnt.next.value;
-        pr(VERT_SP, DASHES, "right value lies in next entry! pop:", population, "odd:", odd, "medianOrd:",
-            medianOrd, "leftOrder:", leftOrder, "rightOrder:", rightOrder);
-      }
-      pr("leftValue:", leftValue, "odd:", odd, "rightValue:", rightValue);
-
       return (leftValue + rightValue) / 2.0;
     }
 
@@ -183,7 +229,6 @@ public class FindMedianFromDataStream extends LeetCode {
           s += " (x" + frequency + ")";
         return s;
       }
-
     }
 
     private Ent join(Ent a, Ent b) {
@@ -202,25 +247,4 @@ public class FindMedianFromDataStream extends LeetCode {
     private int medianOrd;
   }
 
-  class SlowMedianFinder extends MedianFinder {
-
-    public SlowMedianFinder() {
-
-    }
-
-    public void addNum(int num) {
-      vals.add(num);
-    }
-
-    public double findMedian() {
-      vals.sort(null);
-      int i = vals.size() / 2;
-      int j = i;
-      if (vals.size() % 2 == 0)
-        j--;
-      return (vals.get(i) + vals.get(j)) / 2.0;
-    }
-
-    private List<Integer> vals = new ArrayList<>();
-  }
 }
