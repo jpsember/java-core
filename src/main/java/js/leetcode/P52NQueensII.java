@@ -7,6 +7,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Ok, I couldn't figure out why it wasn't working; added a bunch of diagnostic
+ * code.
+ * 
+ * I think the 'allowing m or m-1' in the current map is faulty logic.
+ * 
+ * New approach: start with a board that is a full row, but unit height, then
+ * add rows.
+ */
 public class P52NQueensII extends LeetCode {
 
   public static void main(String[] args) {
@@ -36,9 +45,9 @@ public class P52NQueensII extends LeetCode {
       p.boards.add(new Board());
       prevSizeMap.put(0L, p);
     }
-    int currentVariantTotal = 0;
+    int solutionCount = 0;
     for (int m = 1; m <= n; m++) {
-      currentVariantTotal = 0;
+      solutionCount = 0;
       nextSizeMap.clear();
       db(VERT_SP, "size", m);
 
@@ -48,8 +57,7 @@ public class P52NQueensII extends LeetCode {
         int queenCount = countQueens(used);
         var pattern = ent.getValue();
         int variants = pattern.variants;
-        db(VERT_SP, "...entry, # queens:", queenCount, "variants:", variants);
-        db(pattern);
+        db(VERT_SP, pattern);
 
         // Try to place one and two additional queens to get solutions for m-1 and m queens
 
@@ -57,19 +65,23 @@ public class P52NQueensII extends LeetCode {
         if (queenCount == m - 1) {
           db("......already an m-1 solution, storing");
           checkState(!nextSizeMap.containsKey(used));
+          // For logging purposes, bump board size up
+          pattern.boardSize = m;
           nextSizeMap.put(used, pattern);
         }
 
         int scanCount = m * 2 - 1;
+
         for (int i = 0; i < scanCount; i++) {
           int x, y;
           if (i < m) {
-            y = m - 1;
             x = i;
+            y = m - 1;
           } else {
-            y = i - m;
             x = m - 1;
+            y = scanCount - 1 - i;
           }
+          db("i:", i, "x:", x, "y:", y);
 
           var sf = squareFlags[y][x];
           if ((sf & used) == 0) {
@@ -83,22 +95,26 @@ public class P52NQueensII extends LeetCode {
               var b2 = b.makeMove(x, y, pat2);
               pat2.boards.add(b2);
             }
-            db("...pattern:", INDENT, pat2);
+            db(INDENT, pat2);
 
             if (queenCountNew == m) {
-              currentVariantTotal += variants;
-              db("......variants now", currentVariantTotal);
+              solutionCount += variants;
+              db("......variants now", solutionCount);
             }
             // See if we can place an additional queen for an m solution
             if (queenCountNew + 1 == m) {
+
+              pr("m:", m, "scanCount:", scanCount);
+
               for (int i2 = i + 1; i2 < scanCount; i2++) {
                 if (i2 < m) {
-                  y = m - 1;
                   x = i2;
+                  y = m - 1;
                 } else {
-                  y = i2 - m;
                   x = m - 1;
+                  y = scanCount - 1 - i2;
                 }
+
                 sf = squareFlags[y][x];
                 if ((sf & usedNew) == 0) {
                   var usedNew2 = usedNew | sf;
@@ -111,8 +127,8 @@ public class P52NQueensII extends LeetCode {
                     var b2 = b.makeMove(x, y, pat3);
                     pat3.boards.add(b2);
                   }
-                  db("...pattern:", INDENT, pat3);
-                  currentVariantTotal += variants;
+                  db(INDENT, pat3);
+                  solutionCount += variants;
                   db(pat3);
                 }
               }
@@ -123,16 +139,16 @@ public class P52NQueensII extends LeetCode {
       var tmp = prevSizeMap;
       prevSizeMap = nextSizeMap;
       nextSizeMap = tmp;
-      db("total for n=", m, "is", currentVariantTotal);
+      db("total for n=", m, "is", solutionCount);
     }
-    return currentVariantTotal;
+    return solutionCount;
   }
 
   private static Pattern addPattern(int boardSize, Map<Long, Pattern> map, long key, int variants) {
     var p = map.get(key);
     if (p == null) {
       p = new Pattern(boardSize, key);
-      pr("created new pattern for board size:", boardSize, "key:", key, INDENT, p);
+      pr("created new pattern for board size:", boardSize, "key:", key);
       map.put(key, p);
     }
     p.variants += variants;
@@ -162,12 +178,12 @@ public class P52NQueensII extends LeetCode {
 
     @Override
     public String toString() {
-      StringBuilder sb = new StringBuilder("Pattern");
+      StringBuilder sb = new StringBuilder("Pattern ---");
       sb.append(" queens:");
       sb.append(countQueens(key));
-      sb.append(" variants:");
+      sb.append(" soln count:");
       sb.append(variants);
-      sb.append("# boards:");
+      sb.append(" # boards:");
       sb.append(boards.size());
       for (var b : boards) {
         sb.append("\n");
