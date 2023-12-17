@@ -13,6 +13,8 @@ import java.util.Map;
  * 
  * New approach: start with a board that is a full row, but unit height, then
  * add rows.
+ * 
+ * I think I am spending a lot of time in hash table lookups.
  */
 public class P52NQueensII extends LeetCode {
 
@@ -21,9 +23,10 @@ public class P52NQueensII extends LeetCode {
   }
 
   public void run() {
-    x(5, 10);
-    x(2, 0);
-    x(4, 2);
+    x(9, 352);
+    //    x(5, 10);
+    //    x(2, 0);
+    //    x(4, 2);
   }
 
   private void x(int n, int exp) {
@@ -33,37 +36,34 @@ public class P52NQueensII extends LeetCode {
   }
 
   public int totalNQueens(int n) {
-    // Prepare grid indicating how a queen placed on a square affects the row usage
-    var squareFlags = new long[n * n];
-    {
-      int i = 0;
-      for (int y = 0; y < n; y++) {
-        for (int x = 0; x < n; x++, i++) {
+    int n2 = n / 2;
+    if (n % 2 == 0)
+      return 2 * aux(n, 0, n2);
+    else
+      return aux(n, n2, n2 + 1) + 2 * aux(n, 0, n2);
+  }
 
-          final int OFF_COL = 0;
-          final int OFF_DIAG1 = OFF_COL + n;
-          final int OFF_DIAG2 = OFF_DIAG1 + n * 2 - 1;
-          squareFlags[i] = (1L << (OFF_COL + x)) //
-              | (1L << (OFF_DIAG1 + x + y)) //
-              | (1L << (OFF_DIAG2 + x - y + n - 1));
-        }
-      }
-    }
+  private int aux(int n, int colStart, int colEnd) {
+    if (colStart == colEnd)
+      return 0;
     Map<Long, Integer> prevHeightMap = new HashMap<>();
     Map<Long, Integer> nextHeightMap = new HashMap<>();
 
     // There is a single solution for n=0 queens in the height=zero map
     prevHeightMap.put(0L, 1);
     int solutionCount = 0;
-    int sqOffset = 0;
-    for (int height = 1; height <= n; height++, sqOffset += n) {
+    var x0 = colStart;
+    var x1 = colEnd;
+
+    for (int height = 1; height <= n; height++) {
       solutionCount = 0;
+      var row = squareFlags[height - 1];
       nextHeightMap.clear();
       for (var ent : prevHeightMap.entrySet()) {
         long rowUsageFlags = ent.getKey();
         var solutions = ent.getValue();
-        for (int x = 0; x < n; x++) {
-          var candidateMoveFlags = squareFlags[sqOffset + x];
+        for (int x = x0; x < x1; x++) {
+          var candidateMoveFlags = row[x];
           if ((candidateMoveFlags & rowUsageFlags) == 0) {
             var newUsageFlags = rowUsageFlags | candidateMoveFlags;
             nextHeightMap.put(newUsageFlags, nextHeightMap.getOrDefault(newUsageFlags, 0) + solutions);
@@ -74,8 +74,29 @@ public class P52NQueensII extends LeetCode {
       var tmp = prevHeightMap;
       prevHeightMap = nextHeightMap;
       nextHeightMap = tmp;
+
+      x0 = 0;
+      x1 = n;
     }
+
     return solutionCount;
+  }
+
+  // Prepare grid indicating how a queen placed on a square affects the row usage
+  private static final int NMax = 9;
+  private static final long[][] squareFlags = new long[NMax][NMax];
+
+  static {
+    for (int y = 0; y < NMax; y++) {
+      for (int x = 0; x < NMax; x++) {
+        final int OFF_COL = 0;
+        final int OFF_DIAG1 = OFF_COL + NMax;
+        final int OFF_DIAG2 = OFF_DIAG1 + NMax * 2 - 1;
+        squareFlags[y][x] = (1L << (OFF_COL + x)) //
+            | (1L << (OFF_DIAG1 + x + y)) //
+            | (1L << (OFF_DIAG2 + x - y + NMax - 1));
+      }
+    }
   }
 
 }
