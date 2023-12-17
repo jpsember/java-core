@@ -39,11 +39,9 @@ public class P52NQueensII extends LeetCode {
       var row = squareFlags[y];
       for (int x = 0; x < n; x++) {
         final int OFF_COL = 0;
-        final int OFF_ROW = OFF_COL + n;
-        final int OFF_DIAG1 = OFF_ROW + n;
+        final int OFF_DIAG1 = OFF_COL + n;
         final int OFF_DIAG2 = OFF_DIAG1 + n * 2 - 1;
         row[x] = (1L << (OFF_COL + x)) //
-            | (1L << (OFF_ROW + y)) //
             | (1L << (OFF_DIAG1 + x + y)) //
             | (1L << (OFF_DIAG2 + x - y + n - 1));
       }
