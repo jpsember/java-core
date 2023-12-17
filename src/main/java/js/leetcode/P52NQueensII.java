@@ -2,35 +2,15 @@ package js.leetcode;
 
 import static js.base.Tools.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class P52NQueensII extends LeetCode {
 
   public static void main(String[] args) {
     new P52NQueensII().run();
-  }
-
-  private static void ac() {
-    for (int x1 = 0; x1 < N; x1++) {
-      for (int y1 = 0; y1 < N; y1++) {
-        var f1 = squareFlags[y1][x1];
-        for (int x2 = 0; x2 < N; x2++) {
-          for (int y2 = 0; y2 < N; y2++) {
-            var f2 = squareFlags[y2][x2];
-            int xd = x1 - x2;
-            int yd = y1 - y2;
-            if (x1 == x2 && y1 == y2)
-              continue;
-            boolean exp = (x1 == x2) || (y1 == y2) || (xd * xd == yd * yd);
-
-            if (((f1 & f2) != 0L) != exp) {
-              halt("x1,y1:", x1, y1, " x2,y2:", x2, y2, CR, bitStrFull(f1), CR, bitStrFull(f2));
-            }
-          }
-        }
-      }
-    }
   }
 
   public void run() {
@@ -46,12 +26,16 @@ public class P52NQueensII extends LeetCode {
   }
 
   public int totalNQueens(int n) {
-    Map<Long, Integer> prevSizeMap = new HashMap<>();
-    Map<Long, Integer> nextSizeMap = new HashMap<>();
+    Map<Long, Pattern> prevSizeMap = new HashMap<>();
+    Map<Long, Pattern> nextSizeMap = new HashMap<>();
 
     // There is a single solution for n=0 queens in the n=0 map
-    prevSizeMap.put(0L, 1);
-
+    {
+      var p = new Pattern(0, 0);
+      p.variants = 1;
+      p.boards.add(new Board());
+      prevSizeMap.put(0L, p);
+    }
     int currentVariantTotal = 0;
     for (int m = 1; m <= n; m++) {
       currentVariantTotal = 0;
@@ -62,15 +46,18 @@ public class P52NQueensII extends LeetCode {
       for (var ent : prevSizeMap.entrySet()) {
         long used = ent.getKey();
         int queenCount = countQueens(used);
-        int variants = ent.getValue();
+        var pattern = ent.getValue();
+        int variants = pattern.variants;
         db(VERT_SP, "...entry, # queens:", queenCount, "variants:", variants);
+        db(pattern);
 
         // Try to place one and two additional queens to get solutions for m-1 and m queens
 
         // If this is already an m-1 solution, store it
         if (queenCount == m - 1) {
           db("......already an m-1 solution, storing");
-          addVariants(nextSizeMap, used, variants);
+          checkState(!nextSizeMap.containsKey(used));
+          nextSizeMap.put(used, pattern);
         }
 
         int scanCount = m * 2 - 1;
@@ -89,8 +76,15 @@ public class P52NQueensII extends LeetCode {
             var queenCountNew = queenCount + 1;
             var usedNew = used | sf;
 
-            addVariants(nextSizeMap, usedNew, variants);
             db("...found spot for queen #", queenCountNew, "at:", x, y);
+
+            var pat2 = addPattern(m, nextSizeMap, usedNew, pattern.variants);
+            for (var b : pattern.boards) {
+              var b2 = b.makeMove(x, y, pat2);
+              pat2.boards.add(b2);
+            }
+            db("...pattern:", INDENT, pat2);
+
             if (queenCountNew == m) {
               currentVariantTotal += variants;
               db("......variants now", currentVariantTotal);
@@ -108,30 +102,24 @@ public class P52NQueensII extends LeetCode {
                 sf = squareFlags[y][x];
                 if ((sf & usedNew) == 0) {
                   var usedNew2 = usedNew | sf;
-                  addVariants(nextSizeMap, usedNew2, variants);
-                  currentVariantTotal += variants;
+
                   db("......found slot for queen #" + (queenCountNew + 1), "x:", x, "y:", y, "variants now:",
                       variants);
+
+                  var pat3 = addPattern(m, nextSizeMap, usedNew2, pat2.variants);
+                  for (var b : pat2.boards) {
+                    var b2 = b.makeMove(x, y, pat3);
+                    pat3.boards.add(b2);
+                  }
+                  db("...pattern:", INDENT, pat3);
+                  currentVariantTotal += variants;
+                  db(pat3);
                 }
               }
             }
           }
         }
       }
-
-      //      {
-      //        int check = 0;
-      //        for (var ent : nextSizeMap.entrySet()) {
-      //          //          ent.
-      //          int queenCount = countQueens(ent.getKey());
-      //          if (queenCount == m) {
-      //            check += ent.getValue();
-      //          }
-      //        }
-      //        checkState(check == currentVariantTotal, "expected:", currentVariantTotal, "but found in map:",
-      //            check);
-      //      }
-
       var tmp = prevSizeMap;
       prevSizeMap = nextSizeMap;
       nextSizeMap = tmp;
@@ -140,13 +128,102 @@ public class P52NQueensII extends LeetCode {
     return currentVariantTotal;
   }
 
-  private static void addVariants(Map<Long, Integer> map, long key, int variants) {
-    map.put(key, map.getOrDefault(key, 0) + variants);
+  private static Pattern addPattern(int boardSize, Map<Long, Pattern> map, long key, int variants) {
+    var p = map.get(key);
+    if (p == null) {
+      p = new Pattern(boardSize, key);
+      pr("created new pattern for board size:", boardSize, "key:", key, INDENT, p);
+      map.put(key, p);
+    }
+    p.variants += variants;
+    return p;
   }
 
   private static int countQueens(long n) {
     // We only need to look at the first N bits
     return Integer.bitCount(((int) n) & ((1 << N) - 1));
+  }
+
+  /**
+   * A pattern is a bit pattern that indicates which rows, columns, and
+   * diagonals are 'used'. Multiple boards can share the same pattern.
+   */
+  private static class Pattern {
+    Pattern(int boardSize, long key) {
+      this.boardSize = boardSize;
+      this.key = key;
+    }
+
+    long key;
+    int variants;
+    // The boards that share this pattern
+    List<Board> boards = new ArrayList<>();
+    int boardSize;
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("Pattern");
+      sb.append(" queens:");
+      sb.append(countQueens(key));
+      sb.append(" variants:");
+      sb.append(variants);
+      sb.append("# boards:");
+      sb.append(boards.size());
+      for (var b : boards) {
+        sb.append("\n");
+
+        int lastMoveY = -1;
+
+        var cells = new boolean[boardSize][boardSize];
+        var b2 = b;
+        while (b2.prev != null) {
+          if (b2.y >= boardSize || b2.x >= boardSize)
+            badState("illegal move for board of this size!");
+          if (lastMoveY < 0)
+            lastMoveY = b2.y;
+          cells[b2.y][b2.x] = true;
+          b2 = b2.prev;
+        }
+        sb.append("/");
+        for (int x = 0; x < boardSize; x++)
+          sb.append("---");
+        sb.append("\\\n");
+
+        for (int y = boardSize - 1; y >= 0; y--) {
+          sb.append('|');
+          for (int x = 0; x < boardSize; x++) {
+            sb.append(cells[y][x] ? (lastMoveY == y ? "(X)" : " X ") : " : ");
+          }
+          sb.append("|\n");
+        }
+        sb.append("\\");
+        for (int x = 0; x < boardSize; x++)
+          sb.append("---");
+        sb.append("/\n");
+
+      }
+      return sb.toString();
+    }
+
+  }
+
+  private static class Board {
+    //    Board(Pattern pattern) {
+    //      this.pattern = pattern;
+    //    }
+
+    int x, y; // Last piece added (if prev != null)
+    Board prev; // previous board position
+    //    Pattern pattern;
+
+    Board makeMove(int x, int y, Pattern newPattern) {
+      var b = new Board();
+      b.x = x;
+      b.y = y;
+      b.prev = this;
+      return b;
+    }
+
   }
 
   private static final int N = 5; // 10;
@@ -169,4 +246,5 @@ public class P52NQueensII extends LeetCode {
 
     }
   }
+
 }
