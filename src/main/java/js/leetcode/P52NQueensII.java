@@ -59,23 +59,8 @@ public class P52NQueensII extends LeetCode {
         int variants = pattern.variants;
         db(VERT_SP, pattern);
 
-        // Try to place an additional queen to get solutions for m queens
-
-        //        // If this is already an m-1 solution, store it
-        //        if (queenCount == m - 1) {
-        //          db("......already an m-1 solution, storing");
-        //          checkState(!nextSizeMap.containsKey(used));
-        //          // For logging purposes, bump board size up
-        //          pattern.height = m;
-        //          nextSizeMap.put(used, pattern);
-        //        }
-
-        for (int i = 0; i < n; i++) {
-          int x = i;
-          int y = m - 1;
-
-          db("i:", i, "x:", x, "y:", y);
-
+        int y = m - 1;
+        for (int x = 0; x < n; x++) {
           var sf = squareFlags[y][x];
           if ((sf & used) == 0) {
             var queenCountNew = queenCount + 1;
@@ -97,20 +82,18 @@ public class P52NQueensII extends LeetCode {
             // See if we can place an additional queen for an m solution
             if (queenCountNew + 1 == m) {
 
-              for (int i2 = i + 1; i2 < n; i2++) {
-                x = i2;
-                y = m - 1;
+              for (int x2 = x+1; x2<n; x2++) {
 
-                sf = squareFlags[y][x];
+                sf = squareFlags[y][x2];
                 if ((sf & usedNew) == 0) {
                   var usedNew2 = usedNew | sf;
 
-                  db("......found slot for queen #" + (queenCountNew + 1), "x:", x, "y:", y, "variants now:",
+                  db("......found slot for queen #" + (queenCountNew + 1), "x:", x2, "y:", y, "variants now:",
                       variants);
 
                   var pat3 = addPattern(n, m, nextSizeMap, usedNew2, pat2.variants);
                   for (var b : pat2.boards) {
-                    var b2 = b.makeMove(x, y, pat3);
+                    var b2 = b.makeMove(x2, y, pat3);
                     pat3.boards.add(b2);
                   }
                   db(INDENT, pat3);
