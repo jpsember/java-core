@@ -58,6 +58,7 @@ public class P52NQueensII extends LeetCode {
     for (int height = 1; height <= n; height++) {
       solutionCount = 0;
       var row = squareFlags[height - 1];
+      pr(prevHeightMap.size());
       nextHeightMap.clear();
       for (var ent : prevHeightMap.entrySet()) {
         long rowUsageFlags = ent.getKey();
@@ -74,7 +75,6 @@ public class P52NQueensII extends LeetCode {
       var tmp = prevHeightMap;
       prevHeightMap = nextHeightMap;
       nextHeightMap = tmp;
-
       x0 = 0;
       x1 = n;
     }

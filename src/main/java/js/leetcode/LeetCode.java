@@ -8,6 +8,7 @@ import java.util.Random;
 
 import js.data.DataUtil;
 import js.json.JSList;
+import js.json.JSObject;
 
 public abstract class LeetCode {
 
@@ -20,6 +21,10 @@ public abstract class LeetCode {
       expected = "<null>";
 
     checkState(result.equals(expected), "Got result:", INDENT, result, CR, "but expected:", CR, expected);
+  }
+
+  public void verify(JSObject result, JSObject expected) {
+    verify(result.prettyPrint(), expected.prettyPrint());
   }
 
   public void verify(int[] result, int[] expected) {
