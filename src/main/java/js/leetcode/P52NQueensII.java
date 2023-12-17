@@ -33,6 +33,21 @@ public class P52NQueensII extends LeetCode {
   }
 
   public int totalNQueens(int n) {
+    // Prepare grid indicating how a queen placed on a square affects the row usage
+    long[][] squareFlags = new long[n][n];
+    for (int y = 0; y < n; y++) {
+      var row = squareFlags[y];
+      for (int x = 0; x < n; x++) {
+        final int OFF_COL = 0;
+        final int OFF_ROW = OFF_COL + n;
+        final int OFF_DIAG1 = OFF_ROW + n;
+        final int OFF_DIAG2 = OFF_DIAG1 + n * 2 - 1;
+        row[x] = (1L << (OFF_COL + x)) //
+            | (1L << (OFF_ROW + y)) //
+            | (1L << (OFF_DIAG1 + x + y)) //
+            | (1L << (OFF_DIAG2 + x - y + n - 1));
+      }
+    }
     Map<Long, Integer> prevHeightMap = new HashMap<>();
     Map<Long, Integer> nextHeightMap = new HashMap<>();
 
@@ -43,46 +58,24 @@ public class P52NQueensII extends LeetCode {
       solutionCount = 0;
       nextHeightMap.clear();
       for (var ent : prevHeightMap.entrySet()) {
-        long used = ent.getKey();
-        int queenCount = Integer.bitCount(((int) used) & ((1 << N) - 1));
-        var variants = ent.getValue();
+        long rowUsageFlags = ent.getKey();
+        int queenCount = Integer.bitCount(((int) rowUsageFlags) & ((1 << n) - 1));
+        var solutions = ent.getValue();
         for (int x = 0; x < n; x++) {
-          var sf = squareFlags[height - 1][x];
-          if ((sf & used) == 0) {
-            var usedNew = used | sf;
-            nextHeightMap.put(usedNew, nextHeightMap.getOrDefault(usedNew, 0) + variants);
+          var candidateMoveFlags = squareFlags[height - 1][x];
+          if ((candidateMoveFlags & rowUsageFlags) == 0) {
+            var newUsageFlags = rowUsageFlags | candidateMoveFlags;
+            nextHeightMap.put(newUsageFlags, nextHeightMap.getOrDefault(newUsageFlags, 0) + solutions);
             if (queenCount + 1 == height)
-              solutionCount += variants;
+              solutionCount += solutions;
           }
         }
       }
       var tmp = prevHeightMap;
       prevHeightMap = nextHeightMap;
       nextHeightMap = tmp;
-      db("total for n=", height, "is", solutionCount);
     }
     return solutionCount;
-  }
-
-  private static final int N = 10;
-
-  private static final long[][] squareFlags = new long[N][N];
-
-  static {
-    for (int y = 0; y < N; y++) {
-      var row = squareFlags[y];
-      for (int x = 0; x < N; x++) {
-        final int OFF_COL = 0;
-        final int OFF_ROW = OFF_COL + N;
-        final int OFF_DIAG1 = OFF_ROW + N;
-        final int OFF_DIAG2 = OFF_DIAG1 + N * 2 - 1;
-        row[x] = (1L << (OFF_COL + x)) //
-            | (1L << (OFF_ROW + y)) //
-            | (1L << (OFF_DIAG1 + x + y)) //
-            | (1L << (OFF_DIAG2 + x - y + N - 1));
-      }
-
-    }
   }
 
 }
