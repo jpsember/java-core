@@ -37,6 +37,15 @@ public abstract class LeetCode {
     return s;
   }
 
+  public static String bitStrFull(long val) {
+    var s = "";
+    for (int i = 0; i <= 63; i++) {
+      long bit = 1L << i;
+      s = (((val & bit) != 0) ? "1" : "0") + s;
+    }
+    return s;
+  }
+
   public static int[] extractNums(String s) {
     var cs = "[],";
     for (int i = 0; i < cs.length(); i++) {
