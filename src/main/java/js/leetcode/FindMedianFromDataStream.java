@@ -122,9 +122,6 @@ public class FindMedianFromDataStream extends LeetCode {
 
   class MedianFinder {
 
-    //    private static final int MIN_VALUE = -100001;
-    //    private static final int MAX_VALUE = 100001;
-
     public MedianFinder() {
       midBucket = new Bucket(true);
       lowBucket = new Bucket(false);
@@ -133,7 +130,6 @@ public class FindMedianFromDataStream extends LeetCode {
 
     public void addNum(int num) {
       db(VERT_SP, "addNum:", num, "pop:", population);
-
       // Determine which bucket this will go into
       Bucket b = midBucket;
       if (population >= BUCKET_SIZE_CENTRAL) {
@@ -144,14 +140,8 @@ public class FindMedianFromDataStream extends LeetCode {
         else if (higher)
           b = highBucket;
       }
-
       b.add(num);
-
       population++;
-
-      //      if (b == lowBucket)
-      //        medianOrd++;
-
       db("after adding:", INDENT, this);
     }
 
@@ -159,65 +149,33 @@ public class FindMedianFromDataStream extends LeetCode {
       int leftOrder = (population - 1) >> 1;
       boolean odd = (population & 1) != 0;
       int rightOrder = leftOrder + (odd ? 0 : 1);
-
       db("findMedian pop:", population, "lowSize:", lowBucket.size(), "mid:", midBucket.size(), "high:",
           highBucket.size());
 
       // If the left and right orders are not within the mid bucket, rejigger them
-      var medianOrd = lowBucket.size();
-      if (leftOrder < medianOrd) {
+      if (leftOrder < lowBucket.size())
         shiftMedianLow();
-        medianOrd = lowBucket.size();
-      } else if (rightOrder >= medianOrd + midBucket.size()) {
+      else if (rightOrder >= lowBucket.size() + midBucket.size())
         shiftMedianHigh();
-        medianOrd = lowBucket.size();
-      }
+
+      var medianOrd = lowBucket.size();
       int leftValue = midBucket.array[leftOrder - medianOrd];
       int rightValue = midBucket.array[rightOrder - medianOrd];
       var median = (leftValue + rightValue) / 2.0;
-      pr(INDENT, "median:", median);
+      db(INDENT, "median:", median);
       return median;
-      //      Bucket b = midBucket;
-      //      int offset = 0;
-      //      var lowSize = lowBucket.size();
-      //      if (leftOrder < lowSize) {
-      //        b = lowBucket;
-      //        db("...searching in low bucket");
-      //      } else {
-      //        offset += lowSize;
-      //        var midSize = midBucket.size();
-      //        if (rightOrder - offset >= midSize) {
-      //          offset += midSize;
-      //          b = highBucket;
-      //          db("...searching in high bucket");
-      //        }
-      //      }
-      //      return b.median(leftOrder - offset, rightOrder - offset);
-      //         
-
-      //      var leftValue = medianEnt.value;
-      //      // Get order of the left median value (which is equal to the right value if the population is odd)
-      //      var leftOrder = (population - 1) >> 1;
-      //
-      //      boolean odd = (population & 1) != 0;
-      //      var rightValue = leftValue;
-      //
-      //      int rightOrder = leftOrder + (odd ? 0 : 1);
-      //      if (rightOrder >= medianOrd + medianEnt.frequency)
-      //        rightValue = medianEnt.next.value;
-      //      return (leftValue + rightValue) / 2.0;
     }
 
     private void shiftMedianLow() {
-      // Try to move half the central bucket's worth of items upward,
+      // Try to move about half the central bucket's worth of items upward,
       // filling in space from the low bucket
-
       int SHIFT_COUNT = BUCKET_SIZE_CENTRAL / 2;
       checkState(lowBucket.size() >= SHIFT_COUNT);
       checkState(midBucket.size() >= SHIFT_COUNT);
 
       // We must sort the low bucket into order so we are getting the higher half
       Arrays.sort(lowBucket.array, 0, lowBucket.size());
+      db(VERT_SP, "shiftMedianLow, before:", INDENT, this);
 
       var newMidArray = new short[midBucket.array.length];
 
@@ -234,23 +192,21 @@ public class FindMedianFromDataStream extends LeetCode {
       System.arraycopy(midBucket.array, midBucket.size() - SHIFT_COUNT, highBucket.array, highBucket.size(),
           SHIFT_COUNT);
       highBucket.used += SHIFT_COUNT;
-
       midBucket.array = newMidArray;
       db("after shifting low:", INDENT, this);
     }
 
     private void shiftMedianHigh() {
-      db(VERT_SP, "shiftMedianHigh, before:", INDENT, this);
-
-      // Try to move half the central bucket's worth of items leftward,
+      // Try to move about half the central bucket's worth of items leftward,
       // filling in space from the high bucket
-
       int SHIFT_COUNT = BUCKET_SIZE_CENTRAL / 2;
       checkState(highBucket.size() >= SHIFT_COUNT);
       checkState(midBucket.size() >= SHIFT_COUNT, "midbucketsize is:", midBucket.size(), INDENT, this);
 
       // We must sort the high bucket into order so we are getting the higher half
       Arrays.sort(highBucket.array, 0, highBucket.size());
+
+      db(VERT_SP, "shiftMedianHigh, before:", INDENT, this);
 
       var newMidArray = new short[midBucket.size()];
 
@@ -270,7 +226,6 @@ public class FindMedianFromDataStream extends LeetCode {
 
       midBucket.array = newMidArray;
       db("after shifting high:", INDENT, this);
-      //      halt();
     }
 
     public JSMap toJson() {
@@ -288,7 +243,7 @@ public class FindMedianFromDataStream extends LeetCode {
       return toJson().prettyPrint();
     }
 
-    private static int BUCKET_SIZE_CENTRAL = 4; // Must be an even number
+    private static int BUCKET_SIZE_CENTRAL = 20; // Must be an even number
     private static int BUCKET_SIZE_EDGES = BUCKET_SIZE_CENTRAL * 4;
 
     private static class Bucket {
@@ -304,20 +259,13 @@ public class FindMedianFromDataStream extends LeetCode {
 
       public int add(int num) {
         ensureCapacity(used + 1);
-        //        if (used + 1 == array.length) {
-        //          var newArray = new short[array.length * 2];
-        //          System.arraycopy(array, 0, newArray, 0, used);
-        //          array = newArray;
-        //        }
         int slot = used;
         if (sorted) {
           int min = 0;
           int max = used;
-          pr("used:", used);
           while (min < max) {
             int q = (min + max) / 2;
             int qn = array[q];
-            pr("min:", min, "max:", max, "q:", q, "qn:", qn);
             if (qn == num) {
               min = q + 1;
               break;
@@ -325,9 +273,7 @@ public class FindMedianFromDataStream extends LeetCode {
               min = q + 1;
             else if (qn > num)
               max = q;
-            pr("min now:", min, "max:", max);
           }
-          pr("...storing in slot:", min);
           System.arraycopy(array, min, array, min + 1, used - min);
           slot = min;
         }
@@ -345,12 +291,10 @@ public class FindMedianFromDataStream extends LeetCode {
       }
 
       public int minVal() {
-        checkState(sorted && used != 0);
         return array[0];
       }
 
       public int maxVal() {
-        checkState(sorted && used != 0);
         return array[used - 1];
       }
 
@@ -375,12 +319,8 @@ public class FindMedianFromDataStream extends LeetCode {
     private Bucket lowBucket;
     private Bucket highBucket;
     private Bucket midBucket;
-
     // Number of numbers processed from data stream
     private int population;
-    // The (zero-based) index of the first occurrence of the median value in a sorted list
-    // of all the values
-    //  private int medianOrd;
   }
 
 }
