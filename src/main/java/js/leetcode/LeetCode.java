@@ -68,14 +68,18 @@ public abstract class LeetCode {
     return Arrays.copyOfRange(array, min, max);
   }
 
-  public void checkInf(int max) {
-    if (mInfiniteLoop++ >= max) {
+  public static void checkInf(int max) {
+    if (sInifiniteLoop++ >= max) {
       badState("infinite loop!");
     }
   }
 
-  public void checkInf() {
+  public static void checkInf() {
     checkInf(120);
+  }
+
+  public static void resetInf() {
+    sInifiniteLoop = 0;
   }
 
   public static void swap(int[] nums, int a, int b) {
@@ -97,7 +101,7 @@ public abstract class LeetCode {
 
   private Random mRandom;
 
-  private int mInfiniteLoop;
+  private static int sInifiniteLoop;
 
   public static void db(Object... messages) {
     pr(messages);
