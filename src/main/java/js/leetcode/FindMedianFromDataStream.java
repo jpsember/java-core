@@ -13,12 +13,15 @@ import js.json.JSObject;
 /**
  * The running time is in the bottom 20%.
  * 
- * An even simpler approach: keep the first n items sorted, and as we add items
- * beyond that, we move the median index forward or backward by a half step
- * depending upon whether the new item is below or above this sorted 'window'.
- * 
- * When the pointer moves out of the window, we sort the whole array and copy
- * the center as the new median window.
+ * Now using an approach where we add values to a bucket, unsorted, until a
+ * median request happens. At that point, if there are multiple buckets, we walk
+ * from the left and right sides of the bucket list, "chopping" off buckets
+ * since a 'low' bucket will be balanced by a 'high' bucket of the same size.
+ * When both cursors reach the same bucket, then we either split that bucket (if
+ * its size is large) or we sort the bucket and extract the median (with special
+ * care for the cursor positions with which we arrived at that bucket). A
+ * special case is made for the cursors pointing to values that are adjacent but
+ * are split between two buckets.
  *
  */
 public class FindMedianFromDataStream extends LeetCode {
@@ -182,7 +185,6 @@ public class FindMedianFromDataStream extends LeetCode {
       }
 
       b.add(num);
-      population++;
     }
 
     private Bucket buck(int index) {
@@ -190,14 +192,12 @@ public class FindMedianFromDataStream extends LeetCode {
     }
 
     public double findMedian() {
-      //db("findMedian", INDENT, this);
       var cleft = 0;
       int pleft = 0;
       var cright = buckets.size() - 1;
       int pright = buck(cright).size() - 1;
       Double median = null;
       while (median == null) {
-        //db(INDENT, "cleft:", cleft, "(" + pleft + ") cright:", cright, "(" + pright + ")");
         if (cleft == cright) {
           if (split(cleft)) {
             break;
@@ -232,9 +232,16 @@ public class FindMedianFromDataStream extends LeetCode {
       return median;
     }
 
+    private static final int DEFAULT_BUCKET_SIZE = 800;
+
+    /**
+     * Determine if a bucket should be split. If its size is small, or its
+     * values are all the same, then return false. Otherwise, split it into two
+     * and return true.
+     */
     private boolean split(int bucketIndex) {
       var b = buck(bucketIndex);
-      if (b.size() <= 10 || b.minVal() == b.maxVal())
+      if (b.size() <= DEFAULT_BUCKET_SIZE || b.minVal() == b.maxVal())
         return false;
       var b1 = new Bucket();
       var b2 = new Bucket();
@@ -279,14 +286,12 @@ public class FindMedianFromDataStream extends LeetCode {
       b2.used = s2;
       buckets.set(bucketIndex, b1);
       buckets.add(bucketIndex + 1, b2);
-      //db("split bucket #", bucketIndex, "count now:", buckets.size(), INDENT, this);
       return true;
     }
 
     public JSMap toJson() {
       var m = map();
       m.put("", "MedianFinder");
-      m.put("pop", population);
       int i = INIT_INDEX;
       for (var b : buckets) {
         i++;
@@ -303,7 +308,7 @@ public class FindMedianFromDataStream extends LeetCode {
     private static class Bucket {
 
       public Bucket() {
-        this.array = new int[200];
+        this.array = new int[DEFAULT_BUCKET_SIZE];
       }
 
       public int size() {
@@ -376,8 +381,6 @@ public class FindMedianFromDataStream extends LeetCode {
     }
 
     private List<Bucket> buckets = new ArrayList<>();
-    // Number of numbers processed from data stream
-    private int population;
   }
 
 }
