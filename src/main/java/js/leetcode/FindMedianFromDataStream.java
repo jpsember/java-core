@@ -120,6 +120,7 @@ public class FindMedianFromDataStream extends LeetCode {
     }
     pr(resultList);
     verify(resultList, expList);
+    db("m:", INDENT, m);
   }
 
   class SlowMedianFinder extends MedianFinder {
