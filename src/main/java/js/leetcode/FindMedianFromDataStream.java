@@ -76,6 +76,10 @@ public class FindMedianFromDataStream extends LeetCode {
     verify(resultList, expList);
   }
 
+  public static JSList dz(short[] array) {
+    return JSList.with(array);
+  }
+
   class SlowMedianFinder extends MedianFinder {
 
     public SlowMedianFinder() {
@@ -108,57 +112,67 @@ public class FindMedianFromDataStream extends LeetCode {
     private static final int MAX_VALUE = 100001;
 
     public MedianFinder() {
+      //      lowBucket = new Bucket(false);
+      //      highBucket = new Bucket(false);
+      //      midBucket = new Bucket(true);
+
+      midBucket = new Bucket(true);
       lowBucket = new Bucket(false);
       highBucket = new Bucket(false);
-      midBucket = new Bucket(true);
-
+//      var b = new Bucket(true);
+//      b.sorted = true;
+//      for (int i = 7; i >= 3; i--) {
+//        for (int j = 0; j < 10; j++)
+//          b.add(i);
+//      }
+//      pr(JSList.with(b.array));
     }
 
     public void addNum(int num) {
       db(VERT_SP, "addNum:", num, "pop:", population);
-
-      // Determine which bucket this will go into
-
-      if (lowBucket.size() != 0 && num <= lowBucket.maxValue) {
-        lowBucket.add(num);
-      } else if (highBucket.size() != 0 && num >= highBucket.minValue) {
-        highBucket.add(num);
-      } else {
-        midBucket.add(num);
-      }
-
-      population++;
-
-      todo("adjust median stuff");
-      if (num < midBucket.minValue)
-        medianOrd++;
-
-      db(this);
+      //
+      //      // Determine which bucket this will go into
+      //
+      //      if (lowBucket.size() != 0 && num <= lowBucket.maxValue) {
+      //        lowBucket.add(num);
+      //      } else if (highBucket.size() != 0 && num >= highBucket.minValue) {
+      //        highBucket.add(num);
+      //      } else {
+      //        midBucket.add(num);
+      //      }
+      //
+      //      population++;
+      //
+      //      todo("adjust median stuff");
+      //      if (num < midBucket.minValue)
+      //        medianOrd++;
+      //
+      //      db(this);
     }
 
     public double findMedian() {
-      int leftOrder = (population - 1) >> 1;
-      boolean odd = (population & 1) != 0;
-      int rightOrder = leftOrder + (odd ? 0 : 1);
-
-      db("findMedian pop:", population, "lowSize:", lowBucket.size(), "mid:", midBucket.size(), "high:",
-          highBucket.size());
-      Bucket b = midBucket;
-      int offset = 0;
-      var lowSize = lowBucket.size();
-      if (leftOrder < lowSize) {
-        b = lowBucket;
-        db("...searching in low bucket");
-      } else {
-        offset += lowSize;
-        var midSize = midBucket.size();
-        if (rightOrder - offset >= midSize) {
-          offset += midSize;
-          b = highBucket;
-          db("...searching in high bucket");
-        }
-      }
-      return b.median(leftOrder - offset, rightOrder - offset);
+      //      int leftOrder = (population - 1) >> 1;
+      //      boolean odd = (population & 1) != 0;
+      //      int rightOrder = leftOrder + (odd ? 0 : 1);
+      //
+      //      db("findMedian pop:", population, "lowSize:", lowBucket.size(), "mid:", midBucket.size(), "high:",
+      //          highBucket.size());
+      //      Bucket b = midBucket;
+      //      int offset = 0;
+      //      var lowSize = lowBucket.size();
+      //      if (leftOrder < lowSize) {
+      //        b = lowBucket;
+      //        db("...searching in low bucket");
+      //      } else {
+      //        offset += lowSize;
+      //        var midSize = midBucket.size();
+      //        if (rightOrder - offset >= midSize) {
+      //          offset += midSize;
+      //          b = highBucket;
+      //          db("...searching in high bucket");
+      //        }
+      //      }
+      //      return b.median(leftOrder - offset, rightOrder - offset);
       //         
 
       //      var leftValue = medianEnt.value;
@@ -172,6 +186,7 @@ public class FindMedianFromDataStream extends LeetCode {
       //      if (rightOrder >= medianOrd + medianEnt.frequency)
       //        rightValue = medianEnt.next.value;
       //      return (leftValue + rightValue) / 2.0;
+      return -1;
     }
 
     @Override
@@ -183,64 +198,48 @@ public class FindMedianFromDataStream extends LeetCode {
     }
 
     private static class Bucket {
-
-      Bucket(boolean center) {
-        this.center = center;
-        entries = new HashMap<Integer, Ent>();
+      public Bucket(boolean sorted) {
+        this.sorted = sorted;
+        this.array = new short[sorted ? 50 : 200];
       }
 
-      double median(int leftIndex, int rightIndex) {
-        db("median, leftind:", leftIndex, "rt:", rightIndex, "size:", size());
-        var sorted = new ArrayList<Ent>(entries.values());
-        sorted.sort((a, b) -> Integer.compare(a.value, b.value));
-        db("sorted:", sorted);
-        var currIndex = 0;
-        int cursor = 0;
-        var ent = sorted.get(cursor);
-        while (currIndex + ent.frequency <= leftIndex) {
-          currIndex += ent.frequency;
-          ent = sorted.get(++cursor);
+      public int add(int num) {
+        if (used + 1 == array.length) {
+          var newArray = new short[array.length * 2];
+          System.arraycopy(array, 0, newArray, 0, used);
+          array = newArray;
         }
-        var left = ent;
-        var right = ent;
-        if (rightIndex >= currIndex + ent.frequency) {
-          right = sorted.get(++cursor);
-        }
-        return (left.value + right.value) / 2.0;
-      }
-
-      boolean center;
-
-      Map<Integer, Ent> entries;
-
-      //      List<Ent> entries = new ArrayList<>();
-      // boolean sorted;
-      int minValue = MIN_VALUE;
-      int maxValue = MAX_VALUE;
-
-      int size() {
-        return entries.size();
-      }
-
-      void add(int num) {
-        var ent = entries.get(num);
-        if (ent == null) {
-          if (size() == 0) {
-            minValue = num;
-            maxValue = num;
-          } else {
-            minValue = Math.min(minValue, num);
-            maxValue = Math.max(maxValue, num);
+        int slot = used;
+        if (sorted) {
+          int min = 0;
+          int max = used;
+          pr("used:", used);
+          while (min < max) {
+            int q = (min + max) / 2;
+            int qn = array[q];
+            pr("min:", min, "max:", max, "q:", q, "qn:", qn);
+            if (qn == num)
+              break;
+            if (qn > num)
+              max = q;
+            else
+              min = q + 1;
           }
-          ent = new Ent(num);
-          entries.put(num, ent);
-          todo("trigger a sort, redistribution to high/low");
-          db("...added entry:", ent);
-          //  sorted = false;
+          pr("before copy:", dz(array));
+          System.arraycopy(array, min, array, min + 1, used - min);
+          pr("after copy:", dz(array));
+          slot = min;
         }
-        ent.frequency++;
-        db("...ent now:", ent);
+        used++;
+        array[slot] = (short) num;
+        pr("added:", num, "to slot:", slot, dz(array));
+        return slot;
       }
+
+      private boolean sorted;
+      private int used;
+      private short[] array;
+
     }
 
     private static class Ent {
