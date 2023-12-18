@@ -206,9 +206,7 @@ public class FindMedianFromDataStream extends LeetCode {
         } else {
           var bleft = buck(cleft);
           var bright = buck(cright);
-
           var dist = Math.min(bleft.size() - pleft, pright + 1);
-
           pleft += dist;
           if (pleft == bleft.size()) {
             cleft++;
