@@ -3,11 +3,19 @@ package js.leetcode;
 import static js.base.Tools.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.TreeMap;
+import java.util.Map;
 
 import js.json.JSList;
 
+/**
+ * The running time is in the bottom 20%.
+ * 
+ * Try another approach: a small, sorted central bucket that contains the
+ * median, and two unsorted buckets on either side
+ *
+ */
 public class FindMedianFromDataStream extends LeetCode {
 
   public static void main(String[] args) {
@@ -96,108 +104,74 @@ public class FindMedianFromDataStream extends LeetCode {
 
   class MedianFinder {
 
+    private static final int MIN_VALUE = -100001;
+    private static final int MAX_VALUE = 100001;
+
     public MedianFinder() {
-      mMap = new TreeMap<>();
-      var minEnt = new Ent(-100001);
-      var maxEnt = new Ent(100001);
-      join(minEnt, maxEnt);
-      mMap.put(minEnt.value, minEnt);
-      mMap.put(maxEnt.value, maxEnt);
+      lowBucket = new Bucket(false);
+      highBucket = new Bucket(false);
+      midBucket = new Bucket(true);
+
     }
 
     public void addNum(int num) {
       db(VERT_SP, "addNum:", num, "pop:", population);
 
-      // Locate map entry that contains this number, or the insertion position
-      // if it is not in the map.
+      // Determine which bucket this will go into
 
-      // This is probably the slowest step... as a heuristic, search from the median entry
-      // for n steps before giving up and querying the tree
-
-      var ent = medianEnt;
-      if (ent != null) {
-        final int maxSteps = 12;
-        for (int i = 0; i < maxSteps; i++) {
-          if (ent.value == num)
-            break;
-          if (ent.value > num) {
-            if (ent.prev.value < num) {
-              ent = null;
-              break;
-            }
-            ent = ent.prev;
-          } else {
-            if (ent.next.value > num) {
-              ent = null;
-              break;
-            }
-            ent = ent.next;
-          }
-        }
-      }
-      if (ent != null) {
-        if (ent.value == num) {
-          pr(DASHES, "median heuristic worked:", ent);
-          ent = null;
-        }
+      if (lowBucket.size() != 0 && num <= lowBucket.maxValue) {
+        lowBucket.add(num);
+      } else if (highBucket.size() != 0 && num >= highBucket.minValue) {
+        highBucket.add(num);
+      } else {
+        midBucket.add(num);
       }
 
-      // If we ran out of steps without finding the target, abandon the heuristic
-      if (ent != null && ent.value != num)
-        ent = null;
-
-      if (ent == null) {
-        var tail = mMap.tailMap(num);
-        ent = tail.get(tail.firstKey());
-        if (ent.value != num) {
-          var newEnt = new Ent(num);
-          join(ent.prev, newEnt);
-          join(newEnt, ent);
-          ent = newEnt;
-          mMap.put(num, ent);
-        }
-      }
-      ent.frequency++;
-      if (medianEnt == null) {
-        medianEnt = ent;
-        medianOrd = 0;
-      }
       population++;
 
-      // Adjust median
-      if (num < medianEnt.value)
+      todo("adjust median stuff");
+      if (num < midBucket.minValue)
         medianOrd++;
 
-      // Get order of the left median value (which is equal to the right value if the population is odd)
-      int mi = (population - 1) >> 1;
-      if (mi < medianOrd) {
-        db("...moving median entry LEFT, since pop is now:", population, "and old median order is:",
-            medianOrd);
-        var n = medianEnt.prev;
-        medianOrd -= n.frequency;
-        medianEnt = n;
-      } else if (mi >= medianOrd + medianEnt.frequency) {
-        db("...moving median entry RIGHT, since pop is now:", population, "old median order is:", medianOrd,
-            "median", medianEnt);
-        medianOrd += medianEnt.frequency;
-        var n = medianEnt.next;
-        medianEnt = n;
-      }
       db(this);
     }
 
     public double findMedian() {
-      var leftValue = medianEnt.value;
-      // Get order of the left median value (which is equal to the right value if the population is odd)
-      var leftOrder = (population - 1) >> 1;
-
+      int leftOrder = (population - 1) >> 1;
       boolean odd = (population & 1) != 0;
-      var rightValue = leftValue;
-
       int rightOrder = leftOrder + (odd ? 0 : 1);
-      if (rightOrder >= medianOrd + medianEnt.frequency)
-        rightValue = medianEnt.next.value;
-      return (leftValue + rightValue) / 2.0;
+
+      db("findMedian pop:", population, "lowSize:", lowBucket.size(), "mid:", midBucket.size(), "high:",
+          highBucket.size());
+      Bucket b = midBucket;
+      int offset = 0;
+      var lowSize = lowBucket.size();
+      if (leftOrder < lowSize) {
+        b = lowBucket;
+        db("...searching in low bucket");
+      } else {
+        offset += lowSize;
+        var midSize = midBucket.size();
+        if (rightOrder - offset >= midSize) {
+          offset += midSize;
+          b = highBucket;
+          db("...searching in high bucket");
+        }
+      }
+      return b.median(leftOrder - offset, rightOrder - offset);
+      //         
+
+      //      var leftValue = medianEnt.value;
+      //      // Get order of the left median value (which is equal to the right value if the population is odd)
+      //      var leftOrder = (population - 1) >> 1;
+      //
+      //      boolean odd = (population & 1) != 0;
+      //      var rightValue = leftValue;
+      //
+      //      int rightOrder = leftOrder + (odd ? 0 : 1);
+      //      if (rightOrder >= medianOrd + medianEnt.frequency)
+      //        rightValue = medianEnt.next.value;
+      //      return (leftValue + rightValue) / 2.0;
     }
 
     @Override
@@ -205,27 +179,68 @@ public class FindMedianFromDataStream extends LeetCode {
       var m = map();
       m.put("", "MedianFinder");
       m.put("pop", population);
-      var ls = list();
-      if (medianEnt != null) {
-        m.put("median entry", medianEnt.toString());
-        var e = medianEnt;
-        while (e.prev != null)
-          e = e.prev;
-        while (true) {
-          if (!(e.prev == null || e.next == null))
-            ls.add(e.toString());
-          if (e.next == null)
-            break;
-          checkState(e.next.prev == e);
-          e = e.next;
-        }
-      }
-      if (population != 0) {
-        m.put("median", findMedian());
-        m.put("median ord", medianOrd);
-      }
-      m.put("entries", ls);
       return m.prettyPrint();
+    }
+
+    private static class Bucket {
+
+      Bucket(boolean center) {
+        this.center = center;
+        entries = new HashMap<Integer, Ent>();
+      }
+
+      double median(int leftIndex, int rightIndex) {
+        db("median, leftind:", leftIndex, "rt:", rightIndex, "size:", size());
+        var sorted = new ArrayList<Ent>(entries.values());
+        sorted.sort((a, b) -> Integer.compare(a.value, b.value));
+        db("sorted:", sorted);
+        var currIndex = 0;
+        int cursor = 0;
+        var ent = sorted.get(cursor);
+        while (currIndex + ent.frequency <= leftIndex) {
+          currIndex += ent.frequency;
+          ent = sorted.get(++cursor);
+        }
+        var left = ent;
+        var right = ent;
+        if (rightIndex >= currIndex + ent.frequency) {
+          right = sorted.get(++cursor);
+        }
+        return (left.value + right.value) / 2.0;
+      }
+
+      boolean center;
+
+      Map<Integer, Ent> entries;
+
+      //      List<Ent> entries = new ArrayList<>();
+      // boolean sorted;
+      int minValue = MIN_VALUE;
+      int maxValue = MAX_VALUE;
+
+      int size() {
+        return entries.size();
+      }
+
+      void add(int num) {
+        var ent = entries.get(num);
+        if (ent == null) {
+          if (size() == 0) {
+            minValue = num;
+            maxValue = num;
+          } else {
+            minValue = Math.min(minValue, num);
+            maxValue = Math.max(maxValue, num);
+          }
+          ent = new Ent(num);
+          entries.put(num, ent);
+          todo("trigger a sort, redistribution to high/low");
+          db("...added entry:", ent);
+          //  sorted = false;
+        }
+        ent.frequency++;
+        db("...ent now:", ent);
+      }
     }
 
     private static class Ent {
@@ -235,8 +250,6 @@ public class FindMedianFromDataStream extends LeetCode {
 
       int value;
       int frequency;
-      Ent prev;
-      Ent next;
 
       @Override
       public String toString() {
@@ -247,17 +260,12 @@ public class FindMedianFromDataStream extends LeetCode {
       }
     }
 
-    private Ent join(Ent a, Ent b) {
-      a.next = b;
-      b.prev = a;
-      return b;
-    }
+    private Bucket lowBucket;
+    private Bucket highBucket;
+    private Bucket midBucket;
 
-    private TreeMap<Integer, Ent> mMap;
     // Number of numbers processed from data stream
     private int population;
-    // Ent containing the median value
-    private Ent medianEnt;
     // The (zero-based) index of the first occurrence of the median value in a sorted list
     // of all the values
     private int medianOrd;
