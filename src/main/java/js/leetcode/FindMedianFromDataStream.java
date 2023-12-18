@@ -154,7 +154,6 @@ public class FindMedianFromDataStream extends LeetCode {
     }
 
     public void addNum(int num) {
-      //db(VERT_SP, "addNum:", num, "pop:", population);
       Bucket b = null;
       if (buckets.isEmpty()) {
         b = new Bucket();
@@ -183,7 +182,6 @@ public class FindMedianFromDataStream extends LeetCode {
 
       b.add(num);
       population++;
-      // db("after adding:", INDENT, this);
     }
 
     private Bucket buck(int index) {
@@ -193,40 +191,22 @@ public class FindMedianFromDataStream extends LeetCode {
     public double findMedian() {
       //db("findMedian", INDENT, this);
       var cleft = 0;
-      int pleft = 0; // buck(cleft).size();
+      int pleft = 0;
       var cright = buckets.size() - 1;
       int pright = buck(cright).size() - 1;
       Double median = null;
-
       while (median == null) {
         //db(INDENT, "cleft:", cleft, "(" + pleft + ") cright:", cright, "(" + pright + ")");
         if (cleft == cright) {
           if (split(cleft)) {
-            //db("...split cleft");
             break;
           }
-
           median = buck(cleft).median(pleft, pright);
-         // db("...found median from cleft:", median);
-          //        } else if (pleft == pright && cright == cleft + 1) {
-          //          db("median straddles bucket");
-          //          // median straddles bucket
-          //          // If either bucket is 'splittable', do so and repeat
-          //          if (split(cleft)) {
-          //            db("...split left");
-          //            break;
-          //          } else if (split(cright)) {
-          //            db("...split right");
-          //            break;
-          //          }
-          //          median = (buck(cleft).maxVal() + buck(cright).minVal()) / 2.0;
-          //          db("...
         } else {
           var bleft = buck(cleft);
           var bright = buck(cright);
 
           var dist = Math.min(bleft.size() - pleft, pright + 1);
-          //db("moving both by:", dist);
 
           pleft += dist;
           if (pleft == bleft.size()) {
@@ -242,17 +222,12 @@ public class FindMedianFromDataStream extends LeetCode {
           // If left has moved past the right, we can't subtract anything, the median straddles these two
           if (cleft > cright) {
             median = (bleft.maxVal() + bright.minVal()) / 2.0;
-            //db("median straddles the two:", median, INDENT, bleft, bright);
             break;
           }
-         // db("decr'd pops");
         }
       }
-      if (median == null) {
-        //db("...calling recursively");
+      if (median == null)
         median = findMedian();
-      }
-     // db("...returning:", median);
       return median;
     }
 
@@ -267,8 +242,6 @@ public class FindMedianFromDataStream extends LeetCode {
 
       int splitVal = (b.minVal() + b.maxVal()) / 2;
 
-      // int split = (int) b.median();
-      // pr("b.size:", b.size(), "split:", split);
       var a1 = b1.array;
       int s1 = 0;
       var a2 = b2.array;
@@ -355,12 +328,10 @@ public class FindMedianFromDataStream extends LeetCode {
       }
 
       public int minVal() {
-        checkState(used != 0);
         return min;
       }
 
       public int maxVal() {
-        checkState(used != 0);
         return max;
       }
 
@@ -375,7 +346,6 @@ public class FindMedianFromDataStream extends LeetCode {
         if (used != 0) {
           m.put(",min", minVal());
           m.put(".max", maxVal());
-
           if (used < 40)
             m.put("nums", JSList.with(Arrays.copyOfRange(array, 0, used)));
         }
@@ -391,19 +361,10 @@ public class FindMedianFromDataStream extends LeetCode {
 
       public double median(int li, int ri) {
         sort();
-       // pr("median, size:", size(), "li:", li, "ri:", ri);
-        // Median lies in this bucket
         int middle = (li + ri) / 2;
         int add = middle - li;
         li += add;
         ri -= add;
-      //  pr("middle:", middle, "add:", add, "li:", li, "ri:", ri);
-        //        int li = slot;
-        //        if (
-        //        int ri = slot >> 1;
-       // checkState(ri < used);
-       // pr("li:", li, "ri:", ri);
-       // pr(this);
         return (array[li] + array[ri]) / 2.0;
       }
 
