@@ -25,6 +25,26 @@ public class FindMedianFromDataStream extends LeetCode {
 
   public void run() {
 
+    if (true) {
+      var m = new MedianFinder();
+      m.addNum(20);
+      m.addNum(25);
+      for (int i = 0; i < 49000; i++) {
+        m.addNum(23);
+      }
+      pr("median:", m.findMedian());
+      return;
+    }
+
+    if (true) {
+      var m = new MedianFinder();
+      for (int i = 100000; i > 50000; i--) {
+        m.addNum(i);
+      }
+      pr("median:", m.findMedian());
+      return;
+    }
+
     if (false) {
       var m = new MedianFinder();
       for (int i = 0; i < 30; i++) {
@@ -244,13 +264,12 @@ public class FindMedianFromDataStream extends LeetCode {
     }
 
     private static int BUCKET_SIZE_CENTRAL = 20; // Must be an even number
-    private static int BUCKET_SIZE_EDGES = BUCKET_SIZE_CENTRAL * 4;
 
     private static class Bucket {
 
       public Bucket(boolean sorted) {
         this.sorted = sorted;
-        this.array = new short[sorted ? BUCKET_SIZE_CENTRAL : BUCKET_SIZE_EDGES];
+        this.array = new short[BUCKET_SIZE_CENTRAL * (sorted ? 1 : 4)];
       }
 
       public int size() {
