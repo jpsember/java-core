@@ -117,21 +117,86 @@ public class SerializeAndDeserializeBinaryTree extends LeetCode {
     }
   }
 
+  /**
+   * LeetCode tree serializer
+   */
+  public class CodecLC extends Codec {
+
+    public String serialize(TreeNode root) {
+      StringBuilder sb = new StringBuilder();
+      if (root == null) {
+        sb.append("null");
+      } else {
+        sb.append('[');
+        List<TreeNode> frontier = new ArrayList<>();
+        frontier.add(root);
+        int cursor = 0;
+        while (cursor < frontier.size()) {
+          //db("...cursor:", cursor, "string:", quote(sb.toString()));
+          var n = frontier.get(cursor++);
+          if (sb.length() > 1)
+            sb.append(',');
+          if (n == null)
+            sb.append("null");
+          else {
+            sb.append(n.val);
+            frontier.add(n.left);
+            frontier.add(n.right);
+          }
+        }
+        trimSuffix(sb, ",null");
+        sb.append(']');
+      }
+      return sb.toString();
+    }
+
+    public TreeNode deserialize(String data) {
+      cursor = 0;
+      text = data;
+      TreeNode result = null;
+      if (!readIf("null")) {
+        read('[');
+        List<Integer> values = new ArrayList<>();
+        while (!readIf(']')) {
+          //db("...remaining text:", quote(text.substring(cursor)));
+          Integer value = null;
+          if (!readIf("null")) {
+            int number = 0;
+            boolean neg = readIf('-');
+            int oldCursor = cursor;
+            while (true) {
+              int digit = peek() - '0';
+              if (digit < 0 || digit > 9)
+                break;
+              read();
+              number = number * 10 + digit;
+            }
+            checkState(cursor > oldCursor);
+            if (neg)
+              number = -number;
+            value = number;
+          }
+          readIf(',');
+          values.add(value);
+        }
+        result = constructTreeFromValues(values);
+      }
+      checkState(cursor == text.length(), "extra characters");
+      return result;
+    }
+  }
+
+  // ------------------------------------------------------------------
+
   public class Codec {
 
-    private static final String dig = "012345abcdefghijklmnopqrstuvwxyz";
-
-    // Encodes a tree to a single string.
     public String serialize(TreeNode root) {
-      db("serialize:", root);
-      List<TreeNode> frontier = new ArrayList<>();
-      frontier.add(root);
+      List<TreeNode> nodeQueue = new ArrayList<>();
+      nodeQueue.add(root);
       StringBuilder sb = new StringBuilder();
       int cursor = 0;
-      while (cursor < frontier.size()) {
-        db("...cursor:", cursor, "string:", quote(sb.toString()));
-        var n = frontier.get(cursor++);
-        db("...cursor:", cursor, "tree:", n);
+      while (cursor < nodeQueue.size()) {
+        var n = nodeQueue.get(cursor++);
         if (n == null) {
           sb.append(".");
         } else {
@@ -142,23 +207,55 @@ public class SerializeAndDeserializeBinaryTree extends LeetCode {
               x = -x;
             } else
               sb.append('+');
-
-            char dig1 = dig.charAt(x & 0x1f);
-            char dig2 = dig.charAt(x >> 5);
-            if (dig2 != '0')
-              sb.append(dig2);
+            char dig1 = (char) ((x & 0x1f) + ENCODE_DIGIT_VALUE);
+            var upper = x >> 5;
+            if (upper != 0)
+              sb.append((char) (upper + ENCODE_DIGIT_VALUE));
             sb.append(dig1);
           }
-          frontier.add(n.left);
-          frontier.add(n.right);
+          nodeQueue.add(n.left);
+          nodeQueue.add(n.right);
         }
       }
       trimSuffix(sb, ".");
       return sb.toString();
     }
 
-    protected int cursor;
-    protected String text;
+    public TreeNode deserialize(String data) {
+      cursor = 0;
+      text = data;
+
+      List<Integer> values = new ArrayList<>();
+      while (hasMore()) {
+        Integer value = null;
+        if (!readIf('.')) {
+          boolean neg = readIf('-');
+          if (!neg)
+            read('+');
+          int slot2 = read() - ENCODE_DIGIT_VALUE;
+          char p = peek();
+          int slot1 = p - ENCODE_DIGIT_VALUE;
+          if (slot1 >= 0)
+            read();
+          else {
+            slot1 = slot2;
+            slot2 = 0;
+          }
+          var val = (slot2 << 5) | slot1;
+          if (neg)
+            val = -val;
+          value = val;
+        }
+        values.add(value);
+      }
+      return constructTreeFromValues(values);
+    }
+
+    // We encode numbers as  ( '+' | '-' )  d [d]
+    //
+    // where d is a base 32 digit plus ASCII value '^'
+    //
+    private static final int ENCODE_DIGIT_VALUE = '^';
 
     protected final boolean hasMore() {
       return cursor < text.length();
@@ -198,63 +295,25 @@ public class SerializeAndDeserializeBinaryTree extends LeetCode {
       return false;
     }
 
-    // Decodes your encoded data to tree.
-    public TreeNode deserialize(String data) {
-      db("deserialize:", quote(data));
-      cursor = 0;
-      text = data;
-
-      List<Integer> values = new ArrayList<>();
-      while (hasMore()) {
-        db("...peek:", Character.toString(peek()));
-        Integer value = null;
-
-        if (!readIf('.')) {
-          boolean neg = readIf('-');
-          if (!neg)
-            read('+');
-
-          char d = read();
-          int slot2 = dig.indexOf(d);
-          checkState(slot2 >= 0);
-          char p = peek();
-          int slot1 = dig.indexOf(p);
-          if (slot1 >= 0)
-            read();
-          else {
-            slot1 = slot2;
-            slot2 = 0;
-          }
-          var val = (slot2 << 5) | slot1;
-          if (neg)
-            val = -val;
-          value = val;
-        }
-        db("...adding value:", value);
-        values.add(value);
-      }
-      return constructTreeFromValues(values);
-    }
-
     protected TreeNode constructTreeFromValues(List<Integer> values) {
       var treeQueue = new ArrayList<TreeNode>();
       int treeCursor = 0;
-      int cursor = 0;
-      var result = new TreeNode(values.get(cursor++), null, null);
+      int valueCursor = 0;
+      var result = new TreeNode(values.get(valueCursor++), null, null);
       treeQueue.add(result);
       while (treeCursor < treeQueue.size()) {
         var tree = treeQueue.get(treeCursor++);
         Integer val = null;
-        if (cursor < values.size())
-          val = values.get(cursor++);
+        if (valueCursor < values.size())
+          val = values.get(valueCursor++);
         if (val != null) {
           var child = new TreeNode(val, null, null);
           treeQueue.add(child);
           tree.left = child;
         }
         val = null;
-        if (cursor < values.size())
-          val = values.get(cursor++);
+        if (valueCursor < values.size())
+          val = values.get(valueCursor++);
         if (val != null) {
           var child = new TreeNode(val, null, null);
           treeQueue.add(child);
@@ -263,91 +322,21 @@ public class SerializeAndDeserializeBinaryTree extends LeetCode {
       }
       return result;
     }
-  }
 
-  private static void trimSuffix(StringBuilder sb, String suffix) {
-    while (true) {
-      int x = sb.length() - suffix.length();
-      if (x < 0)
-        break;
-      if (!sb.substring(x).equals(suffix))
-        break;
-      sb.setLength(x);
-    }
-  }
-
-  /**
-   * LeetCode tree serializer
-   */
-  public class CodecLC extends Codec {
-
-    public String serialize(TreeNode root) {
-      db("serialize:", root);
-      StringBuilder sb = new StringBuilder();
-      if (root == null) {
-        sb.append("null");
-      } else {
-        sb.append('[');
-        List<TreeNode> frontier = new ArrayList<>();
-        frontier.add(root);
-        int cursor = 0;
-        while (cursor < frontier.size()) {
-          db("...cursor:", cursor, "string:", quote(sb.toString()));
-          var n = frontier.get(cursor++);
-          if (sb.length() > 1)
-            sb.append(',');
-          if (n == null)
-            sb.append("null");
-          else {
-            sb.append(n.val);
-            frontier.add(n.left);
-            frontier.add(n.right);
-          }
-        }
-        trimSuffix(sb, ",null");
-        sb.append(']');
+    protected void trimSuffix(StringBuilder sb, String suffix) {
+      while (true) {
+        int x = sb.length() - suffix.length();
+        if (x < 0)
+          break;
+        if (!sb.substring(x).equals(suffix))
+          break;
+        sb.setLength(x);
       }
-      return sb.toString();
     }
 
-    // Decodes your encoded data to tree.
-    public TreeNode deserialize(String data) {
-      db("deserialize:", quote(data));
-      cursor = 0;
-      text = data;
-      TreeNode result = null;
-      if (!readIf("null")) {
-        read('[');
-        List<Integer> values = new ArrayList<>();
-        while (!readIf(']')) {
-          db("...remaining text:", quote(text.substring(cursor)));
-          Integer value = null;
-          if (!readIf("null")) {
-            int number = 0;
-            boolean neg = readIf('-');
-            int oldCursor = cursor;
-            while (true) {
-              int digit = peek() - '0';
-              if (digit < 0 || digit > 9)
-                break;
-              read();
-              number = number * 10 + digit;
-            }
-            checkState(cursor > oldCursor);
-            if (neg)
-              number = -number;
-            value = number;
-          }
-          readIf(',');
+    protected int cursor;
+    protected String text;
 
-          db("...adding value:", value);
-          values.add(value);
-        }
-        result = constructTreeFromValues(values);
-      }
-      checkState(cursor == text.length(), "extra characters");
-      return result;
-    }
   }
 
 }
