@@ -225,7 +225,7 @@ public class SerializeAndDeserializeBinaryTree extends LeetCode {
       cursor = 0;
       text = data;
 
-      List<Integer> values = new ArrayList<>();
+      List<Integer> values = new ArrayList<>(data.length());
       while (hasMore()) {
         Integer value = null;
         if (!readIf('.')) {
@@ -296,6 +296,8 @@ public class SerializeAndDeserializeBinaryTree extends LeetCode {
     }
 
     protected TreeNode constructTreeFromValues(List<Integer> values) {
+      if (values.isEmpty())
+        return null;
       var treeQueue = new ArrayList<TreeNode>(values.size());
       int treeCursor = 0;
       int cursor = 0;
