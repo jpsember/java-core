@@ -123,7 +123,7 @@ public class FindMedianFromDataStream extends LeetCode {
     }
     pr(resultList);
     verify(resultList, expList);
-    db("m:", INDENT, m);
+    //db("m:", INDENT, m);
   }
 
   class SlowMedianFinder extends MedianFinder {
@@ -154,9 +154,6 @@ public class FindMedianFromDataStream extends LeetCode {
 
   class MedianFinder {
 
-    public MedianFinder() {
-    }
-
     public void addNum(int num) {
       Bucket b = null;
       if (buckets.isEmpty()) {
@@ -183,7 +180,6 @@ public class FindMedianFromDataStream extends LeetCode {
           }
         }
       }
-
       b.add(num);
     }
 
@@ -320,7 +316,6 @@ public class FindMedianFromDataStream extends LeetCode {
           min = num;
         if (used == 1 || num > max)
           max = num;
-        sorted = false;
       }
 
       public void ensureCapacity(int cap) {
@@ -357,9 +352,29 @@ public class FindMedianFromDataStream extends LeetCode {
       }
 
       public void sort() {
-        if (!sorted) {
-          Arrays.sort(array, 0, used);
-          sorted = true;
+        if (sortedTo < used) {
+          var a = array;
+          // Sort the new items in the list
+          if (used - sortedTo > 1)
+            Arrays.sort(a, sortedTo, used);
+          if (sortedTo != 0) {
+            // Merge newly sorted items into previously sorted
+            int ca = sortedTo - 1;
+            int cb = used - 1;
+            while (ca >= 0 && ca != cb) {
+              var va = a[ca];
+              var vb = a[cb];
+              if (va > vb) {
+                a[cb] = va;
+                a[ca] = vb;
+                ca--;
+                cb--;
+              } else {
+                cb--;
+              }
+            }
+          }
+          sortedTo = used;
         }
       }
 
@@ -375,7 +390,7 @@ public class FindMedianFromDataStream extends LeetCode {
       private int used;
       private int[] array;
       private int min, max;
-      private boolean sorted;
+      private int sortedTo;
     }
 
     private List<Bucket> buckets = new ArrayList<>();
