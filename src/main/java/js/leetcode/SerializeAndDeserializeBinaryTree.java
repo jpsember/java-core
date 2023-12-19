@@ -296,28 +296,22 @@ public class SerializeAndDeserializeBinaryTree extends LeetCode {
     }
 
     protected TreeNode constructTreeFromValues(List<Integer> values) {
-      var treeQueue = new ArrayList<TreeNode>();
+      var treeQueue = new ArrayList<TreeNode>(values.size());
       int treeCursor = 0;
-      int valueCursor = 0;
-      var result = new TreeNode(values.get(valueCursor++), null, null);
+      int cursor = 0;
+      var result = new TreeNode(values.get(cursor++), null, null);
       treeQueue.add(result);
       while (treeCursor < treeQueue.size()) {
         var tree = treeQueue.get(treeCursor++);
-        Integer val = null;
-        if (valueCursor < values.size())
-          val = values.get(valueCursor++);
+        Integer val = cursor == values.size() ? null : values.get(cursor++);
         if (val != null) {
-          var child = new TreeNode(val, null, null);
-          treeQueue.add(child);
-          tree.left = child;
+          tree.left = new TreeNode(val, null, null);
+          treeQueue.add(tree.left);
         }
-        val = null;
-        if (valueCursor < values.size())
-          val = values.get(valueCursor++);
+        val = cursor == values.size() ? null : values.get(cursor++);
         if (val != null) {
-          var child = new TreeNode(val, null, null);
-          treeQueue.add(child);
-          tree.right = child;
+          tree.right = new TreeNode(val, null, null);
+          treeQueue.add(tree.right);
         }
       }
       return result;
