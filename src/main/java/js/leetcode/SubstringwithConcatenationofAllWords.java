@@ -24,6 +24,12 @@ public class SubstringwithConcatenationofAllWords extends LeetCode {
   }
 
   public void run() {
+    //
+    //    //    long q = 
+    //    //        2l *3l* 5l* 7l* 11l* 13l* 17l* 19l* 23l* 29l* 31l* 37l* 41l* 43l* 47l* 53l* 59l* 61l* 67l* 71l* 73l* 79l* 83l* 89l* 97l;
+    //    //    
+    //    pr(q);
+    //    halt();
 
     x("barfoothefoobarman", "[\"foo\",\"bar\"]");
 
@@ -35,12 +41,12 @@ public class SubstringwithConcatenationofAllWords extends LeetCode {
     var words = new JSList(wordsString).asStringArray();
     var result = findSubstring(s, words);
     result.sort(null);
-    var expected = result;
+    var expected = SLOWfindSubstring(s, words);
     pr("String:", s, "Words:", words, "Result:", result);
     verify(result, expected);
   }
 
-  public List<Integer> findSubstring(String s, String[] words) {
+  public List<Integer> SLOWfindSubstring(String s, String[] words) {
     List<Integer> result = new ArrayList<>();
 
     var wordLength = words[0].length();
@@ -90,6 +96,62 @@ public class SubstringwithConcatenationofAllWords extends LeetCode {
   private class WordInfo {
     int uniqueIndex;
     int multiplicity;
+  }
+
+  // ------------------------------------------------------------------
+
+  public List<Integer> findSubstring(String s, String[] words) {
+    List<Integer> result = new ArrayList<>();
+    var wordLength = words[0].length();
+
+    // Get some information about the words we're looking for
+    Map<String, WordInfo> wordIndexMap = new HashMap<>(words.length);
+
+    int unique = 0;
+    for (int i = 0; i < words.length; i++) {
+      var info = wordIndexMap.get(words[i]);
+      if (info == null) {
+        info = new WordInfo();
+        wordIndexMap.put(words[i], info);
+        info.uniqueIndex = unique++;
+      }
+      info.multiplicity++;
+    }
+    int uniqueWordsCount = wordIndexMap.size();
+
+    // Construct an array of shorts corresponding to the index of the word starting at that character,
+    // or -1 if none
+    short[] wordAtIndex = new short[s.length() - (wordLength - 1)];
+    Arrays.fill(wordAtIndex, (short) -1);
+    for (int i = 0; i < wordAtIndex.length; i++) {
+      var info = wordIndexMap.get(s.substring(i, i + wordLength));
+      if (info != null)
+        wordAtIndex[i] = (short) info.uniqueIndex;
+    }
+
+    int substringLength = wordLength * words.length;
+    int scanStop = (s.length() - (substringLength - 1));
+
+    int[] found = new int[uniqueWordsCount];
+    int[] target = new int[uniqueWordsCount];
+
+    for (var ent : wordIndexMap.values())
+      target[ent.uniqueIndex] = ent.multiplicity;
+
+    // Scan through our wordAtIndex array, looking for sets of starting words that match 
+    // our target
+    outer: for (int i = 0; i < scanStop; i++) {
+      Arrays.fill(found, 0);
+      for (int j = 0; j < substringLength; j += wordLength) {
+        var word = wordAtIndex[i + j];
+        if (word < 0)
+          continue outer;
+        found[word]++;
+      }
+      if (Arrays.equals(found, target))
+        result.add(i);
+    }
+    return result;
   }
 
 }
