@@ -10,13 +10,18 @@ public class BinaryTreeMaximumPathSum extends LeetCode {
   }
 
   public void run() {
+    x("[1,-2,3]", 4);
+    x("[5,4,8,11,null,13,4,7,2,null,null,null,1]", 48);
+    x("[1,2,3]", 6);
+    x("[1]", 1);
     x("[-10,9,20,null,null,15,7]", 42);
   }
 
   private void x(String s, int expected) {
     var tree = deserializeTree(s);
+    pr(VERT_SP, s, CR, tree);
     var answer = maxPathSum(tree);
-    pr(s, INDENT, tree, "answer:", answer);
+    pr(INDENT, "answer:", answer);
     verify(answer, expected);
   }
 
@@ -76,6 +81,36 @@ public class BinaryTreeMaximumPathSum extends LeetCode {
   // ------------------------------------------------------------------
 
   public int maxPathSum(TreeNode root) {
-    return 7;
+    maxSum = Integer.MIN_VALUE;
+    rewrite(root);
+    return maxSum;
   }
+
+  private TreeNode rewrite(TreeNode t) {
+    if (t == null)
+      return t;
+    rewrite(t.left);
+    rewrite(t.right);
+
+    // Get our value, and the values of the children, or zero if there are none or are negative
+    var vParent = t.val;
+    var vLeft = (t.left != null) ? t.left.val : 0;
+    var vRight = (t.right != null) ? t.right.val : 0;
+    if (vLeft < 0)
+      vLeft = 0;
+    if (vRight < 0)
+      vRight = 0;
+
+    // Summing these three values gives maximum value of any path contained by Left->Parent->Right.
+    var x = vParent + vLeft + vRight;
+    maxSum = x > maxSum ? x : maxSum;
+
+    // Replace the parent node with a leaf node that includes the value of the maximum child (if positive)
+    t.left = null;
+    t.right = null;
+    t.val = vParent + (vLeft > vRight ? vLeft : vRight);
+    return t;
+  }
+
+  private int maxSum;
 }
