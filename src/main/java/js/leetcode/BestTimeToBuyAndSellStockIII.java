@@ -20,6 +20,7 @@ public class BestTimeToBuyAndSellStockIII extends LeetCode {
     x("[1,2,3,4,5]", 4);
     x("[7,6,4,3,1]", 0);
     x("[72]", 0);
+    x("[2,8,4,9,3,8]", 12);
   }
 
   private void x(String s, int expected) {
@@ -36,61 +37,47 @@ public class BestTimeToBuyAndSellStockIII extends LeetCode {
     int n = prices.length;
 
     // Construct a flipped (and negated) version of the price list
-    var reversed = new int[n];
+    var flippedPrices = new int[n];
     for (int i = 0; i < n; i++)
-      reversed[n - 1 - i] = -prices[i];
+      flippedPrices[n - 1 - i] = -prices[i];
 
     var fwd = calcInfo(prices);
-    var bwd = calcInfo(reversed);
+    var bwd = calcInfo(flippedPrices);
 
     int bestProfit = 0;
     for (int i = 1; i < n; i++) {
-      var profit = fwd[i].delta + bwd[n - 1 - i].delta;
+      var profit = fwd[i].maxProfit + bwd[n - 1 - i].maxProfit;
       bestProfit = Math.max(profit, bestProfit);
     }
     return bestProfit;
   }
 
   private static class Info {
-    int min;
-    int delta;
-    int deltaMin;
+    int minPrice; // minimum price seen so far
+    int maxProfit; // maximal (nonnegative) profit seen so far
   }
 
   private Info[] calcInfo(int[] prices) {
-    var res = new Info[prices.length];
+    var result = new Info[prices.length];
 
-    Info prevInfo = null;
+    Info prevInfo = new Info();
+    prevInfo.minPrice = prices[0];
+
     for (int i = 0; i < prices.length; i++) {
       var price = prices[i];
       var info = new Info();
-      if (prevInfo == null) {
-        prevInfo = new Info();
-        prevInfo.min = price;
-        prevInfo.deltaMin = price;
-      }
 
-      info.min = prevInfo.min;
-      info.delta = prevInfo.delta;
-      info.deltaMin = prevInfo.deltaMin;
+      // See if selling at this price improves the best profit
+      info.maxProfit = Math.max(prevInfo.maxProfit, price - prevInfo.minPrice);
+      info.minPrice = prevInfo.minPrice;
 
-      if (price < info.min)
-        info.min = price;
-      var delta = price - info.min;
-      if (delta > info.delta) {
-        info.delta = delta;
-        info.deltaMin = info.min;
-      }
+      if (price < info.minPrice)
+        info.minPrice = price;
+
       prevInfo = info;
-      res[i] = info;
+      result[i] = info;
     }
-    return res;
+    return result;
   }
 
-  public static int[] reverse(int[] nums) {
-    var rev = new int[nums.length];
-    for (int i = 0; i < nums.length; i++)
-      rev[nums.length - 1 - i] = nums[i];
-    return rev;
-  }
 }
