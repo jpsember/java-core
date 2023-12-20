@@ -2,10 +2,19 @@ package js.leetcode;
 
 import static js.base.Tools.*;
 
+import js.base.BasePrinter;
+
 public class BestTimeToBuyAndSellStockIV extends LeetCode {
 
   public static void main(String[] args) {
+
+    BasePrinter.registerClassHandler(Tr.class, (x, p) -> print((Tr) x, p));
+
     new BestTimeToBuyAndSellStockIV().run();
+  }
+
+  private static void print(Tr x, BasePrinter p) {
+    p.appendString("(" + x.buy + ".." + x.sell + ": " + profit(x.buy, x.sell) + ")");
   }
 
   public void run() {
@@ -26,9 +35,27 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
   public int maxProfit(int k, int[] prices) {
     if (prices.length == 1)
       return 0;
+    sPrices = prices;
     int n = prices.length;
+
+    var y = new Tr();
+    y.buy = 1;
+    y.sell = 3;
+    db(y);
 
     return 42 + n;
   }
 
+  private static class Tr {
+    int buy;
+    int sell;
+  }
+
+  private static int profit(int buy, int sell) {
+    checkArgument(sell > buy);
+    return sPrices[sell] - sPrices[buy];
+  }
+
+  // Global variable for debug usage
+  private static int[] sPrices;
 }
