@@ -49,10 +49,6 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     int n = prices.length;
     minTime = -1;
 
-    // var trans = new Tr[k];
-    //    int tCursor = 0;
-    todo("mintime accounting is problematic");
-
     db("Prices:", prices);
     for (int time = 1; time < n; time++) {
       db("time:", time, "price:", prices[time], "minTime:", minTime, "trans:", trans);
@@ -86,6 +82,8 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
         continue;
       }
 
+      db("...candidate transaction:", newTrans);
+
       // We're already at the maximum number of transactions.
       // Determine if this transaction should replace one of the previous ones
       int minTransSlot = 0;
@@ -107,9 +105,35 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
         db("...removing older transaction", minTrans, "for new");
         trans.remove(minTransSlot);
         addTrans(newTrans);
+
+        // The transactions to the left (resp, right) side of the one we just removed might
+        // be improved by using its sell (resp, buy) date
+
+        var leftSlot = minTransSlot - 1;
+        var rightSlot = minTransSlot;
+        Tr altLeft = null;
+        var leftImprovement = Integer.MIN_VALUE;
+
+        if (leftSlot >= 0) {
+          var left = trans.get(leftSlot);
+          altLeft = new Tr(left.buy, minTrans.sell);
+          leftImprovement = altLeft.profit - left.profit;
+        }
+        var right = trans.get(rightSlot);
+        Tr altRight = new Tr(minTrans.buy, right.sell);
+        var rightImprovement = altRight.profit - right.profit;
+
+        if (leftImprovement > rightImprovement && leftImprovement > 0) {
+          db("...improving transaction to left of older, from:", trans.get(leftSlot), "to:", altLeft);
+          trans.set(leftSlot, altLeft);
+        } else if (rightImprovement > 0) {
+          db("...improving transaction to right of older, from:", trans.get(rightSlot), "to:", altRight);
+          trans.set(rightSlot, altRight);
+        }
         continue;
       }
 
+      db("...candidate isn't an improvement over existing ones");
       // Can we improve the most recent transaction by extending its sell date to the current time?
       {
         int j = trans.size() - 1;
@@ -148,7 +172,7 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
 
     @Override
     public String toString() {
-      return "(" + buy + ".." + sell + ": "+sPrices[buy]+".."+sPrices[sell]+" = " + profit + ")";
+      return "(" + buy + ".." + sell + ": " + sPrices[buy] + ".." + sPrices[sell] + " = " + profit + ")";
     }
   }
 
