@@ -13,7 +13,7 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
 
   public void run() {
     x("[2,8,4,9,3,8]", 2, 12);
-    xx("[3,2,6,5,0,3]", 2, 7);
+    x("[3,2,6,5,0,3]", 2, 7);
     x("[1,2,3,4,5]", 2, 4);
     x("[7,6,4,3,1]", 2, 0);
     x("[72]", 2, 0);
@@ -26,7 +26,7 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     verify(result, expected);
   }
 
-  private static void verify() {
+  private void verify() {
     if (trans.isEmpty())
       return;
     Tr prev = null;
@@ -38,6 +38,8 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
       }
       prev = t;
     }
+    if (trans.size() > sK)
+      die(">k transactions in sequence:", trans);
   }
 
   public int maxProfit(int k, int[] prices) {
@@ -71,73 +73,93 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
         continue;
       }
 
+      // Construct candidate transaction, or extend previous (if it ended at previous time slot)
+
+      if (trans.size() != 0) {
+        var prev = lastTrans();
+        if (prev.sell == time - 1 && prices[time] >= prices[prev.sell]) {
+          db("...extending previous transaction");
+          trans.set(trans.size() - 1, new Tr(prev.buy, time));
+          minTime = time;
+          continue;
+        }
+      }
+
       // Construct candidate transaction from the previous minimum to this price
       var newTrans = new Tr(minTime, time);
       if (newTrans.profit <= 0)
         continue;
 
-      if (trans.size() < k) {
-        db("...less than k transactions, adding new");
-        addTrans(newTrans);
+      addTrans(newTrans);
+      db("...added candidate transaction:", newTrans);
+
+      if (trans.size() <= k) {
+        db("...not more than k transactions");
         continue;
       }
 
-      db("...candidate transaction:", newTrans);
+      // Determine which of the transaction to delete.
+      // Choose the one that minimizes the drop in profit, and take into
+      // consideration the neighbors being able to reposition to use the deleted one's date
+      todo(
+          "cache the value of deleting a transaction; if we change a transaction, delete this cached flag for both its neighbors as well");
+      int bestImprovement = Integer.MIN_VALUE;
+      int minSlot = -1;
+      Tr minLeft = null;
+      Tr minRight = null;
+      for (int i = 0; i < trans.size(); i++) {
+        var t = tr(i);
+        var improvement = -t.profit;
 
-      // We're already at the maximum number of transactions.
-      // Determine if this transaction should replace one of the previous ones
-      int minTransSlot = 0;
-      Tr minTrans = trans.get(0);
-      for (int i = 1; i < trans.size(); i++) {
-        var t = trans.get(i);
-        if (t.profit < minTrans.profit) {
-          minTrans = t;
-          minTransSlot = i;
-        }
-      }
-
-      // Is the new one greater profit than an existing one?
-
-      if (minTrans.profit < newTrans.profit) {
-
-        // For now, just throw out the old trans and replace with the new.  
-        // Later we will see if we can improve things by rejiggering the buy/sell points.
-        db("...removing older transaction", minTrans, "for new");
-        trans.remove(minTransSlot);
-        addTrans(newTrans);
-
-        // The transactions to the left (resp, right) side of the one we just removed might
+        // The transactions to the left (resp, right) side of this one might
         // be improved by using its sell (resp, buy) date
 
-        var leftSlot = minTransSlot - 1;
-        var rightSlot = minTransSlot;
+        var leftSlot = i - 1;
+        var rightSlot = i + 1;
         Tr altLeft = null;
+        Tr altRight = null;
         var leftImprovement = Integer.MIN_VALUE;
-
+        var rightImprovement = Integer.MIN_VALUE;
         if (leftSlot >= 0) {
-          var left = trans.get(leftSlot);
-          altLeft = new Tr(left.buy, minTrans.sell);
+          var left = tr(leftSlot);
+          altLeft = new Tr(left.buy, t.sell);
           leftImprovement = altLeft.profit - left.profit;
         }
-        var right = trans.get(rightSlot);
-        Tr altRight = new Tr(minTrans.buy, right.sell);
-        var rightImprovement = altRight.profit - right.profit;
-
-        if (leftImprovement > rightImprovement && leftImprovement > 0) {
-          db("...improving transaction to left of older, from:", trans.get(leftSlot), "to:", altLeft);
-          trans.set(leftSlot, altLeft);
-        } else if (rightImprovement > 0) {
-          db("...improving transaction to right of older, from:", trans.get(rightSlot), "to:", altRight);
-          trans.set(rightSlot, altRight);
+        if (rightSlot < trans.size()) {
+          var right = tr(rightSlot);
+          altRight = new Tr(t.buy, right.sell);
+          rightImprovement = altRight.profit - right.profit;
         }
-        continue;
+
+        int sideImp = Math.max(leftImprovement, rightImprovement);
+        if (sideImp > 0) {
+          improvement += sideImp;
+          if (leftImprovement > rightImprovement)
+            altRight = null;
+          else
+            altLeft = null;
+        }
+
+        if (improvement > bestImprovement) {
+          bestImprovement = improvement;
+          minSlot = i;
+          minLeft = altLeft;
+          minRight = altRight;
+        }
       }
+
+      db("...removing suboptimal transaction:", tr(minSlot));
+      if (minLeft != null)
+        trans.set(minSlot - 1, minLeft);
+      else if (minRight != null)
+        trans.set(minSlot + 1, minRight);
+      trans.remove(minSlot);
 
       db("...candidate isn't an improvement over existing ones");
       // Can we improve the most recent transaction by extending its sell date to the current time?
       {
         int j = trans.size() - 1;
-        var t = trans.get(j);
+        var t = tr(j);
         if (sPrices[t.sell] < sPrices[time]) {
           trans.remove(j);
           db("...improving most recent transaction by extending its sell date to current time");
@@ -153,7 +175,6 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
   }
 
   private void addTrans(Tr t) {
-    checkState(trans.size() < sK);
     trans.add(t);
     minTime = t.sell;
   }
@@ -177,12 +198,15 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
   }
 
   private static Tr lastTrans() {
-    return trans.get(trans.size() - 1);
+    return tr(trans.size() - 1);
   }
 
-  private static int sK;
+  private static Tr tr(int slot) {
+    return trans.get(slot);
+  }
+
+  private int sK;
   private static List<Tr> trans;
   private static int minTime;
-  // Global variable for debug usage
   private static int[] sPrices;
 }
