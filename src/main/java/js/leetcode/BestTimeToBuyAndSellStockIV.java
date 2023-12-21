@@ -4,9 +4,7 @@ import static js.base.Tools.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * About to redo the algorithm.
@@ -22,6 +20,8 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
   }
 
   public void run() {
+    x("[0,5,4,9,0,6]", 2, 15);
+
     x(2, 8, -1);
     if (false)
       for (int i = 7; i < 30; i++) {
@@ -30,10 +30,10 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
       }
     x(2, 2000, -1);
     x("[3,3,5,0,0,3,1,4]", 2, 6);
-    x("[2,8,4,9,3,8]", 2, 12);
     x("[5,2]", 2, 0);
     x("[3,2,6,5,0,3]", 2, 7);
     x("[1,2,3,4,5]", 2, 4);
+    x("[2,8,4,9,3,8]", 2, 12);
     x("[7,6,4,3,1]", 2, 0);
     x("[5]", 2, 0);
     x("[72]", 2, 0);
@@ -82,7 +82,8 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
       prices[i] = rand().nextInt(30) + 2;
     }
     var result = maxProfit(k, prices);
-    pr("k:", k, "prices", prices, "result:", result);
+    if (prices.length < 100)
+      pr("k:", k, "prices", prices, "result:", result);
     if (expected >= 0)
       verify(result, expected);
   }
@@ -94,171 +95,29 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     verify(result, expected);
   }
 
-  private void verify(int k) {
-    if (trans.isEmpty())
-      return;
-    Tr prev = null;
-    for (var t : trans) {
-      if (prev != null) {
-        if (prev.sell >= t.buy) {
-          die("bad transaction sequence:", trans);
-        }
-      }
-      prev = t;
-    }
-    if (trans.size() > k)
-      die(">k transactions in sequence:", trans);
-  }
 
   public int maxProfit(final int k, final int[] prices) {
     var points = findBuySellPoints(prices);
-    if (points.length == 0)
-      return 0;
+    db("prices:", prices);
+    db("buy/sell prices:", points);
 
-    pr("prices:", prices, CR, "buy/sell:", points);
-    pointsSet.clear();
-    for (var i : points)
-      pointsSet.add(i);
-    sPrices = prices;
-    trans = new ArrayList<>();
-    int bestBuyTime = 0;
+    // Choosing the most profitable k transactions from the naive buy/sell list is
+    // suboptimal; see for example  [0,5,4,9,0,6] with k=2
+    //
+    var prof = new ArrayList<Integer>();
 
-    db("Prices:", prices);
-    int time = 0;
-    int signOfLastPriceMovement = 0;
-
-    while (true) {
-      time++;
-      if (time == prices.length)
-        break;
-      int currentPrice = prices[time];
-      db("time:", time, "price:", currentPrice, "buytime:", bestBuyTime, "trans:", trans);
-      verify(k);
-
-      int sign = currentPrice - prices[time - 1];
-      if (sign != 0)
-        signOfLastPriceMovement = sign;
-
-      // If prices have dipped below the previous best buy time, we have a new best buy time
-      if (currentPrice < prices[bestBuyTime]) {
-        db("...new low time of min price:", time);
-        bestBuyTime = time;
-      }
-
-      // If not at a peak, we won't be selling; and if not at a trough, we won't be buying.
-      // But we only figure out where we want to buy when we reach a selling point.
-
-      db("...mv sign:", signOfLastPriceMovement);
-      int nextVal = (time + 1 != prices.length) ? prices[time + 1] : Integer.MIN_VALUE;
-      if (!(signOfLastPriceMovement > 0 && nextVal < currentPrice)) {
-        db("...not at potential SELL point");
-        continue;
-      }
-
-      if (time == bestBuyTime) {
-        db("...still at time of min price since last transaction");
-        continue;
-      }
-
-      // Construct candidate transaction from the previous minimum to this price
-      if (prices[time] <= prices[bestBuyTime])
-        continue;
-      var newTrans = new Tr(bestBuyTime, time);
-      db("...constructed candidate transaction:", newTrans);
-      checkState(newTrans.profit > 0);
-      addTrans(newTrans);
-      db("...added candidate transaction:", newTrans);
-
-      // We update the best buy time to be the time immediately following this sale time
-      bestBuyTime = newTrans.sell + 1;
-
-      if (trans.size() <= k) {
-        db("...not more than k transactions");
-        continue;
-      }
-
-      // Determine which of the transaction to delete.
-      // Choose the one that minimizes the drop in profit, and take into
-      // consideration the neighbors being able to reposition to use the deleted one's date
-      int bestImprovement = Integer.MIN_VALUE;
-      int minSlot = -1;
-      Tr minLeft = null;
-      Tr minRight = null;
-      for (int i = 0; i < trans.size(); i++) {
-        var t = tr(i);
-        var improvement = -t.profit;
-
-        // The transactions to the left (resp, right) side of this one might
-        // be improved by using its sell (resp, buy) date
-
-        var leftSlot = i - 1;
-        var rightSlot = i + 1;
-        Tr altLeft = null;
-        Tr altRight = null;
-        var leftImprovement = Integer.MIN_VALUE;
-        var rightImprovement = Integer.MIN_VALUE;
-        if (leftSlot >= 0) {
-          var left = tr(leftSlot);
-          var modified = new Tr(left.buy, t.sell);
-          leftImprovement = modified.profit - left.profit;
-          if (leftImprovement > 0)
-            altLeft = modified;
-        }
-        if (rightSlot < trans.size()) {
-          var right = tr(rightSlot);
-          var modified = new Tr(t.buy, right.sell);
-          rightImprovement = modified.profit - right.profit;
-          if (rightImprovement > 0)
-            altRight = modified;
-        }
-
-        int sideImp = Math.max(leftImprovement, rightImprovement);
-        if (sideImp > 0) {
-          improvement += sideImp;
-          if (leftImprovement > rightImprovement)
-            altRight = null;
-          else
-            altLeft = null;
-        }
-
-        if (improvement > bestImprovement) {
-          bestImprovement = improvement;
-          minSlot = i;
-          minLeft = altLeft;
-          minRight = altRight;
-        }
-      }
-
-      db(VERT_SP, "removing subopt trans at", minSlot, INDENT, trans);
-
-      db("...removing suboptimal transaction:", tr(minSlot));
-      if (minLeft != null)
-        trans.set(minSlot - 1, minLeft);
-      else if (minRight != null)
-        trans.set(minSlot + 1, minRight);
-      trans.remove(minSlot);
-
-      db("after removal", INDENT, trans);
-
-      if (minSlot != trans.size() && alert("verifying end transaction time hasn't changed")) {
-        var lastT = tr(trans.size() - 1);
-        if (bestBuyTime != lastT.sell + 1)
-          die("bestBuyTime is", bestBuyTime, "but last sell is now", lastT.sell, INDENT, trans);
-      }
+    for (int i = 0; i < points.length; i += 2) {
+      prof.add(points[i + 1] - points[i]);
     }
-    int sum = 0;
-    for (var t : trans) {
-      pr("prices:", prices, CR, "buy/sell:", points);
-      checkArgument(pointsSet.contains(prices[t.buy]), "buy time not in set:", t);
-      checkArgument(pointsSet.contains(prices[t.sell]), "sell time not in set:", t);
-      sum += t.profit;
-    }
+    prof.sort(null);
+    while (prof.size() > k)
+      prof.subList(0, prof.size() - k).clear();
+    var sum = 0;
+    for (var p : prof)
+      sum += p;
     return sum;
   }
 
-  private void addTrans(Tr t) {
-    trans.add(t);
-  }
 
   private static class Tr {
     Tr(int buyTime, int sellTime) {
@@ -289,10 +148,7 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     return (value == 0) ? 0 : (value < 0 ? -1 : 1);
   }
 
-  private static Set<Integer> pointsSet = new HashSet<>();
-
   private int[] findBuySellPoints(int[] prices) {
-    pr("buy/sell points from:", prices);
     final int len = prices.length;
     int[] result = new int[len * 3 + 3];
     int resultCursor = 0;
