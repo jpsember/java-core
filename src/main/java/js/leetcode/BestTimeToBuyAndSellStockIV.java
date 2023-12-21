@@ -53,8 +53,8 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
 
     db("Prices:", prices);
     int time = 0;
-    int prevLevel = -1;
-    
+    int signOfLastPriceMovement = 0;
+
     while (true) {
       time++;
       if (time == prices.length)
@@ -62,13 +62,28 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
       db("time:", time, "price:", prices[time], "mintime:", minTimeSinceLastTr, "trans:", trans);
       verify(k);
 
-      if (time == minTimeSinceLastTr) {
-        db("...still at time of min price since last transaction");
-        continue;
+      if (false && alert("validating min time since")) {
+        int expLast = 0;
+        if (!trans.isEmpty()) {
+          var t = tr(trans.size() - 1);
+          expLast = t.sell + 1;
+        }
+        for (int t = expLast; t < time; t++) {
+          if (prices[t] < prices[expLast])
+            expLast = t;
+        }
+        if (minTimeSinceLastTr != expLast) {
+        die("minTimeSince",minTimeSinceLastTr,"but expected it to be",expLast);
+        }
+        
       }
 
+      int sign = prices[time] - prices[time - 1];
+      if (sign != 0)
+        signOfLastPriceMovement = sign;
       if (prices[time] < prices[minTimeSinceLastTr]) {
         db("...new low time of min price:", time);
+        todo("why does this want to skip the following code?");
         minTimeSinceLastTr = time;
         continue;
       }
@@ -76,27 +91,19 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
       // If not at a peak, we won't be selling; and if not at a trough, we won't be buying.
       // But we only figure out where we want to buy when we reach a selling point.
 
-      boolean atSellPoint = false;
       {
         int nextVal = (time + 1 != prices.length) ? prices[time + 1] : Integer.MIN_VALUE;
-        int curr = prices[time];
-        if ((curr > prevLevel && curr > nextVal) || time + 1 == prices.length)
-          atSellPoint = true;
-        if (curr != prevLevel)
-          prevLevel = curr;
-        db("...prev:", prevLevel, "curr:", curr, "at sell point:", atSellPoint);
+        db("...mv sign:", signOfLastPriceMovement);
+        if (!(signOfLastPriceMovement > 0 && nextVal < prices[time])) {
+          db("...not at potential SELL point");
+          continue;
+        }
       }
 
-      if (!atSellPoint) {
-        db("...not at potential SELL point");
+      if (time == minTimeSinceLastTr) {
+        db("...still at time of min price since last transaction");
         continue;
       }
-      //      
-      //      // If we are still moving up and not about to stop, do nothing
-      //      if (time + 1 < prices.length && prices[time + 1] >= prices[time]) {
-      //        db("...still moving upward");
-      //        continue;
-      //      }
 
       // Construct candidate transaction from the previous minimum to this price
       var newTrans = new Tr(minTimeSinceLastTr, time);
@@ -105,9 +112,10 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
         continue;
 
       addTrans(newTrans);
-      todo("this min adjustment might not be 'undoable'");
-      var oldMin = minTimeSinceLastTr;
+//      todo("this min adjustment might not be 'undoable'");
+//      var oldMin = minTimeSinceLastTr;
 
+      // We update the minimum time since last transaction here, 
       minTimeSinceLastTr = newTrans.sell + 1;
       db("...added candidate transaction:", newTrans);
 
@@ -172,6 +180,12 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
       else if (minRight != null)
         trans.set(minSlot + 1, minRight);
       trans.remove(minSlot);
+
+      if (!trans.isEmpty()) {
+        var t = tr(trans.size() - 1);
+        db("last trans sell:", t.sell, "minTimeSince:", minTimeSinceLastTr, "old:", oldMin);
+      }
+
     }
     int sum = 0;
     for (var t : trans)
