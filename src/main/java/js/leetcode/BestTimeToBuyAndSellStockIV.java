@@ -58,7 +58,6 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
       if (time == prices.length)
         break;
       db("time:", time, "price:", prices[time], "mintime:", minTimeSinceLastTr, "trans:", trans);
-
       verify(k);
 
       if (time == minTimeSinceLastTr) {
@@ -85,6 +84,9 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
         continue;
 
       addTrans(newTrans);
+      todo("this min adjustment might not be 'undoable'");
+      var oldMin = minTimeSinceLastTr;
+      
       minTimeSinceLastTr = newTrans.sell + 1;
       db("...added candidate transaction:", newTrans);
 
@@ -149,20 +151,6 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
       else if (minRight != null)
         trans.set(minSlot + 1, minRight);
       trans.remove(minSlot);
-
-      db("...candidate isn't an improvement over existing ones");
-      // Can we improve the most recent transaction by extending its sell date to the current time?
-      {
-        int j = trans.size() - 1;
-        var t = tr(j);
-        if (prices[t.sell] < prices[time]) {
-          trans.remove(j);
-          db("...improving most recent transaction by extending its sell date to current time");
-          addTrans(new Tr(t.buy, time));
-          minTimeSinceLastTr = time + 1;
-          continue;
-        }
-      }
     }
     int sum = 0;
     for (var t : trans)
