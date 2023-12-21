@@ -12,6 +12,8 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
   }
 
   public void run() {
+    x("[5]", 2, 0);
+    x("[5,2]", 2, 0);
     x("[2,8,4,9,3,8]", 2, 12);
     x("[3,2,6,5,0,3]", 2, 7);
     x("[1,2,3,4,5]", 2, 4);
@@ -26,7 +28,7 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     verify(result, expected);
   }
 
-  private void verify() {
+  private void verify(int k) {
     if (trans.isEmpty())
       return;
     Tr prev = null;
@@ -38,55 +40,78 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
       }
       prev = t;
     }
-    if (trans.size() > sK)
+    if (trans.size() > k)
       die(">k transactions in sequence:", trans);
   }
 
   public int maxProfit(int k, int[] prices) {
     if (prices.length == 1)
       return 0;
-    sK = k;
     sPrices = prices;
     trans = new ArrayList<>();
-    int n = prices.length;
-    minTime = -1;
+    sTimeOfMinPriceSinceLastTransaction = 0;
 
     db("Prices:", prices);
-    for (int time = 1; time < n; time++) {
-      db("time:", time, "price:", prices[time], "minTime:", minTime, "trans:", trans);
+    int time = 0;
+    while (true) {
+      time++;
+      if (time == prices.length)
+        break;
+      db("time:", time, "price:", prices[time], "mintime:", sTimeOfMinPriceSinceLastTransaction, "trans:",
+          trans);
 
-      verify();
+      verify(k);
 
-      if (minTime < 0) {
-        if (trans.isEmpty())
-          minTime = 0;
-        else
-          minTime = lastTrans().sell;
-      }
-
-      if (prices[time] < prices[minTime])
-        minTime = time;
-
-      // If we haven't moved up from previous position, do nothing
-      if (prices[time] <= prices[time - 1]) {
-        db("...not moving up");
+      if (time == sTimeOfMinPriceSinceLastTransaction) {
+        db("...still at time of min price since last transaction");
         continue;
       }
 
-      // Construct candidate transaction, or extend previous (if it ended at previous time slot)
+      if (prices[time] < prices[sTimeOfMinPriceSinceLastTransaction]) {
+        db("...new low time of min price:", time);
+        sTimeOfMinPriceSinceLastTransaction = time;
+        continue;
+      }
 
-      if (trans.size() != 0) {
-        var prev = lastTrans();
-        if (prev.sell == time - 1 && prices[time] >= prices[prev.sell]) {
-          db("...extending previous transaction");
-          trans.set(trans.size() - 1, new Tr(prev.buy, time));
-          minTime = time;
+      if (true || todo("add this optimization later")) {
+        // If we are still moving up and not about to stop, do nothing
+        if (time + 1 < prices.length && prices[time + 1] >= prices[time]) {
+          db("...still moving upward");
           continue;
         }
       }
+      //      if (minTime < 0) {
+      //        if (trans.isEmpty())
+      //          minTime = 0;
+      //        else
+      //          minTime = lastTrans().sell;
+      //      }
+
+      //      // If we haven't moved up from previous position, do nothing
+      //      if (prices[time] <= prices[time - 1]) {
+      //        db("...not moving up");
+      //        continue;
+      //      }
+
+      if (false) {
+        // Construct candidate transaction, or extend previous (if it ended at previous time slot)
+
+        if (trans.size() != 0) {
+          var prev = lastTrans();
+          if (prev.sell == time - 1 && prices[time] >= prices[prev.sell]) {
+            db("...extending previous transaction");
+            trans.set(trans.size() - 1, new Tr(prev.buy, time));
+            sTimeOfMinPriceSinceLastTransaction = time;
+            continue;
+          }
+        }
+
+      }
+      //
 
       // Construct candidate transaction from the previous minimum to this price
-      var newTrans = new Tr(minTime, time);
+      var newTrans = new Tr(sTimeOfMinPriceSinceLastTransaction, time);
+      db("...constructed candidate transaction:", newTrans);
       if (newTrans.profit <= 0)
         continue;
 
@@ -160,7 +185,7 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
       {
         int j = trans.size() - 1;
         var t = tr(j);
-        if (sPrices[t.sell] < sPrices[time]) {
+        if (prices[t.sell] < prices[time]) {
           trans.remove(j);
           db("...improving most recent transaction by extending its sell date to current time");
           addTrans(new Tr(t.buy, time));
@@ -176,12 +201,12 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
 
   private void addTrans(Tr t) {
     trans.add(t);
-    minTime = t.sell;
+    sTimeOfMinPriceSinceLastTransaction = t.sell + 1;
   }
 
   private static class Tr {
     Tr(int buyTime, int sellTime) {
-      checkArgument(sellTime > buyTime);
+      checkArgument(sellTime > buyTime, "attempt to construct buyTime", buyTime, ">= sellTime", sellTime);
       this.buy = buyTime;
       this.sell = sellTime;
       this.profit = sPrices[sell] - sPrices[buy];
@@ -205,8 +230,7 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     return trans.get(slot);
   }
 
-  private int sK;
   private static List<Tr> trans;
-  private static int minTime;
   private static int[] sPrices;
+  private static int sTimeOfMinPriceSinceLastTransaction;
 }
