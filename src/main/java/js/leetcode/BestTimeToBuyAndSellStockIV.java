@@ -20,6 +20,10 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
   }
 
   public void run() {
+    x("[8,6,4,3,3,2,3,5,8,3,8,2,6]", 2, 11);
+
+    x("[3,3]", 1, 0);
+
     x("[0,5,4,9,0,6]", 2, 15);
 
     x(2, 8, -1);
@@ -91,6 +95,8 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     var prices = extractNums(s);
     var result = maxProfit(k, prices);
     pr("k:", k, "prices", darray(prices), "result:", result);
+    if (expected < 0)
+      expected = result;
     verify(result, expected);
   }
 
@@ -98,8 +104,8 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
 
   public int maxProfit(final int k, final int[] prices) {
     points = findBuySellPoints(prices);
-    //db("prices:", darray(prices));
-    //db("buy/sell prices:", darray(points));
+    db("prices:", darray(prices));
+    db("buy/sell prices:", darray(points));
     memo.clear();
     cacheMisses = 0;
     cacheAttempts = 0;
@@ -140,19 +146,23 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     final int len = prices.length;
     int[] result = new int[len * 2];
     int prevPrice = 1001;
+    var dir = -1;
     int outCursor = 0;
     for (int inCursor = 0; inCursor < len; inCursor++) {
       var price = prices[inCursor];
-      if (price == prevPrice)
-        continue;
-      // If price isn't moving, do nothing
       var nextPrice = (inCursor + 1 < len) ? prices[inCursor + 1] : -1001;
+      // If price isn't moving, do nothing
+      var newDir = dir;
+      if (nextPrice != price)
+        newDir = (nextPrice < price) ? -1 : 1;
       // If direction hasn't changed, do nothing
-      if ((nextPrice - price) * (price - prevPrice) > 0)
+      if (newDir == dir)
         continue;
+      dir = newDir;
       result[outCursor++] = price;
       prevPrice = price;
     }
+    checkState(outCursor % 2 == 0, "prices:", darray(prices), INDENT, "points:", darray(result, outCursor));
     return Arrays.copyOf(result, outCursor);
   }
 
