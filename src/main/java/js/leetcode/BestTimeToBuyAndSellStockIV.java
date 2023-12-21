@@ -3,6 +3,8 @@ package js.leetcode;
 import static js.base.Tools.*;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * About to redo the algorithm.
@@ -80,8 +82,7 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
       prices[i] = rand().nextInt(30) + 2;
     }
     var result = maxProfit(k, prices);
-    if (prices.length < 100)
-      pr("k:", k, "prices", prices, "result:", result);
+    pr("k:", k, "prices", darray(prices), "result:", result);
     if (expected >= 0)
       verify(result, expected);
   }
@@ -89,29 +90,51 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
   private void x(String s, int k, int expected) {
     var prices = extractNums(s);
     var result = maxProfit(k, prices);
-    pr("k:", k, "prices", prices, "result:", result);
+    pr("k:", k, "prices", darray(prices), "result:", result);
     verify(result, expected);
   }
 
+  // ------------------------------------------------------------------
+
   public int maxProfit(final int k, final int[] prices) {
     points = findBuySellPoints(prices);
-    db("prices:", prices);
-    db("buy/sell prices:", points);
-
-    return aux(k, 0);
+    //db("prices:", darray(prices));
+    //db("buy/sell prices:", darray(points));
+    memo.clear();
+    cacheMisses = 0;
+    cacheAttempts = 0;
+    var result = aux(k, 0);
+    db("cache attempts:", cacheAttempts, "misses:", cacheMisses,
+        ((cacheMisses * 100) / (cacheAttempts + 1)) + "%");
+    return result;
   }
-
-  private int[] points;
 
   /**
    * Determine best profit for choosing at most k transactions from the list of
    * buy/sell points starting at cursor c
    */
   private int aux(int k, int c) {
-    return 0;
+    if (k == 0 || c >= points.length)
+      return 0;
+    cacheAttempts++;
+    int key = (c << 7) | k;
+    int profit = memo.getOrDefault(key, -1);
+    if (profit < 0) {
+      cacheMisses++;
+      // Consider not using the next buy point,
+      // or using it with any of the following sell points
+      profit = aux(k, c + 2);
+      for (int d = c; d < points.length; d += 2) {
+        var thisProfit = points[d + 1] - points[c];
+        var other = aux(k - 1, d + 2);
+        var profit2 = thisProfit + other;
+        if (profit2 > profit)
+          profit = profit2;
+      }
+      memo.put(key, profit);
+    }
+    return profit;
   }
-
-  private static int[] sPrices;
 
   private int[] findBuySellPoints(int[] prices) {
     final int len = prices.length;
@@ -132,4 +155,9 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     }
     return Arrays.copyOf(result, outCursor);
   }
+
+  private int[] points;
+  private Map<Integer, Integer> memo = new HashMap<>();
+  private int cacheAttempts;
+  private int cacheMisses;
 }
