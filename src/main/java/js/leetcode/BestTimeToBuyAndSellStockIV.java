@@ -20,6 +20,10 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
 
   public void run() {
 
+    x("[0,5,4,9,0,6]", 2, 15);
+
+    x("[3,2,6,5,0,3]", 2, 7);
+
     x("[70,4,83,56,94,72,78,43,2,86,65,100,94,56,41,66,3,33,10,3,45,94,15,12,78,60,58,0,58,"
         + "15,21,7,11,41,12,96,83,77,47,62,27,19,40,63,30,4,77,52,17,57,21,66,63,29,51,40,"
         + "37,6,44,42,92,16,64,33,31,51,36,0,29,95,92,35,66,91,19,21,100,95,40,61,15,83,31,"
@@ -62,8 +66,7 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
 
     x("[3,3]", 1, 0);
 
-    x("[0,5,4,9,0,6]", 2, 15);
-
+ 
     x(2, 8, -1);
     if (false)
       for (int i = 7; i < 30; i++) {
@@ -108,46 +111,28 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     buySellPrices = findBuySellPoints(prices);
     db("prices:", darray(prices));
     db("buy/sell prices:", darray(buySellPrices));
-    memo.clear();
-    cacheMisses = 0;
-    cacheAttempts = 0;
-    var result = aux(k, 0);
-    db("cache attempts:", cacheAttempts, "misses:", cacheMisses, "miss %:",
-        ((cacheMisses * 100) / (cacheAttempts + 1)));
-    return result;
-  }
+    int np = buySellPrices.length / 2;
+    var table = new int[k + 1][np + 1];
+    for (int kc = 1; kc <= k; kc++) {
+      var currTbl = table[kc];
+      var prevTbl = table[kc - 1];
+      for (int j = 0; j < np; j++) {
+        int buy = buySellPrices[j * 2 + 0];
+        int sell = buySellPrices[j * 2 + 1];
+        int profit = sell - buy;
+        int newSum = prevTbl[j] + profit;
+        if (newSum > currTbl[j + 1])
+          currTbl[j + 1] = newSum;
 
-  /**
-   * Determine best profit for choosing at most k transactions from the list of
-   * buy/sell points starting at cursor c
-   */
-  private int aux(int k, int c) {
-    if (k == 0 || c >= buySellPrices.length)
-      return 0;
-    cacheAttempts++;
-    int key = (c << 7) | k;
-    int profit = memo.getOrDefault(key, -1);
-    if (profit < 0) {
-      cacheMisses++;
-      // Consider not using the next buy point,
-      // or using it with any of the following sell points (but only if later sell points
-      // have higher profit than earlier ones)
-      profit = aux(k, c + 2);
-      var bestPreviousProfit = 0;
-      for (int d = c; d < buySellPrices.length; d += 2) {
-        var thisProfit = buySellPrices[d + 1] - buySellPrices[c];
-        // Optimization #1: skip later sell points that don't produce higher profits than an earlier one
-        if (thisProfit < bestPreviousProfit)
-          continue;
-        bestPreviousProfit = thisProfit;
-        var other = aux(k - 1, d + 2);
-        var profit2 = thisProfit + other;
-        if (profit2 > profit)
-          profit = profit2;
+        if (prevTbl[j + 1] < prevTbl[j])
+          prevTbl[j + 1] = prevTbl[j];
       }
-      memo.put(key, profit);
     }
-    return profit;
+    int max = 0;
+    for (var finalSum : table[k]) {
+      max = Math.max(max, finalSum);
+    }
+    return max;
   }
 
   private int[] findBuySellPoints(int[] prices) {
@@ -172,7 +157,4 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
   }
 
   private int[] buySellPrices;
-  private Map<Integer, Integer> memo = new HashMap<>();
-  private int cacheAttempts;
-  private int cacheMisses;
 }
