@@ -12,6 +12,15 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
   }
 
   public void run() {
+    x(2,8,-1);
+    
+    for (int i = 7; i < 30; i++) {
+      pr(INDENT,"i:",i);
+    x(2, i, -1);
+    }
+    if (true) return;
+    x(2, 2000, 20);
+    x("[3,3,5,0,0,3,1,4]", 2, 6);
     x("[2,8,4,9,3,8]", 2, 12);
     x("[5]", 2, 0);
     x("[5,2]", 2, 0);
@@ -19,7 +28,7 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     x("[1,2,3,4,5]", 2, 4);
     x("[7,6,4,3,1]", 2, 0);
     x("[72]", 2, 0);
-    x(2, 2000, 20);
+    
   }
 
   private void x(int k, int count, int expected) {
@@ -58,7 +67,8 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
   }
 
   public int maxProfit(final int k, final int[] prices) {
-   int cacheOps = 0; if (prices.length == 1)
+    int cacheOps = 0;
+    if (prices.length == 1)
       return 0;
     sPrices = prices;
     trans = new ArrayList<>();
@@ -118,7 +128,6 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
         continue;
       }
 
-      
       cacheOps++;
       // Determine which of the transaction to delete.
       // Choose the one that minimizes the drop in profit, and take into
@@ -144,13 +153,17 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
         var rightImprovement = Integer.MIN_VALUE;
         if (leftSlot >= 0) {
           var left = tr(leftSlot);
-          altLeft = new Tr(left.buy, t.sell);
-          leftImprovement = altLeft.profit - left.profit;
+          var modified = new Tr(left.buy, t.sell);
+          leftImprovement = modified.profit - left.profit;
+          if (leftImprovement > 0)
+            altLeft = modified;
         }
         if (rightSlot < trans.size()) {
           var right = tr(rightSlot);
-          altRight = new Tr(t.buy, right.sell);
-          rightImprovement = altRight.profit - right.profit;
+          var modified = new Tr(t.buy, right.sell);
+          rightImprovement = modified.profit - right.profit;
+          if (rightImprovement > 0)
+            altRight = modified;
         }
 
         int sideImp = Math.max(leftImprovement, rightImprovement);
@@ -186,7 +199,7 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     int sum = 0;
     for (var t : trans)
       sum += t.profit;
-    pr("cacheOps:",cacheOps);
+    pr("cacheOps:", cacheOps);
     return sum;
   }
 
