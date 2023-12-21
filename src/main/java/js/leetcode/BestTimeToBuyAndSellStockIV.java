@@ -186,6 +186,7 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     int sum = 0;
     for (var t : trans)
       sum += t.profit;
+    pr("cacheOps:",cacheOps);
     return sum;
   }
 
