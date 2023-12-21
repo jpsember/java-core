@@ -2,9 +2,7 @@ package js.leetcode;
 
 import static js.base.Tools.*;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 /**
  * About to redo the algorithm.
@@ -95,78 +93,43 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     verify(result, expected);
   }
 
-
   public int maxProfit(final int k, final int[] prices) {
-    var points = findBuySellPoints(prices);
+    points = findBuySellPoints(prices);
     db("prices:", prices);
     db("buy/sell prices:", points);
 
-    // Choosing the most profitable k transactions from the naive buy/sell list is
-    // suboptimal; see for example  [0,5,4,9,0,6] with k=2
-    //
-    var prof = new ArrayList<Integer>();
-
-    for (int i = 0; i < points.length; i += 2) {
-      prof.add(points[i + 1] - points[i]);
-    }
-    prof.sort(null);
-    while (prof.size() > k)
-      prof.subList(0, prof.size() - k).clear();
-    var sum = 0;
-    for (var p : prof)
-      sum += p;
-    return sum;
+    return aux(k, 0);
   }
 
+  private int[] points;
 
-  private static class Tr {
-    Tr(int buyTime, int sellTime) {
-      checkArgument(sellTime > buyTime, "attempt to construct buyTime", buyTime, ">= sellTime", sellTime);
-      this.buy = buyTime;
-      this.sell = sellTime;
-      this.profit = sPrices[sell] - sPrices[buy];
-    }
-
-    final int buy;
-    final int sell;
-    final int profit;
-
-    @Override
-    public String toString() {
-      return "(" + buy + ".." + sell + ": " + sPrices[buy] + ".." + sPrices[sell] + " = " + profit + ")";
-    }
+  /**
+   * Determine best profit for choosing at most k transactions from the list of
+   * buy/sell points starting at cursor c
+   */
+  private int aux(int k, int c) {
+    return 0;
   }
 
-  private static Tr tr(int slot) {
-    return trans.get(slot);
-  }
-
-  private static List<Tr> trans;
   private static int[] sPrices;
-
-  private static int sign(int value) {
-    return (value == 0) ? 0 : (value < 0 ? -1 : 1);
-  }
 
   private int[] findBuySellPoints(int[] prices) {
     final int len = prices.length;
-    int[] result = new int[len * 3 + 3];
-    int resultCursor = 0;
-    var dir = -1;
-    for (int i = 0; i < len; i++) {
-      var price = prices[i];
-      var nextPrice = (i + 1 < len) ? prices[i + 1] : -1001;
-      var nextDir = sign(nextPrice - price);
-      if (nextDir != 0) {
-        if (dir != nextDir) {
-          // The first value should correspond to a BUY point
-          if (resultCursor == 0)
-            checkState(nextDir > 0);
-          result[resultCursor++] = price;
-        }
-        dir = nextDir;
-      }
+    int[] result = new int[len * 2];
+    int prevPrice = 1001;
+    int outCursor = 0;
+    for (int inCursor = 0; inCursor < len; inCursor++) {
+      var price = prices[inCursor];
+      if (price == prevPrice)
+        continue;
+      // If price isn't moving, do nothing
+      var nextPrice = (inCursor + 1 < len) ? prices[inCursor + 1] : -1001;
+      // If direction hasn't changed, do nothing
+      if ((nextPrice - price) * (price - prevPrice) > 0)
+        continue;
+      result[outCursor++] = price;
+      prevPrice = price;
     }
-    return Arrays.copyOf(result, resultCursor);
+    return Arrays.copyOf(result, outCursor);
   }
 }
