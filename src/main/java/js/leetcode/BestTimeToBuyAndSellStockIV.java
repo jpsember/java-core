@@ -12,9 +12,9 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
   }
 
   public void run() {
+    x("[2,8,4,9,3,8]", 2, 12);
     x("[5]", 2, 0);
     x("[5,2]", 2, 0);
-    x("[2,8,4,9,3,8]", 2, 12);
     x("[3,2,6,5,0,3]", 2, 7);
     x("[1,2,3,4,5]", 2, 4);
     x("[7,6,4,3,1]", 2, 0);
@@ -53,6 +53,8 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
 
     db("Prices:", prices);
     int time = 0;
+    int prevLevel = -1;
+    
     while (true) {
       time++;
       if (time == prices.length)
@@ -71,11 +73,30 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
         continue;
       }
 
-      // If we are still moving up and not about to stop, do nothing
-      if (time + 1 < prices.length && prices[time + 1] >= prices[time]) {
-        db("...still moving upward");
+      // If not at a peak, we won't be selling; and if not at a trough, we won't be buying.
+      // But we only figure out where we want to buy when we reach a selling point.
+
+      boolean atSellPoint = false;
+      {
+        int nextVal = (time + 1 != prices.length) ? prices[time + 1] : Integer.MIN_VALUE;
+        int curr = prices[time];
+        if ((curr > prevLevel && curr > nextVal) || time + 1 == prices.length)
+          atSellPoint = true;
+        if (curr != prevLevel)
+          prevLevel = curr;
+        db("...prev:", prevLevel, "curr:", curr, "at sell point:", atSellPoint);
+      }
+
+      if (!atSellPoint) {
+        db("...not at potential SELL point");
         continue;
       }
+      //      
+      //      // If we are still moving up and not about to stop, do nothing
+      //      if (time + 1 < prices.length && prices[time + 1] >= prices[time]) {
+      //        db("...still moving upward");
+      //        continue;
+      //      }
 
       // Construct candidate transaction from the previous minimum to this price
       var newTrans = new Tr(minTimeSinceLastTr, time);
@@ -86,7 +107,7 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
       addTrans(newTrans);
       todo("this min adjustment might not be 'undoable'");
       var oldMin = minTimeSinceLastTr;
-      
+
       minTimeSinceLastTr = newTrans.sell + 1;
       db("...added candidate transaction:", newTrans);
 
