@@ -58,7 +58,7 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
   }
 
   public int maxProfit(final int k, final int[] prices) {
-    if (prices.length == 1)
+   int cacheOps = 0; if (prices.length == 1)
       return 0;
     sPrices = prices;
     trans = new ArrayList<>();
@@ -89,13 +89,11 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
       // If not at a peak, we won't be selling; and if not at a trough, we won't be buying.
       // But we only figure out where we want to buy when we reach a selling point.
 
-      {
-        int nextVal = (time + 1 != prices.length) ? prices[time + 1] : Integer.MIN_VALUE;
-        db("...mv sign:", signOfLastPriceMovement);
-        if (!(signOfLastPriceMovement > 0 && nextVal < currentPrice)) {
-          db("...not at potential SELL point");
-          continue;
-        }
+      db("...mv sign:", signOfLastPriceMovement);
+      int nextVal = (time + 1 != prices.length) ? prices[time + 1] : Integer.MIN_VALUE;
+      if (!(signOfLastPriceMovement > 0 && nextVal < currentPrice)) {
+        db("...not at potential SELL point");
+        continue;
       }
 
       if (time == bestBuyTime) {
@@ -104,22 +102,24 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
       }
 
       // Construct candidate transaction from the previous minimum to this price
+      if (prices[time] <= prices[bestBuyTime])
+        continue;
       var newTrans = new Tr(bestBuyTime, time);
       db("...constructed candidate transaction:", newTrans);
-      if (newTrans.profit <= 0)
-        continue;
-
+      checkState(newTrans.profit > 0);
       addTrans(newTrans);
+      db("...added candidate transaction:", newTrans);
 
       // We update the best buy time to be the time immediately following this sale time
       bestBuyTime = newTrans.sell + 1;
-      db("...added candidate transaction:", newTrans);
 
       if (trans.size() <= k) {
         db("...not more than k transactions");
         continue;
       }
 
+      
+      cacheOps++;
       // Determine which of the transaction to delete.
       // Choose the one that minimizes the drop in profit, and take into
       // consideration the neighbors being able to reposition to use the deleted one's date
