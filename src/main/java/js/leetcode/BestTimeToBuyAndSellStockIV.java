@@ -2,6 +2,7 @@ package js.leetcode;
 
 import static js.base.Tools.*;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -66,7 +67,6 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
 
     x("[3,3]", 1, 0);
 
- 
     x(2, 8, -1);
     if (false)
       for (int i = 7; i < 30; i++) {
@@ -107,32 +107,135 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
 
   // ------------------------------------------------------------------
 
+  private static int compileState(int buyCursor, int sellCursor, int transactionCount) {
+    // Prices length is <=1000, or 2^10;
+    // k <= 100, or 2^7
+    return transactionCount | (buyCursor << 7) | (sellCursor << (7 + 10));
+  }
+
+  public static int extractCount(int state) {
+    return state & 0x7f;
+  }
+
+  public static int extractBuyCursor(int state) {
+    return (state >> 7) & 0x3ff;
+  }
+
+  public static int extractSellCursor(int state) {
+    return (state >> (7 + 10));
+  }
+
   public int maxProfit(final int k, final int[] prices) {
     buySellPrices = findBuySellPoints(prices);
     db("prices:", darray(prices));
     db("buy/sell prices:", darray(buySellPrices));
-    int np = buySellPrices.length / 2;
-    var table = new int[k + 1][np + 1];
-    for (int kc = 1; kc <= k; kc++) {
-      var currTbl = table[kc];
-      var prevTbl = table[kc - 1];
-      for (int j = 0; j < np; j++) {
-        int buy = buySellPrices[j * 2 + 0];
-        int sell = buySellPrices[j * 2 + 1];
-        int profit = sell - buy;
-        int newSum = prevTbl[j] + profit;
-        if (newSum > currTbl[j + 1])
-          currTbl[j + 1] = newSum;
 
-        if (prevTbl[j + 1] < prevTbl[j])
-          prevTbl[j + 1] = prevTbl[j];
+    // Prices length is <=1000, or 2^10;
+    // k <= 100, or 2^7
+
+    int numPoints = buySellPrices.length / 2;
+
+    Map<Integer, Integer> map = new HashMap<>();
+
+    int maxProfit = 0;
+    int initialState = compileState(0, 0, 0);
+    map.put(initialState, 0);
+    var frontier = new ArrayList<Integer>();
+    frontier.add(initialState);
+
+    int cursor = 0;
+    while (cursor < frontier.size()) {
+      int state = frontier.get(cursor++);
+      int currentSum = map.get(state);
+      if (maxProfit < currentSum)
+        maxProfit = currentSum;
+
+      int kc = extractCount(state);
+      if (kc == k)
+        continue;
+
+      int buyCursor = extractBuyCursor(state);
+      int sellCursor = extractSellCursor(state);
+
+      if (buyCursor < numPoints) {
+        // Explore buying at current buy price and selling at current or any later sell prices
+        int buyPrice = buySellPrices[buyCursor * 2];
+        for (int j = buyCursor; j < numPoints; j++) {
+          int sellPrice = buySellPrices[j * 2 + 1];
+          int profit = sellPrice - buyPrice;
+          if (profit <= 0)
+            continue;
+
+          var newSum = currentSum + profit;
+          int newState = compileState(j + 1, j + 1, kc + 1);
+          var currentBest = map.getOrDefault(newState, 0);
+          if (currentBest < newSum) {
+            map.put(newState, newSum);
+            frontier.add(newState);
+          }
+        }
+        // Explore not buying at current buy price and jumping to next
+        int newBuy = buyCursor + 1;
+        int newState = compileState(newBuy, newBuy, kc);
+        var currentBest = map.getOrDefault(newState, 0);
+        if (currentBest < currentSum) {
+          map.put(newState, currentSum);
+          frontier.add(newState);
+        }
       }
+      //
+      //      // 
+      //
+      //      if (sellCursor < numpoints) {
+      //        int buyPrice = buySellPrices[buyCursor * 2];
+      //        int sellPrice = buySellPrices[sellCursor * 2 + 1];
+      //        int profit = sellPrice - buyPrice;
+      //        if (profit > 0) {
+      //          var newSum = currentSum + profit;
+      //          int newState = ((sellCursor + 1) << 17) | ((sellCursor + 1) << 7) | (kc + 1);
+      //          var currentBest = map.getOrDefault(newState, 0);
+      //          if (currentBest < newSum)
+      //            map.put(newState, newSum);
+      //        }
+      //
+      //        // Consider what happens if we don't buy and sell
+      //        {
+      //          int newState = ((sellCursor + 1) << 17) | ((sellCursor + 1) << 7) | kc;
+      //          var currentBest = map.getOrDefault(newState, 0);
+      //          if (currentBest < currentSum)
+      //            map.put(newState, currentSum);
+      //        }
+      //      }
+      //
+      //      // Explore additional states
+      //      for (int sellc2 = sellCursor + 1; sellc2 < numpoints; sellc2++) {
+      //        int newState = (sellc2 << 17) | ((sellCursor + 1) << 7) | kc;
+      //      }
     }
-    int max = 0;
-    for (var finalSum : table[k]) {
-      max = Math.max(max, finalSum);
-    }
-    return max;
+    return maxProfit;
+    //
+    //    int np = buySellPrices.length / 2;
+    //    var table = new int[k + 1][np + 1];
+    //    for (int kc = 1; kc <= k; kc++) {
+    //      var currTbl = table[kc];
+    //      var prevTbl = table[kc - 1];
+    //      for (int j = 0; j < np; j++) {
+    //        int buy = buySellPrices[j * 2 + 0];
+    //        int sell = buySellPrices[j * 2 + 1];
+    //        int profit = sell - buy;
+    //        int newSum = prevTbl[j] + profit;
+    //        if (newSum > currTbl[j + 1])
+    //          currTbl[j + 1] = newSum;
+    //
+    //        if (prevTbl[j + 1] < prevTbl[j])
+    //          prevTbl[j + 1] = prevTbl[j];
+    //      }
+    //    }
+    //    int max = 0;
+    //    for (var finalSum : table[k]) {
+    //      max = Math.max(max, finalSum);
+    //    }
+    //    return max;
   }
 
   private int[] findBuySellPoints(int[] prices) {
