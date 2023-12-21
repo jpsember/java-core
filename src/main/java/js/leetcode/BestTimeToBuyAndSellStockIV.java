@@ -3,8 +3,18 @@ package js.leetcode;
 import static js.base.Tools.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+/**
+ * About to redo the algorithm.
+ * 
+ * I think we can look at the input and find distinct buy/sell points ahead of
+ * time, and choose accordingly.
+ *
+ */
 public class BestTimeToBuyAndSellStockIV extends LeetCode {
 
   public static void main(String[] args) {
@@ -21,11 +31,11 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     x(2, 2000, -1);
     x("[3,3,5,0,0,3,1,4]", 2, 6);
     x("[2,8,4,9,3,8]", 2, 12);
-    x("[5]", 2, 0);
     x("[5,2]", 2, 0);
     x("[3,2,6,5,0,3]", 2, 7);
     x("[1,2,3,4,5]", 2, 4);
     x("[7,6,4,3,1]", 2, 0);
+    x("[5]", 2, 0);
     x("[72]", 2, 0);
     x("[70,4,83,56,94,72,78,43,2,86,65,100,94,56,41,66,3,33,10,3,45,94,15,12,78,60,58,0,58,"
         + "15,21,7,11,41,12,96,83,77,47,62,27,19,40,63,30,4,77,52,17,57,21,66,63,29,51,40,"
@@ -101,8 +111,14 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
   }
 
   public int maxProfit(final int k, final int[] prices) {
-    if (prices.length == 1)
+    var points = findBuySellPoints(prices);
+    if (points.length == 0)
       return 0;
+
+    pr("prices:", prices, CR, "buy/sell:", points);
+    pointsSet.clear();
+    for (var i : points)
+      pointsSet.add(i);
     sPrices = prices;
     trans = new ArrayList<>();
     int bestBuyTime = 0;
@@ -224,15 +240,19 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
 
       db("after removal", INDENT, trans);
 
-      if ( minSlot != trans.size() && alert("verifying end transaction time hasn't changed")) {
+      if (minSlot != trans.size() && alert("verifying end transaction time hasn't changed")) {
         var lastT = tr(trans.size() - 1);
         if (bestBuyTime != lastT.sell + 1)
           die("bestBuyTime is", bestBuyTime, "but last sell is now", lastT.sell, INDENT, trans);
       }
     }
     int sum = 0;
-    for (var t : trans)
+    for (var t : trans) {
+      pr("prices:", prices, CR, "buy/sell:", points);
+      checkArgument(pointsSet.contains(prices[t.buy]), "buy time not in set:", t);
+      checkArgument(pointsSet.contains(prices[t.sell]), "sell time not in set:", t);
       sum += t.profit;
+    }
     return sum;
   }
 
@@ -265,4 +285,32 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
   private static List<Tr> trans;
   private static int[] sPrices;
 
+  private static int sign(int value) {
+    return (value == 0) ? 0 : (value < 0 ? -1 : 1);
+  }
+
+  private static Set<Integer> pointsSet = new HashSet<>();
+
+  private int[] findBuySellPoints(int[] prices) {
+    pr("buy/sell points from:", prices);
+    final int len = prices.length;
+    int[] result = new int[len * 3 + 3];
+    int resultCursor = 0;
+    var dir = -1;
+    for (int i = 0; i < len; i++) {
+      var price = prices[i];
+      var nextPrice = (i + 1 < len) ? prices[i + 1] : -1001;
+      var nextDir = sign(nextPrice - price);
+      if (nextDir != 0) {
+        if (dir != nextDir) {
+          // The first value should correspond to a BUY point
+          if (resultCursor == 0)
+            checkState(nextDir > 0);
+          result[resultCursor++] = price;
+        }
+        dir = nextDir;
+      }
+    }
+    return Arrays.copyOf(result, resultCursor);
+  }
 }
