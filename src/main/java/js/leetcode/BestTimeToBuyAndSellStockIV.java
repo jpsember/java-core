@@ -12,14 +12,13 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
   }
 
   public void run() {
-    x(2,8,-1);
-    
-    for (int i = 7; i < 30; i++) {
-      pr(INDENT,"i:",i);
-    x(2, i, -1);
-    }
-    if (true) return;
-    x(2, 2000, 20);
+    x(2, 8, -1);
+    if (false)
+      for (int i = 7; i < 30; i++) {
+        pr(INDENT, "i:", i);
+        x(2, i, -1);
+      }
+    x(2, 2000, -1);
     x("[3,3,5,0,0,3,1,4]", 2, 6);
     x("[2,8,4,9,3,8]", 2, 12);
     x("[5]", 2, 0);
@@ -28,7 +27,7 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     x("[1,2,3,4,5]", 2, 4);
     x("[7,6,4,3,1]", 2, 0);
     x("[72]", 2, 0);
-    
+
   }
 
   private void x(int k, int count, int expected) {
@@ -183,6 +182,8 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
         }
       }
 
+      db(VERT_SP, "removing subopt trans at", minSlot, INDENT, trans);
+
       db("...removing suboptimal transaction:", tr(minSlot));
       if (minLeft != null)
         trans.set(minSlot - 1, minLeft);
@@ -190,7 +191,9 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
         trans.set(minSlot + 1, minRight);
       trans.remove(minSlot);
 
-      if (alert("verifying end transaction time hasn't changed")) {
+      db("after removal", INDENT, trans);
+
+      if ( minSlot != trans.size() && alert("verifying end transaction time hasn't changed")) {
         var lastT = tr(trans.size() - 1);
         if (bestBuyTime != lastT.sell + 1)
           die("bestBuyTime is", bestBuyTime, "but last sell is now", lastT.sell, INDENT, trans);
