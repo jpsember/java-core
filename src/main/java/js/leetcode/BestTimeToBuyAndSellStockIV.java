@@ -19,6 +19,19 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     x("[1,2,3,4,5]", 2, 4);
     x("[7,6,4,3,1]", 2, 0);
     x("[72]", 2, 0);
+    x(2, 2000, 20);
+  }
+
+  private void x(int k, int count, int expected) {
+    rand(2000 + count);
+    int[] prices = new int[count];
+    for (int i = 0; i < count; i++) {
+      prices[i] = rand().nextInt(30) + 2;
+    }
+    var result = maxProfit(k, prices);
+    pr("k:", k, "prices", prices, "result:", result);
+    if (expected >= 0)
+      verify(result, expected);
   }
 
   private void x(String s, int k, int expected) {
@@ -49,7 +62,7 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
       return 0;
     sPrices = prices;
     trans = new ArrayList<>();
-    int minTimeSinceLastTr = 0;
+    int bestBuyTime = 0;
 
     db("Prices:", prices);
     int time = 0;
@@ -59,33 +72,18 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
       time++;
       if (time == prices.length)
         break;
-      db("time:", time, "price:", prices[time], "mintime:", minTimeSinceLastTr, "trans:", trans);
+      int currentPrice = prices[time];
+      db("time:", time, "price:", currentPrice, "buytime:", bestBuyTime, "trans:", trans);
       verify(k);
 
-      if (false && alert("validating min time since")) {
-        int expLast = 0;
-        if (!trans.isEmpty()) {
-          var t = tr(trans.size() - 1);
-          expLast = t.sell + 1;
-        }
-        for (int t = expLast; t < time; t++) {
-          if (prices[t] < prices[expLast])
-            expLast = t;
-        }
-        if (minTimeSinceLastTr != expLast) {
-        die("minTimeSince",minTimeSinceLastTr,"but expected it to be",expLast);
-        }
-        
-      }
-
-      int sign = prices[time] - prices[time - 1];
+      int sign = currentPrice - prices[time - 1];
       if (sign != 0)
         signOfLastPriceMovement = sign;
-      if (prices[time] < prices[minTimeSinceLastTr]) {
+
+      // If prices have dipped below the previous best buy time, we have a new best buy time
+      if (currentPrice < prices[bestBuyTime]) {
         db("...new low time of min price:", time);
-        todo("why does this want to skip the following code?");
-        minTimeSinceLastTr = time;
-        continue;
+        bestBuyTime = time;
       }
 
       // If not at a peak, we won't be selling; and if not at a trough, we won't be buying.
@@ -94,29 +92,27 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
       {
         int nextVal = (time + 1 != prices.length) ? prices[time + 1] : Integer.MIN_VALUE;
         db("...mv sign:", signOfLastPriceMovement);
-        if (!(signOfLastPriceMovement > 0 && nextVal < prices[time])) {
+        if (!(signOfLastPriceMovement > 0 && nextVal < currentPrice)) {
           db("...not at potential SELL point");
           continue;
         }
       }
 
-      if (time == minTimeSinceLastTr) {
+      if (time == bestBuyTime) {
         db("...still at time of min price since last transaction");
         continue;
       }
 
       // Construct candidate transaction from the previous minimum to this price
-      var newTrans = new Tr(minTimeSinceLastTr, time);
+      var newTrans = new Tr(bestBuyTime, time);
       db("...constructed candidate transaction:", newTrans);
       if (newTrans.profit <= 0)
         continue;
 
       addTrans(newTrans);
-//      todo("this min adjustment might not be 'undoable'");
-//      var oldMin = minTimeSinceLastTr;
 
-      // We update the minimum time since last transaction here, 
-      minTimeSinceLastTr = newTrans.sell + 1;
+      // We update the best buy time to be the time immediately following this sale time
+      bestBuyTime = newTrans.sell + 1;
       db("...added candidate transaction:", newTrans);
 
       if (trans.size() <= k) {
@@ -181,11 +177,11 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
         trans.set(minSlot + 1, minRight);
       trans.remove(minSlot);
 
-      if (!trans.isEmpty()) {
-        var t = tr(trans.size() - 1);
-        db("last trans sell:", t.sell, "minTimeSince:", minTimeSinceLastTr, "old:", oldMin);
+      if (alert("verifying end transaction time hasn't changed")) {
+        var lastT = tr(trans.size() - 1);
+        if (bestBuyTime != lastT.sell + 1)
+          die("bestBuyTime is", bestBuyTime, "but last sell is now", lastT.sell, INDENT, trans);
       }
-
     }
     int sum = 0;
     for (var t : trans)
