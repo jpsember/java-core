@@ -104,14 +104,36 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
 
   // ------------------------------------------------------------------
 
+  private static boolean extractTransactionFlag(int cellValue) {
+    return (cellValue & 1) != 0;
+  }
+
+  private static int extractProfit(int cellValue) {
+    return cellValue >> 1;
+  }
+
+  private static int compileCellValue(int profit, boolean transactionFlag) {
+    var val = profit << 1;
+    if (transactionFlag)
+      val |= 1;
+    return val;
+  }
+
+  private static String cellStr(int cellValue) {
+    return (extractTransactionFlag(cellValue) ? "!" : "") + extractProfit(cellValue);
+  }
+
   public int maxProfit(final int k, final int[] prices) {
     var buySellPrices = findBuySellPoints(prices);
     db("prices:", darray(prices));
     db("buy/sell prices:", darray(buySellPrices));
 
-    int numTimePoints = buySellPrices.length;
-    // Add an extra two columns to the rows to be able to show the result of the last buy/sell point
-    var cells = new int[k + 1][numTimePoints + 2];
+    // We need to examine each buy/sell pair, but only need to record data for the date following a
+    // particular sell date.  
+
+    int numTimePoints = (buySellPrices.length / 2);
+
+    var cells = new int[k + 1][numTimePoints];
 
     for (int rowIndex = 0; rowIndex < k; rowIndex++) {
       var row = cells[rowIndex];
@@ -127,36 +149,48 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
 
       todo("how to avoid selling twice on the same day?");
 
-      for (int t = 0; t < numTimePoints; t++) {
-        int transEndDate = t + 2;
-        boolean buying = (t & 1) == 0;
-        boolean selling = !buying;
+      for (int ci = 0; ci < numTimePoints; ci++) {
 
-        var prevSum = row[t];
-        db("cell[t=" + t + "]:", prevSum, "price:", buySellPrices[t], "M:", minSharePrice, "C:", cProfit);
-        if (buying)
-          minSharePrice = updateIfLess(minSharePrice, buySellPrices[t], "M");
+        int t0 = (ci * 2);
+        var prevSum = extractProfit(row[ci]);
+        db("cell[" + ci + "]:", prevSum, "price:", buySellPrices[t0], "M:", minSharePrice, "C:", cProfit);
 
-        if (buying) {
-          var newTransProfit = buySellPrices[t + 1] - minSharePrice;
-          db("...C':", newTransProfit);
-          cProfit = updateIfBetter(cProfit, newTransProfit, "C");
+        minSharePrice = updateIfLess(minSharePrice, buySellPrices[t0 + 0], "M");
 
-         
-          // Update next row for case where we do not make this transaction
-          updateIfBetter(nextRow, t + 2, prevSum, "no transaction");
-     
-          
-          // If we've previously performed a sell at this transactions' buy/sell date,
-          // don't double count this transaction
-          if (nextRow[t + 2] == 0) {
-            // Update next row for case where we do make this transaction
-            var newCellValue = prevSum + cProfit;
-            updateIfBetter(nextRow, t + 2, newCellValue, "transaction");
+        var newTransProfit = buySellPrices[t0 + 1] - minSharePrice;
+        db("...C':", newTransProfit);
+        cProfit = updateIfBetter(cProfit, newTransProfit, "C");
+
+        // Update next row for case where we do not make this transaction
+        {
+          var oldVal = nextRow[ci];
+          var oldProfit = extractProfit(oldVal);
+          if (oldProfit < prevSum) {
+            var newVal = compileCellValue(prevSum, false);
+            db("......no transaction: update upper cell[" + ci + "] from", cellStr(oldVal), "to",
+                cellStr(newVal));
+            row[ci] = newVal;
           }
         }
+
+        // If we've previously performed a sell at this transactions' buy/sell date,
+        // don't double count this transaction
+        if (!extractTransactionFlag(row[ci])) {
+          // Update next row for case where we do make this transaction
+          var newCellValue = prevSum + cProfit;
+          var oldVal = nextRow[ci];
+          var oldProfit = extractProfit(oldVal);
+          if (oldProfit < newCellValue) {
+            var newVal = compileCellValue(newCellValue, true);
+            db("......transaction: update upper cell[" + ci + "] from", cellStr(oldVal), "to",
+                cellStr(newVal));
+            row[ci] = newVal;
+          }
+        }
+
       }
     }
+
     var row = cells[k];
     int max = 0;
     for (var x : row)
@@ -184,8 +218,8 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
         col++;
         if (v == 0)
           sb.append('.');
-        else
-          sb.append(v);
+        else  
+          sb.append(cellStr(v));
         tab(sb, 6 + col * colWidth);
       }
       db(sb);
@@ -207,14 +241,6 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
       return newValue;
     }
     return oldValue;
-  }
-
-  private void updateIfBetter(int[] row, int slot, int newValue, String message) {
-    if (row[slot] >= newValue)
-      return;
-    db("......", message, ": update upper cell[" + slot + "] from", row[slot], "to", newValue);
-    row[slot] = newValue;
-    return;
   }
 
   private int[] findBuySellPoints(int[] prices) {
