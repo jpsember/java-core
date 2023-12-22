@@ -116,37 +116,40 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     db("buy/sell prices:", darray(buySellPrices));
 
     int numTimePoints = buySellPrices.length;
-    var cells = new int[k + 1][numTimePoints];
+    // Add an extra two columns to the rows to be able to show the result of the last buy/sell point
+    var cells = new int[k + 1][numTimePoints + 2];
 
     for (int rowIndex = 0; rowIndex < k; rowIndex++) {
       var row = cells[rowIndex];
       var nextRow = cells[rowIndex + 1];
-      db(VERT_SP, "Row", rowIndex, row);
+      dbTable(cells, rowIndex + 1);
+
+      // db(VERT_SP, "Row", rowIndex, row);
 
       var cProfit = 0; // S_c
       var minSharePrice = buySellPrices[0]; // S_m
 
+      todo("we really are doing different things on the odd vs even points.");
+
       for (int t = 0; t < numTimePoints; t++) {
+        boolean buying = (t & 1) == 0;
+        boolean selling = !buying;
+
         var prevSum = row[t];
         db("cell[t=" + t + "]:", prevSum, "price:", buySellPrices[t], "M:", minSharePrice, "C:", cProfit);
-        if (minSharePrice > buySellPrices[t]) {
-          minSharePrice = buySellPrices[t];
-          db("...updated M to", minSharePrice);
-        }
-        var newTransProfit = buySellPrices[t] - minSharePrice;
-        db("...C':", newTransProfit);
-        if (newTransProfit > cProfit) {
-          cProfit = newTransProfit;
-          db("...updated C to", cProfit);
-        }
+        if (buying)
+          minSharePrice = updateIfLess(minSharePrice, buySellPrices[t], "M");
+        if (buying) {
+          var newTransProfit = buySellPrices[t + 1] - minSharePrice;
+          db("...C':", newTransProfit);
+          cProfit = updateIfBetter(cProfit, newTransProfit, "C");
 
-        // Update next row for case where we do not make this transaction
-        updateIfBetter(nextRow, t, prevSum, "old value");
+          // Update next row for case where we do not make this transaction
+          updateIfBetter(nextRow, t + 2, prevSum, "no transaction");
 
-        // Update next row for case where we do make this transaction
-        if (t + 1 < numTimePoints) {
+          // Update next row for case where we do make this transaction
           var newCellValue = prevSum + cProfit;
-          updateIfBetter(nextRow, t + 1, newCellValue, "transaction");
+          updateIfBetter(nextRow, t + 2, newCellValue, "transaction");
         }
       }
     }
@@ -155,6 +158,51 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     for (var x : row)
       max = Math.max(max, x);
     return max;
+  }
+
+  private void dbTable(int[][] table, int maxRows) {
+    var colWidth = 4;
+    int x = table[0].length * colWidth + 9;
+    var ds = "-----------------------------------------------------";
+    var dashes = ds.substring(0, Math.min(ds.length(), x));
+    db(VERT_SP);
+    db(dashes);
+    var sb = new StringBuilder();
+    for (int y = maxRows - 1; y >= 0; y--) {
+      var ry = table[y];
+      sb.setLength(0);
+      sb.append(' ');
+      sb.append(y);
+      tab(sb, 4);
+      sb.append("| ");
+      int col = 0;
+      for (var v : ry) {
+        col++;
+        if (v == 0)
+          sb.append('.');
+        else
+          sb.append(v);
+        tab(sb, 6 + col * colWidth);
+      }
+      db(sb);
+    }
+    db(dashes);
+  }
+
+  private int updateIfLess(int oldValue, int newValue, String message) {
+    if (oldValue > newValue) {
+      db("......", message, ": updating from", oldValue, "to", newValue);
+      return newValue;
+    }
+    return oldValue;
+  }
+
+  private int updateIfBetter(int oldValue, int newValue, String message) {
+    if (oldValue < newValue) {
+      db("......", message, ": updating from", oldValue, "to", newValue);
+      return newValue;
+    }
+    return oldValue;
   }
 
   private void updateIfBetter(int[] row, int slot, int newValue, String message) {
