@@ -2,10 +2,7 @@ package js.leetcode;
 
 import static js.base.Tools.*;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * About to redo the algorithm.
@@ -22,7 +19,8 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
   public void run() {
 
     x("[5,2,3,0,3,5,6,8,1,5]", 2, 12);
-
+    if (true)
+      return;
     x("[0,5,4,9,0,6]", 2, 15);
 
     x("[3,2,6,5,0,3]", 2, 7);
@@ -101,7 +99,9 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
 
   private void x(String s, int k, int expected) {
     var prices = extractNums(s);
+    checkpoint("Calculating max profit for n", prices.length);
     var result = maxProfit(k, prices);
+    checkpoint("Done calculating");
     pr("k:", k, "prices", darray(prices), "result:", result);
     if (expected < 0)
       expected = result;
@@ -115,80 +115,54 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     db("prices:", darray(prices));
     db("buy/sell prices:", darray(buySellPrices));
 
-    // Prices length is <=1000, or 2^10;
-    // k <= 100, or 2^7
+    int numTimePoints = buySellPrices.length;
+    var cells = new int[k + 1][numTimePoints];
 
-    int numPoints = buySellPrices.length / 2;
+    for (int rowIndex = 0; rowIndex < k; rowIndex++) {
+      var row = cells[rowIndex];
+      var nextRow = cells[rowIndex + 1];
+      db(VERT_SP, "Row", rowIndex, row);
 
-    Map<Integer, Integer> map = new HashMap<>();
+      var cProfit = 0; // S_c
+      var minSharePrice = buySellPrices[0]; // S_m
 
-    int maxProfit = 0;
-    int initialState = compileState(0, 0);
-    map.put(initialState, 0);
-    var frontier = new ArrayList<Integer>();
-    frontier.add(initialState);
+      for (int t = 0; t < numTimePoints; t++) {
+        var prevSum = row[t];
+        db("cell[t=" + t + "]:", prevSum, "price:", buySellPrices[t], "M:", minSharePrice, "C:", cProfit);
+        if (minSharePrice > buySellPrices[t]) {
+          minSharePrice = buySellPrices[t];
+          db("...updated M to", minSharePrice);
+        }
+        var newTransProfit = buySellPrices[t] - minSharePrice;
+        db("...C':", newTransProfit);
+        if (newTransProfit > cProfit) {
+          cProfit = newTransProfit;
+          db("...updated C to", cProfit);
+        }
 
-    int cursor = 0;
-    while (cursor < frontier.size()) {
-      int state = frontier.get(cursor++);
-      int currentSum = map.get(state);
-      db(VERT_SP, "popped state:", state, "sum:", currentSum, "k:", extractCount(state), "buyc:",
-          extractBuyCursor(state));
+        // Update next row for case where we do not make this transaction
+        updateIfBetter(nextRow, t, prevSum, "old value");
 
-      if (maxProfit < currentSum)
-        maxProfit = currentSum;
-
-      int transactionCount = extractCount(state);
-      // If we've already used up all k transactions, don't continue along this path
-      if (transactionCount == k)
-        continue;
-
-      int buyCursor = extractBuyCursor(state);
-
-      // If we've already used up all possible buy/sell points, don't continue
-
-      if (buyCursor == numPoints)
-        continue;
-
-      // Explore buying at current buy price and selling at current or any later sell prices
-      int buyPrice = buySellPrices[buyCursor * 2];
-      int maxProfitSeen = 0;
-      db("...considering buying at current buy price:", buyPrice);
-
-      for (int j = buyCursor; j < numPoints; j++) {
-        int sellPrice = buySellPrices[j * 2 + 1];
-        int profit = sellPrice - buyPrice;
-        db("...sell cursor:", j, "sell price:", sellPrice, "profit:", profit);
-        if (profit <= maxProfitSeen)
-          continue;
-        maxProfitSeen = profit;
-
-        var newSum = currentSum + profit;
-        db("....newsum:", newSum);
-        int newState = compileState(j + 1, transactionCount + 1);
-        var currentBest = map.getOrDefault(newState, Integer.MIN_VALUE);
-        if (currentBest < newSum) {
-          db("......adding to frontier");
-          map.put(newState, newSum);
-          frontier.add(newState);
+        // Update next row for case where we do make this transaction
+        if (t + 1 < numTimePoints) {
+          var newCellValue = prevSum + cProfit;
+          updateIfBetter(nextRow, t + 1, newCellValue, "transaction");
         }
       }
-
-      // Explore not buying at current buy price and jumping to next
-      db("...considering NOT buying at current buy price:", buyPrice);
-
-      int newState = compileState(buyCursor + 1, transactionCount);
-      var currentBest = map.getOrDefault(newState, Integer.MIN_VALUE);
-      db("...skipping to next:", buyCursor + 1, "memo value:", currentBest);
-      if (currentBest < currentSum) {
-        map.put(newState, currentSum);
-        db("......adding to frontier");
-        frontier.add(newState);
-      }
     }
-    db("states examined:", frontier.size());
-    db("maxprofit:", maxProfit);
-    return maxProfit;
+    var row = cells[k];
+    int max = 0;
+    for (var x : row)
+      max = Math.max(max, x);
+    return max;
+  }
+
+  private void updateIfBetter(int[] row, int slot, int newValue, String message) {
+    if (row[slot] >= newValue)
+      return;
+    db("......", message, ": update upper cell[" + slot + "] from", row[slot], "to", newValue);
+    row[slot] = newValue;
+    return;
   }
 
   private int[] findBuySellPoints(int[] prices) {
@@ -210,23 +184,6 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
       result[outCursor++] = price;
     }
     return Arrays.copyOf(result, outCursor);
-  }
-
-  private static final int TRANSACTION_COUNT_BITS = 7;
-  private static final int PRICE_CURSOR_BITS = 10;
-
-  private static int compileState(int buyCursor, int transactionCount) {
-    // Prices length is <=1000, or 2^10;
-    // k <= 100, or 2^7
-    return transactionCount | (buyCursor << TRANSACTION_COUNT_BITS);
-  }
-
-  private static int extractCount(int state) {
-    return state & ((1 << TRANSACTION_COUNT_BITS) - 1);
-  }
-
-  private static int extractBuyCursor(int state) {
-    return (state >> TRANSACTION_COUNT_BITS) & ((1 << PRICE_CURSOR_BITS) - 1);
   }
 
 }
