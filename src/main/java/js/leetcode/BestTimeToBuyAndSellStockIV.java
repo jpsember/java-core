@@ -4,12 +4,6 @@ import static js.base.Tools.*;
 
 import java.util.Arrays;
 
-/**
- * About to redo the algorithm.
- * 
- * Works, but is in bottom 5% runtime and memory.
- *
- */
 public class BestTimeToBuyAndSellStockIV extends LeetCode {
 
   public static void main(String[] args) {
@@ -131,7 +125,10 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
 
       todo("we really are doing different things on the odd vs even points.");
 
+      todo("how to avoid selling twice on the same day?");
+
       for (int t = 0; t < numTimePoints; t++) {
+        int transEndDate = t + 2;
         boolean buying = (t & 1) == 0;
         boolean selling = !buying;
 
@@ -139,17 +136,24 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
         db("cell[t=" + t + "]:", prevSum, "price:", buySellPrices[t], "M:", minSharePrice, "C:", cProfit);
         if (buying)
           minSharePrice = updateIfLess(minSharePrice, buySellPrices[t], "M");
+
         if (buying) {
           var newTransProfit = buySellPrices[t + 1] - minSharePrice;
           db("...C':", newTransProfit);
           cProfit = updateIfBetter(cProfit, newTransProfit, "C");
 
+         
           // Update next row for case where we do not make this transaction
           updateIfBetter(nextRow, t + 2, prevSum, "no transaction");
-
-          // Update next row for case where we do make this transaction
-          var newCellValue = prevSum + cProfit;
-          updateIfBetter(nextRow, t + 2, newCellValue, "transaction");
+     
+          
+          // If we've previously performed a sell at this transactions' buy/sell date,
+          // don't double count this transaction
+          if (nextRow[t + 2] == 0) {
+            // Update next row for case where we do make this transaction
+            var newCellValue = prevSum + cProfit;
+            updateIfBetter(nextRow, t + 2, newCellValue, "transaction");
+          }
         }
       }
     }
