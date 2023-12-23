@@ -3,6 +3,8 @@ package js.leetcode;
 import static js.base.Tools.*;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 public class BestTimeToBuyAndSellStockIV extends LeetCode {
 
@@ -11,15 +13,12 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
   }
 
   public void run() {
-
     x("[5,2,3,0,3,5,6,8,1,5]", 2, 12);
-    if (true)
-      return;
     x("[0,5,4,9,0,6]", 2, 15);
 
     x("[3,2,6,5,0,3]", 2, 7);
 
-    if (false)
+    if (true)
       x("[70,4,83,56,94,72,78,43,2,86,65,100,94,56,41,66,3,33,10,3,45,94,15,12,78,60,58,0,58,"
           + "15,21,7,11,41,12,96,83,77,47,62,27,19,40,63,30,4,77,52,17,57,21,66,63,29,51,40,"
           + "37,6,44,42,92,16,64,33,31,51,36,0,29,95,92,35,66,91,19,21,100,95,40,61,15,83,31,"
@@ -104,132 +103,94 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
 
   // ------------------------------------------------------------------
 
-  //  private static boolean extractTransactionFlag(int cellValue) {
-  //    return (cellValue & 1) != 0;
-  //  }
-  //
-  //  private static int extractProfit(int cellValue) {
-  //    return cellValue >> 1;
-  //  }
-  //
-  //  private static int compileCellValue(int profit, boolean transactionFlag) {
-  //    var val = profit << 1;
-  //    if (transactionFlag)
-  //      val |= 1;
-  //    return val;
-  //  }
-
-  //  private static String cellStr(int cellValue) {
-  //    return (extractTransactionFlag(cellValue) ? "!" : "") + extractProfit(cellValue);
-  //  }
-
   public int maxProfit(final int k, final int[] prices) {
     var buySellPrices = findBuySellPoints(prices);
     db("prices:", darray(prices));
     db("buy/sell prices:", darray(buySellPrices));
+    mPoints = buildPoints(buySellPrices);
+    db("points:", Arrays.asList(mPoints));
+    memo.clear();
+    return aux(0, mPoints.length, k);
+  }
 
-    // We need to examine each buy/sell pair, but only need to record data for the date following a
-    // particular sell date.  
-
-    int numTimePoints = (buySellPrices.length / 2);
-
-    var cells = new CellValue[k + 1][numTimePoints];
-    for (var row : cells) {
-      for (int i = 0; i < row.length; i++)
-        row[i] = new CellValue();
-    }
-    for (int rowIndex = 0; rowIndex < k; rowIndex++) {
-      var row = cells[rowIndex];
-      var nextRow = cells[rowIndex + 1];
-      dbTable(cells, rowIndex + 1);
-
-      // db(VERT_SP, "Row", rowIndex, row);
-
-      var cProfit = 0; // S_c
-      var minSharePrice = buySellPrices[0]; // S_m
-
-      for (int ci = 0; ci < numTimePoints; ci++) {
-        int t0 = (ci * 2);
-        var prevVal = row[ci];
-        db("cell[" + ci + "]:", prevVal, "price:", buySellPrices[t0], "M:", minSharePrice, "C:", cProfit);
-
-        minSharePrice = updateIfBetter(false, minSharePrice, buySellPrices[t0 + 0], "M");
-
-        var newTransProfit = buySellPrices[t0 + 1] - minSharePrice;
-        db("...C':", newTransProfit);
-        cProfit = updateIfBetter(true, cProfit, newTransProfit, "C");
-
-        // Update next row for case where we do not make this transaction
-        {
-          var cell = nextRow[ci];
-          var newProfit = prevVal.profitWithoutSale;
-          checkState(cell.profitWithoutSale <= newProfit);
-          if (cell.profitWithoutSale < newProfit) {
-            cell.profitWithoutSale = newProfit;
-            db("......no transaction: update upper cell[" + ci + "] to", cell);
-          }
-        }
-
-        // Update next row for case where we do make this transaction
-        {
-          var cell = nextRow[ci];
-          var newCellValue = cell.profitWithoutSale + cProfit;
-          if (cell.profitWithSale < newCellValue) {
-            cell.profitWithSale = newCellValue;
-            db("......transaction: update upper cell[" + ci + "] to", cell);
-          }
-        }
+  private int aux(int ptStart, int ptEnd, int k) {
+    final boolean db = false;
+    if (db)
+      db("aux", ptStart, "..", ptEnd, "k:", k);
+    int result = -1;
+    do {
+      if (k == 0 || ptStart == ptEnd) {
+        result = 0;
+        break;
       }
-    }
-
-    var row = cells[k];
-    int max = 0;
-    for (var x : row)
-      max = Math.max(max, Math.max(x.profitWithoutSale, x.profitWithSale));
-    return max;
-  }
-
-  private void dbTable(CellValue[][] table, int maxRows) {
-    var colWidth = 8;
-    int x = table[0].length * colWidth + 9;
-    var ds = "-----------------------------------------------------";
-    var dashes = ds.substring(0, Math.min(ds.length(), x));
-    db(VERT_SP);
-    db(dashes);
-    var sb = new StringBuilder();
-    for (int y = maxRows - 1; y >= 0; y--) {
-      var ry = table[y];
-      sb.setLength(0);
-      sb.append(' ');
-      sb.append(y);
-      tab(sb, 4);
-      sb.append("| ");
-      int col = 0;
-      for (var v : ry) {
-        col++;
-        sb.append(v);
-        tab(sb, 6 + col * colWidth);
+      int key = k | (ptStart << 7) | (ptEnd << (7 + 10));
+      result = memo.getOrDefault(key, -1);
+      if (result < 0) {
+        result = calcAux(ptStart, ptEnd, k);
+        memo.put(key, result);
       }
-      db(sb);
-    }
-    db(dashes);
+    } while (false);
+    if (db)
+      db("...profit:", result);
+    return result;
   }
 
-  private int updateIfBetter(boolean higher, int oldValue, int newValue, String message) {
-    if (newValue != oldValue && (newValue > oldValue) == higher) {
-      //db("......", message, ": updating from", oldValue, "to", newValue);
-      return newValue;
+  private int calcAux(int u, int v, int k) {
+    db("calcAux, u:", u, "v:", v, "k:", k);
+
+    //    todo("return the actual k used, so we can store as optimal in map as well?");
+    if (k >= v - u) {
+      var sum = 0;
+      for (int i = u; i < v; i++)
+        sum += mPoints[i].profit();
+      db("...sum of all transactions");
+      return sum;
     }
-    return oldValue;
+    if (k == 0) {
+      alert("this actually happens!");
+      db("...k is zero");
+      return 0;
+    }
+    var first = mPoints[u];
+
+    // Calculate result of using this transaction
+    var bestSoFar = first.profit() + aux(u + 1, v, k - 1);
+    db("...with", first, "is", bestSoFar);
+
+    // Calculate result of not using this transaction
+    {
+      var alt = Math.max(bestSoFar, aux(u + 1, v, k));
+      db("...without", first, "is", alt);
+      bestSoFar = Math.max(bestSoFar, alt);
+    }
+    // Consider alternatives where we use this buy point, but skip one or more sell points
+
+    var minSellPrice = first.sellPrice;
+    for (var u2 = u + 1; u2 < v; u2++) {
+      var pt = mPoints[u2];
+      db("...considering using u2=", u2, new Pt(first.buyPrice, pt.sellPrice));
+
+      // If this point has a buy price lower than (or equal) to ours, then it dominates 
+      // our buy price for itself and any following sell points; stop scanning
+      if (pt.buyPrice <= first.buyPrice) {
+        db("...buyPrice is less than ours! Halting scan");
+        break;
+      }
+
+      // If this sell price is less than one of the ones we've passed by, ignore it
+      if (pt.sellPrice <= minSellPrice) {
+        db("...sell price is less than one we've already seen");
+        continue;
+      }
+
+      minSellPrice = pt.sellPrice;
+
+      var alt = (minSellPrice - first.buyPrice) + aux(u2, v, k - 1);
+      db("...with", new Pt(first.buyPrice, minSellPrice), "is:", alt);
+      bestSoFar = Math.max(bestSoFar, alt);
+    }
+    return bestSoFar;
   }
-  //
-  //  private int updateIfBetter(int oldValue, int newValue, String message) {
-  //    if (oldValue < newValue) {
-  //      db("......", message, ": updating from", oldValue, "to", newValue);
-  //      return newValue;
-  //    }
-  //    return oldValue;
-  //  }
 
   private int[] findBuySellPoints(int[] prices) {
     final int len = prices.length;
@@ -252,23 +213,34 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     return Arrays.copyOf(result, outCursor);
   }
 
-  private static class CellValue {
-    // max profit sum that does not include a sale at this date
-    int profitWithoutSale;
-    // max profit sum that *does* include a sale at this date
-    int profitWithSale;
+  private static class Pt {
+    Pt(int buy, int sell) {
+      this.buyPrice = buy;
+      this.sellPrice = sell;
+    }
 
-    private String s(int value) {
-      if (value == 0)
-        return "_";
-      return "" + value;
+    public int profit() {
+      return sellPrice - buyPrice;
     }
 
     @Override
     public String toString() {
-
-      return "(" + s(profitWithoutSale) + " " + s(profitWithSale) + ")";
+      return "(" + buyPrice + " " + sellPrice + ")=" + profit();
     }
 
+    int buyPrice;
+    int sellPrice;
   }
+
+  private Pt[] buildPoints(int[] buySellPoints) {
+    var out = new Pt[buySellPoints.length / 2];
+    int j = 0;
+    for (int i = 0; i < buySellPoints.length; i += 2)
+      out[j++] = new Pt(buySellPoints[i], buySellPoints[i + 1]);
+    return out;
+  }
+
+  private Pt[] mPoints;
+  private Map<Integer, Integer> memo = new HashMap<>();
+
 }
