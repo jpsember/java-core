@@ -137,19 +137,12 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
 
   private int calcAux(int u, int v, int k) {
     db("calcAux, u:", u, "v:", v, "k:", k);
-
-    //    todo("return the actual k used, so we can store as optimal in map as well?");
     if (k >= v - u) {
       var sum = 0;
       for (int i = u; i < v; i++)
         sum += mPoints[i].profit();
       db("...sum of all transactions");
       return sum;
-    }
-    if (k == 0) {
-      alert("this actually happens!");
-      db("...k is zero");
-      return 0;
     }
     var first = mPoints[u];
 
