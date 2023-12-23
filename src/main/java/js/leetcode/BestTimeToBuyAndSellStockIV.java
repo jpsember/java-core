@@ -104,24 +104,24 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
 
   // ------------------------------------------------------------------
 
-  private static boolean extractTransactionFlag(int cellValue) {
-    return (cellValue & 1) != 0;
-  }
+  //  private static boolean extractTransactionFlag(int cellValue) {
+  //    return (cellValue & 1) != 0;
+  //  }
+  //
+  //  private static int extractProfit(int cellValue) {
+  //    return cellValue >> 1;
+  //  }
+  //
+  //  private static int compileCellValue(int profit, boolean transactionFlag) {
+  //    var val = profit << 1;
+  //    if (transactionFlag)
+  //      val |= 1;
+  //    return val;
+  //  }
 
-  private static int extractProfit(int cellValue) {
-    return cellValue >> 1;
-  }
-
-  private static int compileCellValue(int profit, boolean transactionFlag) {
-    var val = profit << 1;
-    if (transactionFlag)
-      val |= 1;
-    return val;
-  }
-
-  private static String cellStr(int cellValue) {
-    return (extractTransactionFlag(cellValue) ? "!" : "") + extractProfit(cellValue);
-  }
+  //  private static String cellStr(int cellValue) {
+  //    return (extractTransactionFlag(cellValue) ? "!" : "") + extractProfit(cellValue);
+  //  }
 
   public int maxProfit(final int k, final int[] prices) {
     var buySellPrices = findBuySellPoints(prices);
@@ -133,8 +133,11 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
 
     int numTimePoints = (buySellPrices.length / 2);
 
-    var cells = new int[k + 1][numTimePoints];
-
+    var cells = new CellValue[k + 1][numTimePoints];
+    for (var row : cells) {
+      for (int i = 0; i < row.length; i++)
+        row[i] = new CellValue();
+    }
     for (int rowIndex = 0; rowIndex < k; rowIndex++) {
       var row = cells[rowIndex];
       var nextRow = cells[rowIndex + 1];
@@ -145,61 +148,49 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
       var cProfit = 0; // S_c
       var minSharePrice = buySellPrices[0]; // S_m
 
-      todo("we really are doing different things on the odd vs even points.");
-
-      todo("how to avoid selling twice on the same day?");
-
       for (int ci = 0; ci < numTimePoints; ci++) {
-
         int t0 = (ci * 2);
-        var prevSum = extractProfit(row[ci]);
-        db("cell[" + ci + "]:", prevSum, "price:", buySellPrices[t0], "M:", minSharePrice, "C:", cProfit);
+        var prevVal = row[ci];
+        db("cell[" + ci + "]:", prevVal, "price:", buySellPrices[t0], "M:", minSharePrice, "C:", cProfit);
 
-        minSharePrice = updateIfLess(minSharePrice, buySellPrices[t0 + 0], "M");
+        minSharePrice = updateIfBetter(false, minSharePrice, buySellPrices[t0 + 0], "M");
 
         var newTransProfit = buySellPrices[t0 + 1] - minSharePrice;
         db("...C':", newTransProfit);
-        cProfit = updateIfBetter(cProfit, newTransProfit, "C");
+        cProfit = updateIfBetter(true, cProfit, newTransProfit, "C");
 
         // Update next row for case where we do not make this transaction
         {
-          var oldVal = nextRow[ci];
-          var oldProfit = extractProfit(oldVal);
-          if (oldProfit < prevSum) {
-            var newVal = compileCellValue(prevSum, false);
-            db("......no transaction: update upper cell[" + ci + "] from", cellStr(oldVal), "to",
-                cellStr(newVal));
-            row[ci] = newVal;
+          var cell = nextRow[ci];
+          var newProfit = prevVal.profitWithoutSale;
+          checkState(cell.profitWithoutSale <= newProfit);
+          if (cell.profitWithoutSale < newProfit) {
+            cell.profitWithoutSale = newProfit;
+            db("......no transaction: update upper cell[" + ci + "] to", cell);
           }
         }
 
-        // If we've previously performed a sell at this transactions' buy/sell date,
-        // don't double count this transaction
-        if (!extractTransactionFlag(row[ci])) {
-          // Update next row for case where we do make this transaction
-          var newCellValue = prevSum + cProfit;
-          var oldVal = nextRow[ci];
-          var oldProfit = extractProfit(oldVal);
-          if (oldProfit < newCellValue) {
-            var newVal = compileCellValue(newCellValue, true);
-            db("......transaction: update upper cell[" + ci + "] from", cellStr(oldVal), "to",
-                cellStr(newVal));
-            row[ci] = newVal;
+        // Update next row for case where we do make this transaction
+        {
+          var cell = nextRow[ci];
+          var newCellValue = cell.profitWithoutSale + cProfit;
+          if (cell.profitWithSale < newCellValue) {
+            cell.profitWithSale = newCellValue;
+            db("......transaction: update upper cell[" + ci + "] to", cell);
           }
         }
-
       }
     }
 
     var row = cells[k];
     int max = 0;
     for (var x : row)
-      max = Math.max(max, x);
+      max = Math.max(max, Math.max(x.profitWithoutSale, x.profitWithSale));
     return max;
   }
 
-  private void dbTable(int[][] table, int maxRows) {
-    var colWidth = 4;
+  private void dbTable(CellValue[][] table, int maxRows) {
+    var colWidth = 8;
     int x = table[0].length * colWidth + 9;
     var ds = "-----------------------------------------------------";
     var dashes = ds.substring(0, Math.min(ds.length(), x));
@@ -216,10 +207,7 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
       int col = 0;
       for (var v : ry) {
         col++;
-        if (v == 0)
-          sb.append('.');
-        else  
-          sb.append(cellStr(v));
+        sb.append(v);
         tab(sb, 6 + col * colWidth);
       }
       db(sb);
@@ -227,21 +215,21 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     db(dashes);
   }
 
-  private int updateIfLess(int oldValue, int newValue, String message) {
-    if (oldValue > newValue) {
-      db("......", message, ": updating from", oldValue, "to", newValue);
+  private int updateIfBetter(boolean higher, int oldValue, int newValue, String message) {
+    if (newValue != oldValue && (newValue > oldValue) == higher) {
+      //db("......", message, ": updating from", oldValue, "to", newValue);
       return newValue;
     }
     return oldValue;
   }
-
-  private int updateIfBetter(int oldValue, int newValue, String message) {
-    if (oldValue < newValue) {
-      db("......", message, ": updating from", oldValue, "to", newValue);
-      return newValue;
-    }
-    return oldValue;
-  }
+  //
+  //  private int updateIfBetter(int oldValue, int newValue, String message) {
+  //    if (oldValue < newValue) {
+  //      db("......", message, ": updating from", oldValue, "to", newValue);
+  //      return newValue;
+  //    }
+  //    return oldValue;
+  //  }
 
   private int[] findBuySellPoints(int[] prices) {
     final int len = prices.length;
@@ -264,4 +252,23 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     return Arrays.copyOf(result, outCursor);
   }
 
+  private static class CellValue {
+    // max profit sum that does not include a sale at this date
+    int profitWithoutSale;
+    // max profit sum that *does* include a sale at this date
+    int profitWithSale;
+
+    private String s(int value) {
+      if (value == 0)
+        return "_";
+      return "" + value;
+    }
+
+    @Override
+    public String toString() {
+
+      return "(" + s(profitWithoutSale) + " " + s(profitWithSale) + ")";
+    }
+
+  }
 }
