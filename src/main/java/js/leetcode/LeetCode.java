@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
 
+import js.base.BasePrinter;
 import js.data.DataUtil;
 import js.json.JSList;
 import js.json.JSObject;
@@ -103,8 +104,26 @@ public abstract class LeetCode {
 
   private static int sInifiniteLoop;
 
+  private static int dbIndent;
+
+  public static void adjustIndent(int amt) {
+    dbIndent += amt;
+  }
+
+  public static void resetIndent() {
+    dbIndent = 0;
+  }
+
   public static void db(Object... messages) {
-    pr(messages);
+    if (dbIndent == 0)
+      pr(messages);
+    else {
+      var s = new BasePrinter();
+      s.mIndentColumn = dbIndent;
+      s.pr(messages);
+      s.resetIndentation();
+      logger().println(s.toString());
+    }
   }
 
   public void xx(Object... messages) {

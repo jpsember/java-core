@@ -13,6 +13,9 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
   }
 
   public void run() {
+
+    x("[1,2,4,2,5,7,2,4,9,0]", 2, 13);
+
     x("[5,2,3,0,3,5,6,8,1,5]", 2, 12);
     x("[0,5,4,9,0,6]", 2, 15);
 
@@ -104,6 +107,7 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
   // ------------------------------------------------------------------
 
   public int maxProfit(final int k, final int[] prices) {
+    resetIndent();
     var buySellPrices = findBuySellPoints(prices);
     db("prices:", darray(prices));
     db("buy/sell prices:", darray(buySellPrices));
@@ -114,9 +118,9 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
   }
 
   private int aux(int ptStart, int ptEnd, int k) {
-    final boolean db = false;
-    if (db)
-      db("aux", ptStart, "..", ptEnd, "k:", k);
+
+    db("aux", ptStart, "..", ptEnd, "k:", k);
+    adjustIndent(4);
     int result = -1;
     do {
       if (k == 0 || ptStart == ptEnd) {
@@ -127,11 +131,12 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
       result = memo.getOrDefault(key, -1);
       if (result < 0) {
         result = calcAux(ptStart, ptEnd, k);
+        db("...memoizing", ptStart, "..", ptEnd, "k:", k, "as:", result);
         memo.put(key, result);
       }
     } while (false);
-    if (db)
-      db("...profit:", result);
+    adjustIndent(-4);
+    db("...profit:", result);
     return result;
   }
 
@@ -178,7 +183,7 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
 
       minSellPrice = pt.sellPrice;
 
-      var alt = (minSellPrice - first.buyPrice) + aux(u2, v, k - 1);
+      var alt = (minSellPrice - first.buyPrice) + aux(u2 + 1, v, k - 1);
       db("...with", new Pt(first.buyPrice, minSellPrice), "is:", alt);
       bestSoFar = Math.max(bestSoFar, alt);
     }
@@ -207,6 +212,7 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
   }
 
   private static class Pt {
+
     Pt(int buy, int sell) {
       this.buyPrice = buy;
       this.sellPrice = sell;

@@ -431,7 +431,7 @@ public final class BasePrinter {
     }
   }
 
-  private int mIndentColumn;
+  public int mIndentColumn;
   private int mColumn;
   private int mMaxColumn;
   private StringBuilder mContentBuffer = new StringBuilder();
