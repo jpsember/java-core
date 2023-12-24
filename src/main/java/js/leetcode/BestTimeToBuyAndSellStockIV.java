@@ -2,10 +2,17 @@ package js.leetcode;
 
 import static js.base.Tools.*;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import js.data.DataUtil;
+
+/**
+ * This is in the bottom 20% time, 15% memory
+ */
 public class BestTimeToBuyAndSellStockIV extends LeetCode {
 
   public static void main(String[] args) {
@@ -14,6 +21,21 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
 
   public void run() {
 
+    if (true) {
+      final int max = 100;
+      add(1, 2);
+      for (int i = 0; i < 48; i++)
+        add(i + 2, i + 4);
+      add(1, max + 1);
+      dup(9);
+      xa(10, max * 10);
+      return;
+    }
+
+    if (true) {
+      x(100, 1000, 85988);
+      return;
+    }
     x("[1,2,4,2,5,7,2,4,9,0]", 2, 13);
 
     x("[5,2,3,0,3,5,6,8,1,5]", 2, 12);
@@ -70,7 +92,6 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
         x(2, i, -1);
       }
 
-    x(2, 2000, -1);
     x("[3,3,5,0,0,3,1,4]", 2, 6);
     x("[5,2]", 2, 0);
     x("[3,2,6,5,0,3]", 2, 7);
@@ -81,23 +102,49 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     x("[72]", 2, 0);
   }
 
+  private List<Integer> bprices = new ArrayList<>();
+
+  private void add(int... prices) {
+    for (var price : prices)
+      bprices.add(price);
+  }
+
+  private void dup(int times) {
+    int sz = bprices.size();
+    for (int i = 0; i < times; i++)
+      bprices.addAll(bprices.subList(0, sz));
+  }
+
+  private void xa(int k, int expected) {
+    loadTools();
+    int[] prices = DataUtil.intArray(bprices);
+    bprices.clear();
+    x3(prices, k, expected);
+  }
+
   private void x(int k, int count, int expected) {
     rand(2000 + count);
     int[] prices = new int[count];
     for (int i = 0; i < count; i++) {
-      prices[i] = rand().nextInt(30) + 2;
+      prices[i] = rand().nextInt(1001);
     }
-    var result = maxProfit(k, prices);
-    pr("k:", k, "prices", darray(prices), "result:", result);
-    if (expected >= 0)
-      verify(result, expected);
+    x3(prices, k, expected);
   }
 
   private void x(String s, int k, int expected) {
     var prices = extractNums(s);
-    checkpoint("Calculating max profit for n", prices.length);
+    x3(prices, k, expected);
+  }
+
+  private void x3(int[] prices, int k, int expected) {
+    if (prices.length >= 500)
+      checkpoint("Calculating max profit for n", prices.length);
     var result = maxProfit(k, prices);
-    checkpoint("Done calculating");
+    if (prices.length >= 500) {
+      checkpoint("Done calculating");
+      pr("Cache requests:", cacheRequests, "Misses:", cacheMisses, "Miss %:",
+          (cacheMisses * 100) / cacheRequests);
+    }
     pr("k:", k, "prices", darray(prices), "result:", result);
     if (expected < 0)
       expected = result;
@@ -113,13 +160,26 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     db("buy/sell prices:", darray(buySellPrices));
     mPoints = buildPoints(buySellPrices);
     db("points:", Arrays.asList(mPoints));
+
+    initMemo(k);
     memo.clear();
+    cacheRequests = 0;
+    cacheMisses = 0;
+
+    pr("mpoints length:", mPoints.length);
     return aux(0, mPoints.length, k);
   }
 
-  private int aux(int ptStart, int ptEnd, int k) {
+  private void initMemo(int k) {
+    memo = new HashMap<>(mPoints.length * mPoints.length * k);
+    cacheRequests = 0;
+    cacheMisses = 0;
+  }
 
-    db("aux", ptStart, "..", ptEnd, "k:", k);
+  private int aux(int ptStart, int ptEnd, int k) {
+    final boolean db = false;
+    if (db)
+      db("aux", ptStart, "..", ptEnd, "k:", k);
     adjustIndent(4);
     int result = -1;
     do {
@@ -129,62 +189,77 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
       }
       int key = k | (ptStart << 7) | (ptEnd << (7 + 10));
       result = memo.getOrDefault(key, -1);
+      cacheRequests++;
       if (result < 0) {
+        cacheMisses++;
         result = calcAux(ptStart, ptEnd, k);
-        db("...memoizing", ptStart, "..", ptEnd, "k:", k, "as:", result);
+        if (db)
+          db("...memoizing", ptStart, "..", ptEnd, "k:", k, "as:", result);
         memo.put(key, result);
       }
     } while (false);
     adjustIndent(-4);
-    db("...profit:", result);
+    if (db)
+      db("...profit:", result);
     return result;
   }
 
+  private static final boolean db = false;
+
   private int calcAux(int u, int v, int k) {
-    db("calcAux, u:", u, "v:", v, "k:", k);
+    if (db)
+      db("calcAux, u:", u, "v:", v, "k:", k);
     if (k >= v - u) {
       var sum = 0;
       for (int i = u; i < v; i++)
         sum += mPoints[i].profit();
-      db("...sum of all transactions");
+      if (db)
+        db("...sum of all transactions");
       return sum;
     }
     var first = mPoints[u];
 
     // Calculate result of using this transaction
     var bestSoFar = first.profit() + aux(u + 1, v, k - 1);
-    db("...with", first, "is", bestSoFar);
+    if (db)
+      db("...with", first, "is", bestSoFar);
 
     // Calculate result of not using this transaction
     {
       var alt = Math.max(bestSoFar, aux(u + 1, v, k));
-      db("...without", first, "is", alt);
+      if (db)
+        db("...without", first, "is", alt);
       bestSoFar = Math.max(bestSoFar, alt);
     }
     // Consider alternatives where we use this buy point, but skip one or more sell points
 
     var minSellPrice = first.sellPrice;
+
     for (var u2 = u + 1; u2 < v; u2++) {
       var pt = mPoints[u2];
-      db("...considering using u2=", u2, new Pt(first.buyPrice, pt.sellPrice));
+      if (db)
+        db("...considering using u2=", u2, new Pt(first.buyPrice, pt.sellPrice));
 
       // If this point has a buy price lower than (or equal) to ours, then it dominates 
       // our buy price for itself and any following sell points; stop scanning
       if (pt.buyPrice <= first.buyPrice) {
-        db("...buyPrice is less than ours! Halting scan");
+        if (db)
+          db("...buyPrice is less than ours! Halting scan");
         break;
       }
 
       // If this sell price is less than one of the ones we've passed by, ignore it
       if (pt.sellPrice <= minSellPrice) {
-        db("...sell price is less than one we've already seen");
+        if (db)
+          db("...sell price is less than one we've already seen");
         continue;
       }
 
       minSellPrice = pt.sellPrice;
 
       var alt = (minSellPrice - first.buyPrice) + aux(u2 + 1, v, k - 1);
-      db("...with", new Pt(first.buyPrice, minSellPrice), "is:", alt);
+      if (db)
+        db("...with", new Pt(first.buyPrice, minSellPrice), "is:", alt);
       bestSoFar = Math.max(bestSoFar, alt);
     }
     return bestSoFar;
@@ -240,6 +315,8 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
   }
 
   private Pt[] mPoints;
-  private Map<Integer, Integer> memo = new HashMap<>();
+  private Map<Integer, Integer> memo;
+  private int cacheRequests;
+  private int cacheMisses;
 
 }
