@@ -11,7 +11,7 @@ import java.util.Map;
 import js.data.DataUtil;
 
 /**
- * This is in the bottom 20% time, 15% memory
+ * This recursive approach is close to working but I suspect it will be very slow.
  */
 public class BestTimeToBuyAndSellStockIV extends LeetCode {
 
@@ -21,7 +21,11 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
 
   public void run() {
 
-    if (true) {
+    x("[5,2,3,0,3,5,6,8,1,5]", 2, 12);
+    if (true)
+      return;
+
+    if (false) {
       final int max = 100;
       add(1, 2);
       for (int i = 0; i < 48; i++)
@@ -32,13 +36,12 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
       return;
     }
 
-    if (true) {
+    if (false) {
       x(100, 1000, 85988);
       return;
     }
     x("[1,2,4,2,5,7,2,4,9,0]", 2, 13);
 
-    x("[5,2,3,0,3,5,6,8,1,5]", 2, 12);
     x("[0,5,4,9,0,6]", 2, 15);
 
     x("[3,2,6,5,0,3]", 2, 7);
@@ -177,7 +180,7 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
   }
 
   private int aux(int ptStart, int ptEnd, int k) {
-    final boolean db = false;
+    final boolean db = true;
     if (db)
       db("aux", ptStart, "..", ptEnd, "k:", k);
     adjustIndent(4);
@@ -217,52 +220,93 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
         db("...sum of all transactions");
       return sum;
     }
-    var first = mPoints[u];
+    if (k == 1)
+      return findBestTransaction(u, v);
+    if (k == 2)
+      return findBestTwoTransactions(u, v);
 
-    // Calculate result of using this transaction
-    var bestSoFar = first.profit() + aux(u + 1, v, k - 1);
-    if (db)
-      db("...with", first, "is", bestSoFar);
+    var k1 = k / 2;
+    var k2 = k - k1;
 
-    // Calculate result of not using this transaction
+    var n = v - u;
+
+    // Find most profitable k1 transactions for each prefix up to length n
+    var fwdResult = new int[n];
+    for (int i = u; i < v; i++) {
+      fwdResult[i - u] = aux(u, i + 1, k1);
+    }
+    // Find most profitable k2 transactions for each suffix
+    var bwdResult = new int[n];
+    for (int i = v - 1; i > u; i--) {
+      bwdResult[i - u] = aux(i, v, k2);
+    }
+
+    int bestProfit = fwdResult[n - 1];
+    for (int i = 0; i < n - 1; i++)
+      bestProfit = Math.max(fwdResult[i] + bwdResult[i + 1], bestProfit);
+
+    pr("fwdResult:", fwdResult);
+    pr("bwdResult:", bwdResult);
+    pr("profit:", bestProfit);
+
+    return bestProfit;
+  }
+
+  private int findBestTransaction(int u, int v) {
+    var minPrice = mPoints[u].buyPrice;
+    var maxProfit = 0;
+    for (int i = u; i < v; i++) {
+      var price = mPoints[i].sellPrice;
+      maxProfit = Math.max(maxProfit, price - minPrice);
+      minPrice = Math.min(price, minPrice);
+    }
+    return maxProfit;
+  }
+
+  private int findBestTwoTransactions(int u, int v) {
+
+    pr("findBestTwoTrans, u:", u, "v:", v);
+
+    int n = v-u;
+    // Find most profitable transaction for each prefix up to length n
+    var fwdResult = new int[n];
     {
-      var alt = Math.max(bestSoFar, aux(u + 1, v, k));
-      if (db)
-        db("...without", first, "is", alt);
-      bestSoFar = Math.max(bestSoFar, alt);
-    }
-    // Consider alternatives where we use this buy point, but skip one or more sell points
-
-    var minSellPrice = first.sellPrice;
-
-    for (var u2 = u + 1; u2 < v; u2++) {
-      var pt = mPoints[u2];
-      if (db)
-        db("...considering using u2=", u2, new Pt(first.buyPrice, pt.sellPrice));
-
-      // If this point has a buy price lower than (or equal) to ours, then it dominates 
-      // our buy price for itself and any following sell points; stop scanning
-      if (pt.buyPrice <= first.buyPrice) {
-        if (db)
-          db("...buyPrice is less than ours! Halting scan");
-        break;
+      var minPrice = mPoints[u].buyPrice;
+      var maxProfit = 0;
+      for (int i = u; i < v; i++) {
+        var price = mPoints[i].sellPrice;
+        minPrice = Math.min(price, minPrice);
+        maxProfit = Math.max(maxProfit, price - minPrice);
+        pr("minPrice:",minPrice,"price:",price,"profit:",maxProfit);
+        fwdResult[i - u] = maxProfit;
       }
-
-      // If this sell price is less than one of the ones we've passed by, ignore it
-      if (pt.sellPrice <= minSellPrice) {
-        if (db)
-          db("...sell price is less than one we've already seen");
-        continue;
-      }
-
-      minSellPrice = pt.sellPrice;
-
-      var alt = (minSellPrice - first.buyPrice) + aux(u2 + 1, v, k - 1);
-      if (db)
-        db("...with", new Pt(first.buyPrice, minSellPrice), "is:", alt);
-      bestSoFar = Math.max(bestSoFar, alt);
     }
-    return bestSoFar;
+
+    // Find most profitable transaction for each suffix starting after 0...n-1
+
+    var bwdResult = new int[n];
+    {
+      var maxPrice = mPoints[v-1].sellPrice;
+      var maxProfit = 0;
+      // We can omit the first point on the backward pass, as the 
+      // 'all points' result will be included in the last entry of the forward pass
+      for (int i = v-1; i>u; i--) {
+        var price = mPoints[i].sellPrice;
+        maxProfit = Math.max(maxProfit, maxPrice - price);
+        maxPrice = Math.max(price, maxPrice);
+        // pr("i:", i, "maxPrice:", maxPrice, "maxProfit:", maxProfit);
+        bwdResult[i-u] = maxProfit;
+      }
+    }
+    pr("fwdRes:", fwdResult);
+    pr("bwdRes:", bwdResult);
+
+    int bestProfit = fwdResult[v-u-1];
+    for (int i = 0; i < v-u-1; i++)
+      bestProfit = Math.max(fwdResult[i] + bwdResult[i + 1], bestProfit);
+
+    pr("bestProfit:", bestProfit);
+    return bestProfit;
   }
 
   private int[] findBuySellPoints(int[] prices) {
