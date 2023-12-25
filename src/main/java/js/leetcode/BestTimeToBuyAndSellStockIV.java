@@ -11,7 +11,8 @@ import java.util.Map;
 import js.data.DataUtil;
 
 /**
- * This recursive approach is close to working but I suspect it will be very slow.
+ * This recursive approach is close to working but I suspect it will be very
+ * slow.
  */
 public class BestTimeToBuyAndSellStockIV extends LeetCode {
 
@@ -22,7 +23,7 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
   public void run() {
 
     x("[5,2,3,0,3,5,6,8,1,5]", 2, 12);
-    if (true)
+    if (false)
       return;
 
     if (false) {
@@ -40,11 +41,6 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
       x(100, 1000, 85988);
       return;
     }
-    x("[1,2,4,2,5,7,2,4,9,0]", 2, 13);
-
-    x("[0,5,4,9,0,6]", 2, 15);
-
-    x("[3,2,6,5,0,3]", 2, 7);
 
     if (true)
       x("[70,4,83,56,94,72,78,43,2,86,65,100,94,56,41,66,3,33,10,3,45,94,15,12,78,60,58,0,58,"
@@ -84,16 +80,17 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
           + "65,3,13,48,83,27,84,86,49,31,63,40,12,34,79,61,47,29,33,52,100,85,38,24,1,"
           + "16,62,89,36,74,9,49,62,89]", 29, 2818);
 
+    x("[1,2,4,2,5,7,2,4,9,0]", 2, 13);
+
+    x("[0,5,4,9,0,6]", 2, 15);
+
+    x("[3,2,6,5,0,3]", 2, 7);
+
     x("[8,6,4,3,3,2,3,5,8,3,8,2,6]", 2, 11);
 
     x("[3,3]", 1, 0);
 
     x(2, 8, -1);
-    if (false)
-      for (int i = 7; i < 30; i++) {
-        pr(INDENT, "i:", i);
-        x(2, i, -1);
-      }
 
     x("[3,3,5,0,0,3,1,4]", 2, 6);
     x("[5,2]", 2, 0);
@@ -145,10 +142,10 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     var result = maxProfit(k, prices);
     if (prices.length >= 500) {
       checkpoint("Done calculating");
-      pr("Cache requests:", cacheRequests, "Misses:", cacheMisses, "Miss %:",
+      db("Cache requests:", cacheRequests, "Misses:", cacheMisses, "Miss %:",
           (cacheMisses * 100) / cacheRequests);
     }
-    pr("k:", k, "prices", darray(prices), "result:", result);
+    db("k:", k, "prices", darray(prices), "result:", result);
     if (expected < 0)
       expected = result;
     verify(result, expected);
@@ -157,33 +154,30 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
   // ------------------------------------------------------------------
 
   public int maxProfit(final int k, final int[] prices) {
-    resetIndent();
     var buySellPrices = findBuySellPoints(prices);
+    db = prices.length < 10;
     db("prices:", darray(prices));
     db("buy/sell prices:", darray(buySellPrices));
     mPoints = buildPoints(buySellPrices);
     db("points:", Arrays.asList(mPoints));
 
     initMemo(k);
-    memo.clear();
-    cacheRequests = 0;
-    cacheMisses = 0;
 
     pr("mpoints length:", mPoints.length);
     return aux(0, mPoints.length, k);
   }
 
   private void initMemo(int k) {
-    memo = new HashMap<>(mPoints.length * mPoints.length * k);
+    memo.clear();
     cacheRequests = 0;
     cacheMisses = 0;
   }
 
+  private static boolean cacheDisabled = false && alert("CACHE DISABLED!");
+
   private int aux(int ptStart, int ptEnd, int k) {
-    final boolean db = true;
-    if (db)
-      db("aux", ptStart, "..", ptEnd, "k:", k);
-    adjustIndent(4);
+    db("aux", ptStart, "..", ptEnd, "k:", k);
+    pushIndent();
     int result = -1;
     do {
       if (k == 0 || ptStart == ptEnd) {
@@ -193,31 +187,25 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
       int key = k | (ptStart << 7) | (ptEnd << (7 + 10));
       result = memo.getOrDefault(key, -1);
       cacheRequests++;
-      if (result < 0) {
+      if (result < 0 || cacheDisabled) {
         cacheMisses++;
         result = calcAux(ptStart, ptEnd, k);
-        if (db)
-          db("...memoizing", ptStart, "..", ptEnd, "k:", k, "as:", result);
+        db("...memoizing", ptStart, "..", ptEnd, "k:", k, "as:", result);
         memo.put(key, result);
       }
     } while (false);
-    adjustIndent(-4);
-    if (db)
-      db("...profit:", result);
+    popIndent();
+    db("...profit:", result);
     return result;
   }
 
-  private static final boolean db = false;
-
   private int calcAux(int u, int v, int k) {
-    if (db)
-      db("calcAux, u:", u, "v:", v, "k:", k);
+    db("calcAux, u:", u, "v:", v, "k:", k);
     if (k >= v - u) {
       var sum = 0;
       for (int i = u; i < v; i++)
         sum += mPoints[i].profit();
-      if (db)
-        db("...sum of all transactions");
+      db("...sum of all transactions");
       return sum;
     }
     if (k == 1)
@@ -245,14 +233,17 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     for (int i = 0; i < n - 1; i++)
       bestProfit = Math.max(fwdResult[i] + bwdResult[i + 1], bestProfit);
 
-    pr("fwdResult:", fwdResult);
-    pr("bwdResult:", bwdResult);
-    pr("profit:", bestProfit);
+    db("fwdResult:", fwdResult);
+    db("bwdResult:", bwdResult);
+    db("profit:", bestProfit);
 
     return bestProfit;
   }
 
   private int findBestTransaction(int u, int v) {
+    pushIndent();
+    db("best transaction", u, "..", v);
+
     var minPrice = mPoints[u].buyPrice;
     var maxProfit = 0;
     for (int i = u; i < v; i++) {
@@ -260,24 +251,29 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
       maxProfit = Math.max(maxProfit, price - minPrice);
       minPrice = Math.min(price, minPrice);
     }
+    db("...result:", maxProfit);
+    popIndent();
     return maxProfit;
   }
 
   private int findBestTwoTransactions(int u, int v) {
 
-    pr("findBestTwoTrans, u:", u, "v:", v);
+    //  todo("is it worth caching single result?");
+    pushIndent();
+    db("findBestTwoTrans, u:", u, "v:", v);
 
-    int n = v-u;
+    int n = v - u;
     // Find most profitable transaction for each prefix up to length n
     var fwdResult = new int[n];
     {
-      var minPrice = mPoints[u].buyPrice;
+      var minBuyPrice = mPoints[u].buyPrice;
       var maxProfit = 0;
       for (int i = u; i < v; i++) {
-        var price = mPoints[i].sellPrice;
-        minPrice = Math.min(price, minPrice);
-        maxProfit = Math.max(maxProfit, price - minPrice);
-        pr("minPrice:",minPrice,"price:",price,"profit:",maxProfit);
+        var pt = mPoints[i];
+        //        var sellPrice = mPoints[i].sellPrice;
+        minBuyPrice = Math.min(pt.buyPrice, minBuyPrice);
+        maxProfit = Math.max(maxProfit, pt.sellPrice - minBuyPrice);
+        db("minPrice:", minBuyPrice, "price:", pt.sellPrice, "profit:", maxProfit);
         fwdResult[i - u] = maxProfit;
       }
     }
@@ -286,26 +282,30 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
 
     var bwdResult = new int[n];
     {
-      var maxPrice = mPoints[v-1].sellPrice;
+      var maxSellPrice = mPoints[v - 1].sellPrice;
       var maxProfit = 0;
       // We can omit the first point on the backward pass, as the 
       // 'all points' result will be included in the last entry of the forward pass
-      for (int i = v-1; i>u; i--) {
-        var price = mPoints[i].sellPrice;
-        maxProfit = Math.max(maxProfit, maxPrice - price);
-        maxPrice = Math.max(price, maxPrice);
+      for (int i = v - 1; i > u; i--) {
+        var pt = mPoints[i];
+        //        var buyPrice = mPoints[i].buyPrice;
+        //        var sellPrice = mPoints[i].sellPrice;
+        maxSellPrice = Math.max(pt.sellPrice, maxSellPrice);
+        maxProfit = Math.max(maxProfit, maxSellPrice - pt.buyPrice);
         // pr("i:", i, "maxPrice:", maxPrice, "maxProfit:", maxProfit);
-        bwdResult[i-u] = maxProfit;
+        bwdResult[i - u] = maxProfit;
       }
     }
-    pr("fwdRes:", fwdResult);
-    pr("bwdRes:", bwdResult);
+    db("fwdRes:", fwdResult);
+    db("bwdRes:", bwdResult);
 
-    int bestProfit = fwdResult[v-u-1];
-    for (int i = 0; i < v-u-1; i++)
+    int bestProfit = fwdResult[v - u - 1];
+    for (int i = 0; i < v - u - 1; i++)
       bestProfit = Math.max(fwdResult[i] + bwdResult[i + 1], bestProfit);
 
-    pr("bestProfit:", bestProfit);
+    db("...bestProfit:", bestProfit);
+    popIndent();
+
     return bestProfit;
   }
 
@@ -359,7 +359,7 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
   }
 
   private Pt[] mPoints;
-  private Map<Integer, Integer> memo;
+  private Map<Integer, Integer> memo = new HashMap<>();
   private int cacheRequests;
   private int cacheMisses;
 
