@@ -15,7 +15,7 @@ import js.data.DataUtil;
  * slow.
  *
  *
- * Time limit exceeded!  Takes 8.351 seconds
+ * Time limit exceeded! Takes 8.351 seconds
  */
 public class BestTimeToBuyAndSellStockIV extends LeetCode {
 
@@ -162,13 +162,10 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     var result = maxProfit(k, prices);
     if (prices.length >= 500) {
       checkpoint("Done calculating");
-      db("Cache requests:", cacheRequests, "Misses:", cacheMisses, "Miss %:",
-          (cacheMisses * 100) / cacheRequests);
     }
     db("k:", k, "prices", darray(prices), "result:", result);
     if (expected < 0) {
       expected = new Slow().maxProfit(k, prices);
-      //      pr("...expected is:", expected);
     }
     verify(result, expected);
   }
@@ -258,154 +255,27 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     db("buy/sell prices:", darray(buySellPrices));
     mPoints = buildPoints(buySellPrices);
     db("points:", Arrays.asList(mPoints));
-
-    initMemo(k);
-    return aux(0, mPoints.length, k);
+    throw notFinished();
   }
 
-  private void initMemo(int k) {
-    memo.clear();
-    cacheRequests = 0;
-    cacheMisses = 0;
-  }
+  private static class Pt {
 
-  private static boolean cacheDisabled = false && alert("CACHE DISABLED!");
-
-  private int aux(int ptStart, int ptEnd, int k) {
-    db("aux", ptStart, "..", ptEnd, "k:", k);
-    pushIndent();
-    int result = -1;
-    do {
-      if (k == 0 || ptStart == ptEnd) {
-        result = 0;
-        break;
-      }
-      int key = k | (ptStart << 7) | (ptEnd << (7 + 10));
-      result = memo.getOrDefault(key, -1);
-      cacheRequests++;
-      if (result < 0 || cacheDisabled) {
-        cacheMisses++;
-        result = calcAux(ptStart, ptEnd, k);
-        db("...memoizing", ptStart, "..", ptEnd, "k:", k, "as:", result);
-        memo.put(key, result);
-      }
-    } while (false);
-    popIndent();
-    db("...profit:", result);
-    return result;
-  }
-
-  private int calcAux(int u, int v, int k) {
-    db("calcAux, u:", u, "v:", v, "k:", k);
-    if (db)
-      db("trans:", Arrays.asList(Arrays.copyOfRange(mPoints, u, v)));
-    if (k >= v - u) {
-      var sum = 0;
-      for (int i = u; i < v; i++)
-        sum += mPoints[i].profit();
-      db("...sum of all transactions");
-      return sum;
-    }
-    if (k == 1)
-      return findBestTransaction(u, v);
-    if (k == 2)
-      return findBestTwoTransactions(u, v);
-
-    var k1 = k / 2;
-    var k2 = k - k1;
-
-    var n = v - u;
-
-    // Find most profitable k1 transactions for each prefix up to length n
-    var fwdResult = new int[n];
-    for (int i = u; i < v; i++) {
-      fwdResult[i - u] = aux(u, i + 1, k1);
-    }
-    // Find most profitable k2 transactions for each suffix
-    var bwdResult = new int[n];
-    for (int i = v - 1; i > u; i--) {
-      bwdResult[i - u] = aux(i, v, k2);
+    Pt(int buy, int sell) {
+      this.buyPrice = buy;
+      this.sellPrice = sell;
     }
 
-    int bestProfit = fwdResult[n - 1];
-    for (int i = 0; i < n - 1; i++)
-      bestProfit = Math.max(fwdResult[i] + bwdResult[i + 1], bestProfit);
-
-    db("fwdResult:", fwdResult);
-    db("bwdResult:", bwdResult);
-    db("profit:", bestProfit);
-
-    return bestProfit;
-  }
-
-  private int findBestTransaction(int u, int v) {
-    pushIndent();
-    db("best transaction", u, "..", v);
-
-    var minBuyPrice = mPoints[u].buyPrice;
-    var maxProfit = 0;
-    for (int i = u; i < v; i++) {
-      var pt = mPoints[i];
-      //      var sellPrice = pt.sellPrice;
-      minBuyPrice = Math.min(minBuyPrice, pt.buyPrice);
-      maxProfit = Math.max(maxProfit, pt.sellPrice - minBuyPrice);
-    }
-    db("...result:", maxProfit);
-    popIndent();
-    return maxProfit;
-  }
-
-  private int findBestTwoTransactions(int u, int v) {
-
-    //  todo("is it worth caching single result?");
-    pushIndent();
-    db("findBestTwoTrans, u:", u, "v:", v);
-
-    int n = v - u;
-    // Find most profitable transaction for each prefix up to length n
-    var fwdResult = new int[n];
-    {
-      var minBuyPrice = mPoints[u].buyPrice;
-      var maxProfit = 0;
-      for (int i = u; i < v; i++) {
-        var pt = mPoints[i];
-        //        var sellPrice = mPoints[i].sellPrice;
-        minBuyPrice = Math.min(pt.buyPrice, minBuyPrice);
-        maxProfit = Math.max(maxProfit, pt.sellPrice - minBuyPrice);
-        db("minPrice:", minBuyPrice, "price:", pt.sellPrice, "profit:", maxProfit);
-        fwdResult[i - u] = maxProfit;
-      }
+    public int profit() {
+      return sellPrice - buyPrice;
     }
 
-    // Find most profitable transaction for each suffix starting after 0...n-1
-
-    var bwdResult = new int[n];
-    {
-      var maxSellPrice = mPoints[v - 1].sellPrice;
-      var maxProfit = 0;
-      // We can omit the first point on the backward pass, as the 
-      // 'all points' result will be included in the last entry of the forward pass
-      for (int i = v - 1; i > u; i--) {
-        var pt = mPoints[i];
-        //        var buyPrice = mPoints[i].buyPrice;
-        //        var sellPrice = mPoints[i].sellPrice;
-        maxSellPrice = Math.max(pt.sellPrice, maxSellPrice);
-        maxProfit = Math.max(maxProfit, maxSellPrice - pt.buyPrice);
-        // pr("i:", i, "maxPrice:", maxPrice, "maxProfit:", maxProfit);
-        bwdResult[i - u] = maxProfit;
-      }
+    @Override
+    public String toString() {
+      return "(" + buyPrice + " " + sellPrice + ")=" + profit();
     }
-    db("fwdRes:", fwdResult);
-    db("bwdRes:", bwdResult);
 
-    int bestProfit = fwdResult[v - u - 1];
-    for (int i = 0; i < v - u - 1; i++)
-      bestProfit = Math.max(fwdResult[i] + bwdResult[i + 1], bestProfit);
-
-    db("...bestProfit:", bestProfit);
-    popIndent();
-
-    return bestProfit;
+    int buyPrice;
+    int sellPrice;
   }
 
   private int[] findBuySellPoints(int[] prices) {
@@ -429,26 +299,6 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     return Arrays.copyOf(result, outCursor);
   }
 
-  private static class Pt {
-
-    Pt(int buy, int sell) {
-      this.buyPrice = buy;
-      this.sellPrice = sell;
-    }
-
-    public int profit() {
-      return sellPrice - buyPrice;
-    }
-
-    @Override
-    public String toString() {
-      return "(" + buyPrice + " " + sellPrice + ")=" + profit();
-    }
-
-    int buyPrice;
-    int sellPrice;
-  }
-
   private Pt[] buildPoints(int[] buySellPoints) {
     var out = new Pt[buySellPoints.length / 2];
     int j = 0;
@@ -458,8 +308,5 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
   }
 
   private Pt[] mPoints;
-  private Map<Integer, Integer> memo = new HashMap<>();
-  private int cacheRequests;
-  private int cacheMisses;
 
 }
