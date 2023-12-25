@@ -33,12 +33,8 @@ public class BestTimeToBuyAndSellStockIII extends LeetCode {
   }
 
   public int maxProfit(int[] prices) {
-
     var buySellPrices = findBuySellPoints(prices);
-    db("prices:", darray(prices));
-    db("buy/sell prices:", darray(buySellPrices));
     mPoints = buildPoints(buySellPrices);
-    db("points:", Arrays.asList(mPoints));
 
     int n = mPoints.length;
     if (n == 0)

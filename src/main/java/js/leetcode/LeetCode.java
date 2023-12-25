@@ -105,90 +105,13 @@ public abstract class LeetCode {
 
   private static int sInifiniteLoop;
 
-  private static int dbIndent;
-
-  @Deprecated
-  public static void adjustIndent(int amt) {
-    if (!db)
-      return;
-    if (indStack.size() > 100)
-      badState("indent stack overflow");
-    push(indStack, dbIndent);
-    dbIndent += amt;
-  }
-
-  public static void pushIndent() {
-    if (!db)
-      return;
-    pushIndent(4);
-  }
-
-  public static void pushIndent(int amt) {
-    if (!db)
-      return;
-    if (indStack.size() > 100)
-      badState("indent stack overflow");
-    push(indStack, dbIndent);
-    dbIndent += amt;
-  }
-
-  public static void popIndent() {
-    if (!db)
-      return;
-    dbIndent = pop(indStack);
-  }
-
-  @Deprecated
-  public static void resetIndent() {
-    dbIndent = 0;
-  }
-
-  public static void db(Object... messages) {
-    if (!db)
-      return;
-    if (dbIndent == 0)
-      pr(messages);
-    else {
-      var s = new BasePrinter();
-      s.mIndentColumn = dbIndent;
-      s.pr(messages);
-      s.resetIndentation();
-      logger().println(s.toString());
-    }
-  }
 
   public void xx(Object... messages) {
   }
 
-  public static Object darray(int[] array, int size) {
-    if (!db)
-      return null;
-    size = Math.min(size, array.length);
-    int maxSize = 30;
-    if (size <= maxSize) {
-      return JSList.with(array).toString();
-    }
-    return JSList.with(Arrays.copyOfRange(array, 0, maxSize)).toString() + "... size:" + size;
-  }
-
-  public static Object darray(int[] array) {
-    return darray(array, array.length);
-  }
-
-  public static void pushDb(boolean state) {
-    if (dbStack.size() > 100)
-      badState("db stack overflow");
-    dbStack.add(db);
-    db = state;
-  }
-
-  public static void popDb() {
-    db = pop(dbStack);
-  }
 
   private static List<Boolean> dbStack = arrayList();
   private static List<Integer> indStack = arrayList();
 
-  public static boolean db;
 
 }
