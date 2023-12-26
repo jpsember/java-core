@@ -240,7 +240,11 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
           db("...level is empty");
           continue;
         }
-        // Look at each state at this level to progress to next
+
+        // If we make a transaction, the time will advance to this point's sell point;
+        // so among all of this level's states, choose the one whose existing profit
+        // and buy price will produce the best profit.
+
         var bestProfit = 0;
         for (var s : level) {
           var buyPrice = Math.min(pt.buyPrice, s.minPrice);
@@ -267,6 +271,7 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
           }
         }
 
+        // If the max profit state dominates any *other* states at this level, remove them
         for (int index = level.size() - 1; index >= 0; index--) {
           var s = level.get(index);
           if (s == maxProfitState)
@@ -278,7 +283,7 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
         }
       }
     }
-    db = true;
+
     db(VERT_SP, "extracting most profitable state from ANY levels");
     dumpTable(levels);
     // db("level", k, "state list:", INDENT, topLevel);
