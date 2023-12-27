@@ -213,8 +213,7 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
 
   public int maxProfit(final int k, final int[] prices) {
     var buySellPrices = findBuySellPoints(prices);
-    db = buySellPrices.length < 10 // || alert("always true")
-    ;
+    db = buySellPrices.length < 10;
     db("prices:", darray(prices));
     db("buy/sell prices:", darray(buySellPrices));
     mPoints = buildPoints(buySellPrices);
@@ -222,7 +221,7 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
 
     Level[] levels = new Level[k + 1];
     for (int i = 0; i <= k; i++)
-      levels[i] = new Level(i == k ? 2 : mPoints.length * 4);
+      levels[i] = new Level(i == k ? 2 : mPoints.length + 8);
     levels[0].add(0, Integer.MAX_VALUE);
 
     for (var pt : mPoints) {
@@ -250,7 +249,6 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
           bestProfit = Math.max(bestProfit, profit);
         }
         if (bestProfit > 0) {
-          //          var state = new State(bestProfit);
           db("add state", dumpState(bestProfit, Integer.MAX_VALUE), "to level", j + 1);
           addStateToLevel(bestProfit, Integer.MAX_VALUE, levels[j + 1]);
         }
@@ -289,7 +287,6 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     db(VERT_SP, "extracting most profitable state from ANY levels");
     dumpTable(levels);
 
-    // db("level", k, "state list:", INDENT, topLevel);
     int maxProfit = 0;
     for (var level : levels) {
       var values = level.values;
@@ -344,14 +341,14 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
   }
 
   private void addStateToLevel(int profit, int minValue, Level level) {
+    checkState(minValue == Integer.MAX_VALUE);
+    if (profit <= level.maxProfit)
+      return;
     var values = level.values;
     var i = level.size;
     while (i != 0) {
       i -= 2;
-      if (stateDominates(values[i], values[i + 1], profit, minValue)) {
-        db("...existing state dominates");
-        return;
-      }
+
       if (stateDominates(profit, minValue, values[i], values[i + 1])) {
         db("...new state dominates existing");
         level.delete(i);
