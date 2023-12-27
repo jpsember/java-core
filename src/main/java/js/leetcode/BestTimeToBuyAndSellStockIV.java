@@ -252,22 +252,23 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
   // ------------------------------------------------------------------
 
   public int maxProfit(final int k, final int[] prices) {
-    var buySellPrices = findBuySellPoints(prices);
-    db = buySellPrices.length < 10;
-    mPoints = buildPoints(buySellPrices);
+    var buySellPoints = findBuySellPoints(prices);
+    db = buySellPoints.length < 10;
     if (db) {
       db("prices:", darray(prices));
-      db("buy/sell prices:", darray(buySellPrices));
-      db("points:", Arrays.asList(mPoints));
+      db("buy/sell prices:", darray(buySellPoints));
     }
 
     Level[] levels = new Level[k + 1];
     for (int i = 0; i <= k; i++)
-      levels[i] = new Level(i == k ? 2 : mPoints.length + 8);
+      levels[i] = new Level(i == k ? 2 : buySellPoints.length + 8);
     levels[0].add(0, Integer.MAX_VALUE);
 
-    for (var pt : mPoints) {
-      db(VERT_SP, "pt:", pt);
+    for (int i = 0; i < buySellPoints.length; i += 2) {
+      int buyPricex = buySellPoints[i];
+      int sellPricex = buySellPoints[i + 1];
+
+      db(VERT_SP, "buySell point:", buyPricex, sellPricex);
       dumpTable(levels);
       for (int j = k - 1; j >= 0; j--) {
         var level = levels[j];
@@ -286,8 +287,8 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
         var values = level.values;
         while (cursor != 0) {
           cursor -= 2;
-          var buyPrice = Math.min(pt.buyPrice, values[cursor + 1]);
-          var profit = values[cursor] + pt.sellPrice - buyPrice;
+          var buyPrice = Math.min(buyPricex, values[cursor + 1]);
+          var profit = values[cursor] + sellPricex - buyPrice;
           bestProfit = Math.max(bestProfit, profit);
         }
 
@@ -307,7 +308,7 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
           cursor -= 2;
           if (values[cursor] > values[maxProfitState])
             maxProfitState = cursor;
-          values[cursor + 1] = Math.min(pt.buyPrice, values[cursor + 1]);
+          values[cursor + 1] = Math.min(buyPricex, values[cursor + 1]);
         }
 
         // If the max profit state dominates any *other* states at this level, remove them
@@ -404,26 +405,6 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     }
   }
 
-  private static class Pt {
-
-    Pt(int buy, int sell) {
-      this.buyPrice = buy;
-      this.sellPrice = sell;
-    }
-
-    public int profit() {
-      return sellPrice - buyPrice;
-    }
-
-    @Override
-    public String toString() {
-      return "(" + buyPrice + " " + sellPrice + ")=" + profit();
-    }
-
-    int buyPrice;
-    int sellPrice;
-  }
-
   private int[] findBuySellPoints(int[] prices) {
     final int len = prices.length;
     int[] result = new int[len * 2];
@@ -444,15 +425,5 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     }
     return Arrays.copyOf(result, outCursor);
   }
-
-  private Pt[] buildPoints(int[] buySellPoints) {
-    var out = new Pt[buySellPoints.length / 2];
-    int j = 0;
-    for (int i = 0; i < buySellPoints.length; i += 2)
-      out[j++] = new Pt(buySellPoints[i], buySellPoints[i + 1]);
-    return out;
-  }
-
-  private Pt[] mPoints;
 
 }
