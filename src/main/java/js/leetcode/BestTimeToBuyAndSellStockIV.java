@@ -357,7 +357,7 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
         level.delete(i);
       }
     }
-    level.add(profit,minValue);
+    level.add(profit, minValue);
   }
 
   private boolean stateDominates(int profit1, int minPrice1, int profit2, int minPrice2) {
@@ -395,6 +395,9 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
       }
     }
 
+    /**
+     * Delete a state from this level. Assumes this is NOT the maxProfit state.
+     */
     public void delete(int index) {
       // Move last value into this slot's position
       int src = size - 2;
