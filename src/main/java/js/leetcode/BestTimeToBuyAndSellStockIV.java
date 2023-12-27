@@ -2,10 +2,8 @@ package js.leetcode;
 
 import static js.base.Tools.*;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class BestTimeToBuyAndSellStockIV extends LeetCode {
@@ -222,13 +220,10 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     mPoints = buildPoints(buySellPrices);
     db("points:", Arrays.asList(mPoints));
 
-    // This is a very confusing but apparently necessary way to initialize a primitive array of objects
-    List<State> levels[] = (List<State>[]) new List[k + 1];
-
+    Level[] levels = new Level[k + 1];
     for (int i = 0; i <= k; i++)
-      levels[i] = new ArrayList<State>();
-
-    levels[0].add(new State(0));
+      levels[i] = new Level(i == k ? 2 : mPoints.length * 4);
+    levels[0].add(0, Integer.MAX_VALUE);
 
     for (var pt : mPoints) {
       db(VERT_SP, "pt:", pt);
@@ -246,39 +241,46 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
         // and buy price will produce the best profit.
 
         var bestProfit = 0;
-        for (var s : level) {
-          var buyPrice = Math.min(pt.buyPrice, s.minPrice);
-          var profit = s.profit + pt.sellPrice - buyPrice;
+        int cursor = level.size;
+        var values = level.values;
+        while (cursor != 0) {
+          cursor -= 2;
+          var buyPrice = Math.min(pt.buyPrice, values[cursor + 1]);
+          var profit = values[cursor] + pt.sellPrice - buyPrice;
           bestProfit = Math.max(bestProfit, profit);
         }
         if (bestProfit > 0) {
-          var state = new State(bestProfit);
-          db("add state", state, "to level", j + 1);
-          addStateToLevel(state, levels[j + 1]);
+          //          var state = new State(bestProfit);
+          db("add state", dumpState(bestProfit, Integer.MAX_VALUE), "to level", j + 1);
+          addStateToLevel(bestProfit, Integer.MAX_VALUE, levels[j + 1]);
         }
 
         // All further extensions to this level will happen with a buy price that is at
         // most this point's buy price.  Update any buy prices lower than this,
         // and trim any states dominated by the max profit state at this level.
 
-        var maxProfitState = level.get(0);
-        for (var s : level) {
-          if (s.profit > maxProfitState.profit)
-            maxProfitState = s;
-          if (s.minPrice > pt.buyPrice) {
-            db("...updating min price for state:", s);
-            s.minPrice = Math.min(s.minPrice, pt.buyPrice);
-          }
+        values = level.values;
+        cursor = level.size;
+        var maxProfitState = 0;
+        while (cursor != 0) {
+          cursor -= 2;
+          if (values[cursor] > values[maxProfitState])
+            maxProfitState = cursor;
+          values[cursor + 1] = Math.min(pt.buyPrice, values[cursor + 1]);
         }
 
         // If the max profit state dominates any *other* states at this level, remove them
-        for (int index = level.size() - 1; index >= 0; index--) {
-          var s = level.get(index);
-          if (s == maxProfitState)
+        int maxProfit = values[maxProfitState];
+        int maxProfitMinValue = values[maxProfitState + 1];
+
+        cursor = level.size;
+        while (cursor != 0) {
+          cursor -= 2;
+          if (cursor == maxProfitState)
             continue;
-          if (maxProfitState.dominates(s)) {
-            db("...state is dominated:", s);
-            level.remove(index);
+          if (stateDominates(maxProfit, maxProfitMinValue, values[cursor], values[cursor + 1])) {
+            db("...state is dominated");
+            level.delete(cursor);
           }
         }
       }
@@ -286,19 +288,22 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
 
     db(VERT_SP, "extracting most profitable state from ANY levels");
     dumpTable(levels);
+
     // db("level", k, "state list:", INDENT, topLevel);
-    State bestState = null;
+    int maxProfit = 0;
     for (var level : levels) {
-      for (var s : level) {
-        if (bestState == null || bestState.profit < s.profit)
-          bestState = s;
+      var values = level.values;
+      var cursor = level.size;
+      while (cursor != 0) {
+        cursor -= 2;
+        maxProfit = Math.max(maxProfit, values[cursor]);
       }
     }
-    db("...best profit:", bestState.profit);
-    return bestState.profit;
+    db("...best profit:", maxProfit);
+    return maxProfit;
   }
 
-  private void dumpTable(List<State> levels[]) {
+  private void dumpTable(Level levels[]) {
     if (!db)
       return;
     db("---------------------------------------------------");
@@ -310,15 +315,18 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
       sb.append("|");
       var cs = sb.length() + 2;
       int i = INIT_INDEX;
-      for (var s : levels[k]) {
-        i++;
-        for (var s2 : levels[k]) {
-          if (s != s2 && s.dominates(s2)) {
-            die("level", k, "has dominated state:", s2, INDENT, "dominated by:", s, CR, levels[k]);
+      var lvl = levels[k];
+      var values = lvl.values;
+      for (var cursor = 0; cursor < lvl.size; cursor += 2) {
+        for (var c2 = 0; c2 < lvl.size; c2 += 2) {
+          if (cursor != c2
+              && stateDominates(values[cursor], values[cursor + 1], values[c2], values[c2 + 1])) {
+            die("level", k, "has dominated state:", dumpState(lvl, c2), INDENT, "dominated by:",
+                dumpState(lvl, cursor));
           }
         }
         tab(sb, cs + i * 10);
-        sb.append(s.toString());
+        sb.append(dumpState(lvl, cursor));
       }
       db(sb);
     }
@@ -326,41 +334,73 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
 
   }
 
-  private void addStateToLevel(State s, List<State> level) {
-    for (int i = level.size() - 1; i >= 0; i--) {
-      var s2 = level.get(i);
-      if (s2.dominates(s)) {
-        db("...existing state dominates:", s2);
-        return;
-      }
-      if (s.dominates(s2)) {
-        db("...new state dominates existing:", s2);
-        level.remove(i);
-      }
-    }
-    level.add(s);
+  private String dumpState(int profit, int minPrice) {
+    return "( " + profit + " " + (minPrice < Integer.MAX_VALUE ? "" + minPrice : "x") + " )";
   }
 
-  private static class State {
-    int profit; // sum of profit for all transactions
-    int minPrice; // minimum price since last transaction
+  private String dumpState(Level level, int cursor) {
+    var values = level.values;
+    return dumpState(values[cursor], values[cursor + 1]);
+  }
 
-    State(int profit) {
-      this(profit, Integer.MAX_VALUE);
+  private void addStateToLevel(int profit, int minValue, Level level) {
+    var values = level.values;
+    var i = level.size;
+    while (i != 0) {
+      i -= 2;
+      if (stateDominates(values[i], values[i + 1], profit, minValue)) {
+        db("...existing state dominates");
+        return;
+      }
+      if (stateDominates(profit, minValue, values[i], values[i + 1])) {
+        db("...new state dominates existing");
+        level.delete(i);
+      }
+    }
+    level.add(profit,minValue);
+  }
+
+  private boolean stateDominates(int profit1, int minPrice1, int profit2, int minPrice2) {
+    return profit1 >= profit2 && minPrice1 <= minPrice2;
+  }
+
+  private static class Level {
+
+    public int[] values;
+    public int maxProfit;
+    public int size;
+
+    public boolean isEmpty() {
+      return size == 0;
     }
 
-    State(int profit, int minPrice) {
-      this.profit = profit;
-      this.minPrice = minPrice;
+    public Level(int initialCapacity) {
+      values = new int[initialCapacity];
     }
 
-    @Override
-    public String toString() {
-      return "( " + profit + " " + (minPrice < Integer.MAX_VALUE ? "" + minPrice : "x") + " )";
+    public void add(int profit, int minValue) {
+      ensureCapacity(size + 2);
+      values[size] = profit;
+      values[size + 1] = minValue;
+      if (profit > maxProfit)
+        maxProfit = profit;
+      size += 2;
     }
 
-    public boolean dominates(State s2) {
-      return this.profit >= s2.profit && this.minPrice <= s2.minPrice;
+    public void ensureCapacity(int capacity) {
+      if (values.length < capacity) {
+        int[] newValues = new int[8 + capacity * 2];
+        System.arraycopy(values, 0, newValues, 0, size);
+        values = newValues;
+      }
+    }
+
+    public void delete(int index) {
+      // Move last value into this slot's position
+      int src = size - 2;
+      values[index] = values[src];
+      values[index + 1] = values[src + 1];
+      size -= 2;
     }
   }
 
