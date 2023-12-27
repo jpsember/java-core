@@ -209,97 +209,6 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
 
   }
 
-  // ------------------------------------------------------------------
-
-  public int maxProfit(final int k, final int[] prices) {
-    var buySellPrices = findBuySellPoints(prices);
-    db = buySellPrices.length < 10;
-    db("prices:", darray(prices));
-    db("buy/sell prices:", darray(buySellPrices));
-    mPoints = buildPoints(buySellPrices);
-    db("points:", Arrays.asList(mPoints));
-
-    Level[] levels = new Level[k + 1];
-    for (int i = 0; i <= k; i++)
-      levels[i] = new Level(i == k ? 2 : mPoints.length + 8);
-    levels[0].add(0, Integer.MAX_VALUE);
-
-    for (var pt : mPoints) {
-      db(VERT_SP, "pt:", pt);
-      dumpTable(levels);
-      for (int j = k - 1; j >= 0; j--) {
-        var level = levels[j];
-        db("extending level", j);
-        if (level.isEmpty()) {
-          db("...level is empty");
-          continue;
-        }
-
-        // If we make a transaction, the time will advance to this point's sell point;
-        // so among all of this level's states, choose the one whose existing profit
-        // and buy price will produce the best profit.
-
-        var bestProfit = 0;
-        int cursor = level.size;
-        var values = level.values;
-        while (cursor != 0) {
-          cursor -= 2;
-          var buyPrice = Math.min(pt.buyPrice, values[cursor + 1]);
-          var profit = values[cursor] + pt.sellPrice - buyPrice;
-          bestProfit = Math.max(bestProfit, profit);
-        }
-        if (bestProfit > 0) {
-          db("add state", dumpState(bestProfit, Integer.MAX_VALUE), "to level", j + 1);
-          addStateToLevel(bestProfit, Integer.MAX_VALUE, levels[j + 1]);
-        }
-
-        // All further extensions to this level will happen with a buy price that is at
-        // most this point's buy price.  Update any buy prices lower than this,
-        // and trim any states dominated by the max profit state at this level.
-
-        values = level.values;
-        cursor = level.size;
-        var maxProfitState = 0;
-        while (cursor != 0) {
-          cursor -= 2;
-          if (values[cursor] > values[maxProfitState])
-            maxProfitState = cursor;
-          values[cursor + 1] = Math.min(pt.buyPrice, values[cursor + 1]);
-        }
-
-        // If the max profit state dominates any *other* states at this level, remove them
-        int maxProfit = values[maxProfitState];
-        int maxProfitMinValue = values[maxProfitState + 1];
-
-        cursor = level.size;
-        while (cursor != 0) {
-          cursor -= 2;
-          if (cursor == maxProfitState)
-            continue;
-          if (stateDominates(maxProfit, maxProfitMinValue, values[cursor], values[cursor + 1])) {
-            db("...state is dominated");
-            level.delete(cursor);
-          }
-        }
-      }
-    }
-
-    db(VERT_SP, "extracting most profitable state from ANY levels");
-    dumpTable(levels);
-
-    int maxProfit = 0;
-    for (var level : levels) {
-      var values = level.values;
-      var cursor = level.size;
-      while (cursor != 0) {
-        cursor -= 2;
-        maxProfit = Math.max(maxProfit, values[cursor]);
-      }
-    }
-    db("...best profit:", maxProfit);
-    return maxProfit;
-  }
-
   private void dumpTable(Level levels[]) {
     if (!db)
       return;
@@ -340,21 +249,112 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     return dumpState(values[cursor], values[cursor + 1]);
   }
 
-  private void addStateToLevel(int profit, int minValue, Level level) {
-    checkState(minValue == Integer.MAX_VALUE);
+  // ------------------------------------------------------------------
+
+  public int maxProfit(final int k, final int[] prices) {
+    var buySellPrices = findBuySellPoints(prices);
+    db = buySellPrices.length < 10;
+    mPoints = buildPoints(buySellPrices);
+    if (db) {
+      db("prices:", darray(prices));
+      db("buy/sell prices:", darray(buySellPrices));
+      db("points:", Arrays.asList(mPoints));
+    }
+
+    Level[] levels = new Level[k + 1];
+    for (int i = 0; i <= k; i++)
+      levels[i] = new Level(i == k ? 2 : mPoints.length + 8);
+    levels[0].add(0, Integer.MAX_VALUE);
+
+    for (var pt : mPoints) {
+      db(VERT_SP, "pt:", pt);
+      dumpTable(levels);
+      for (int j = k - 1; j >= 0; j--) {
+        var level = levels[j];
+        db("extending level", j);
+        if (level.isEmpty()) {
+          db("...level is empty");
+          continue;
+        }
+
+        // If we make a transaction, the time will advance to this point's sell point;
+        // so among all of this level's states, choose the one whose existing profit
+        // and buy price will produce the best profit.
+
+        var bestProfit = 0;
+        int cursor = level.size;
+        var values = level.values;
+        while (cursor != 0) {
+          cursor -= 2;
+          var buyPrice = Math.min(pt.buyPrice, values[cursor + 1]);
+          var profit = values[cursor] + pt.sellPrice - buyPrice;
+          bestProfit = Math.max(bestProfit, profit);
+        }
+
+        if (bestProfit > 0) {
+          db("add state", dumpState(bestProfit, Integer.MAX_VALUE), "to level", j + 1);
+          addStateToLevel(bestProfit, levels[j + 1]);
+        }
+
+        // All further extensions to this level will happen with a buy price that is at
+        // most this point's buy price.  Update any buy prices lower than this,
+        // and trim any states dominated by the max profit state at this level.
+
+        values = level.values;
+        cursor = level.size;
+        var maxProfitState = 0;
+        while (cursor != 0) {
+          cursor -= 2;
+          if (values[cursor] > values[maxProfitState])
+            maxProfitState = cursor;
+          values[cursor + 1] = Math.min(pt.buyPrice, values[cursor + 1]);
+        }
+
+        // If the max profit state dominates any *other* states at this level, remove them
+        removeDominatedStates(level, maxProfitState);
+      }
+    }
+
+    db(VERT_SP, "extracting most profitable state from ANY levels");
+    dumpTable(levels);
+
+    int maxProfit = 0;
+    for (var level : levels) {
+      var values = level.values;
+      var cursor = level.size;
+      while (cursor != 0) {
+        cursor -= 2;
+        maxProfit = Math.max(maxProfit, values[cursor]);
+      }
+    }
+    db("...best profit:", maxProfit);
+    return maxProfit;
+  }
+
+  private void addStateToLevel(int profit, Level level) {
     if (profit <= level.maxProfit)
       return;
+    final var minValue = Integer.MAX_VALUE;
+    level.add(profit, minValue);
+    removeDominatedStates(level, level.size - 2);
+  }
+
+  private void removeDominatedStates(Level level, int dominatingCursor) {
     var values = level.values;
     var i = level.size;
+    // The position of the dominating state might change if we delete states!
+    // But I don't think that would happen, and I won't elaborate here
+    var domProfit = values[dominatingCursor];
+    var domMinPrice = values[dominatingCursor + 1];
     while (i != 0) {
       i -= 2;
-
-      if (stateDominates(profit, minValue, values[i], values[i + 1])) {
+      if (i == dominatingCursor)
+        continue;
+      if (stateDominates(domProfit, domMinPrice, values[i], values[i + 1])) {
         db("...new state dominates existing");
         level.delete(i);
       }
     }
-    level.add(profit, minValue);
   }
 
   private boolean stateDominates(int profit1, int minPrice1, int profit2, int minPrice2) {
