@@ -163,45 +163,36 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     //
     int kOrigin = 1;
     int tOrigin = 1;
-    int[][] tblOut = new int[k + kOrigin][tOrigin + buySellPoints.length];
-    int[][] tblIn = new int[k + kOrigin][tOrigin + buySellPoints.length];
 
-    // Initialize the 'in' table so the logic forces a purchase, even if that puts the
+    var tSize = tOrigin + buySellPoints.length;
+    int[] outTable = new int[tSize];
+    int[] prevOutTable = new int[tSize];
+    int[] inTable = new int[tSize];
+    int[] otherInTable = new int[tSize];
+
+    // Initialize the 'in' tables so the logic forces a purchase, even if that puts the
     // profit into negative territory
     //
-    for (int kIndex = 0; kIndex < tblIn.length; kIndex++) {
-      var tbl = tblIn[kIndex];
-      if (kIndex >= kOrigin) {
-        tbl[tOrigin - 1] = MIN_VAL;
-      } else
-        Arrays.fill(tbl, MIN_VAL);
-    }
+    Arrays.fill(inTable, MIN_VAL);
+    Arrays.fill(otherInTable, MIN_VAL);
 
     for (int kIndex = kOrigin; kIndex < k + kOrigin; kIndex++) {
-
-      db("kIndex:", kIndex);
-      var inTable = tblIn[kIndex];
-      var outTable = tblOut[kIndex];
-      var prevOutTable = tblOut[kIndex - 1];
-
-      pushIndent(2);
-
-      for (int time = tOrigin; time < tOrigin + buySellPoints.length; time++) {
-        int price = buySellPoints[time - tOrigin];
+      var time = tOrigin;
+      for (var price : buySellPoints) {
         inTable[time] = Math.max(inTable[time - 1], prevOutTable[time] - price);
         outTable[time] = Math.max(outTable[time - 1], inTable[time - 1] + price);
+        time++;
       }
-      popIndent();
-
-      if (db) {
-        db(VERT_SP);
-        dumpTable("In :", tblIn, kIndex);
-        dumpTable("Out:", tblOut, kIndex);
-      }
+      var tmp = inTable;
+      inTable = otherInTable;
+      otherInTable = tmp;
+      tmp = outTable;
+      outTable = prevOutTable;
+      prevOutTable = tmp;
     }
 
     int maxProfit = 0;
-    for (var x : tblOut[kOrigin + k - 1])
+    for (var x : prevOutTable)
       maxProfit = Math.max(maxProfit, x);
 
     db("...best profit:", maxProfit);
