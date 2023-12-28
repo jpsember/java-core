@@ -130,6 +130,8 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     verify(result, expected);
   }
 
+  private static final int MIN_VAL = -999;
+
   private void dumpTable(String prompt, int[][] table, int maxRow) {
     pr(prompt);
     pr("----------------------------------------");
@@ -138,8 +140,8 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
       var row = table[i];
       for (int j = 0; j < row.length; j++) {
         var v = row[j];
-        tab(sb, 3 + j * 4);
-        if (v > Integer.MIN_VALUE)
+        tab(sb, 3 + j * 6);
+        if (v > MIN_VAL)
           sb.append(v);
         else
           sb.append("-");
@@ -155,50 +157,69 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     var buySellPoints = findBuySellPoints(prices);
     db = buySellPoints.length < 10;
     if (db) {
+      db("k:",k);
       db("prices:", darray(prices));
       db("buy/sell prices:", darray(buySellPoints));
     }
 
-    int[][] tblSome = new int[k][buySellPoints.length];
-    int[][] tblNone = new int[k][buySellPoints.length];
+    int numPoints = buySellPoints.length / 2;
+    int kOrigin = 1;
+    int ptsOrigin = 1;
+    int[][] tblSome = new int[k + kOrigin][ptsOrigin + numPoints];
+    int[][] tblNone = new int[k + kOrigin][ptsOrigin + numPoints];
 
-    for (int transIndex = 1; transIndex < k; transIndex++) {
+    for (int y = 0; y < k; y++) {
+      var tbl = tblSome[y];
+      if (y > 0) {
+        tbl[0] = MIN_VAL;
+      } else
+        Arrays.fill(tbl, MIN_VAL);
+    }
 
-      for (int dayIndex = 0; dayIndex < buySellPoints.length; dayIndex++) {
+    for (int tNum = kOrigin; tNum < k + kOrigin; tNum++) {
 
-        int price = buySellPoints[dayIndex];
-
-        // Update the 'some' table
+      db("tNum:", tNum);
+      pushIndent(2);
+      for (int ptIndex = 0; ptIndex < numPoints; ptIndex++) {
+        int di = ptIndex + ptsOrigin;
+        db("pointIndex:", di);
+        pushIndent(2);
         {
-          int v = -price;
-          if (dayIndex > 0) {
-            int v1 = 0;
-            if (transIndex > 0)
-              v1 = tblNone[transIndex - 1][dayIndex - 1];
-            v = Math.max(v1 - price, tblSome[transIndex][dayIndex - 1]);
-          }
-          tblSome[transIndex][dayIndex] = v;
+          // process buy
+          int price = buySellPoints[ptIndex * 2];
+          db("buy price:", price);
+
+          var prevSome = tblSome[tNum - 1][di];
+          db("prev some, transIndx:", tNum, "di:", di, "prevSome", prevSome);
+          var prevNone = tblNone[tNum][di - 1];
+          db("prev none:", prevNone);
+          checkState(prevSome != 0, "transIndex-1:", tNum - 1, "di:", di);
+
+          var v = Math.max(prevSome, prevNone - price);
+          tblSome[tNum][di] = v;
+          db("..storing", v, "in tblSome[", tNum, "][", di, "]");
         }
 
         {
-          int v = 0;
-          if (dayIndex > 0) {
-            int carryOver = tblNone[transIndex][dayIndex - 1];
-            if (transIndex > 0) {
-              int sale = tblSome[transIndex][dayIndex - 1] + price;
-              v = Math.max(carryOver, sale);
-            } else {
-              v = carryOver;
-            }
-          }
-          tblNone[transIndex][dayIndex] = v;
+          // process sell
+          var price = buySellPoints[ptIndex * 2 + 1];
+          db("sell price:", price);
+          int prevNone = tblNone[tNum - 1][di];
+          db("prev none:", prevNone);
+          int prevSome = tblSome[tNum][di];
+          db("prev some:", prevSome, "plus price:", prevSome + price);
+          var val = Math.max(prevNone, prevSome + price);
+          tblNone[tNum][di] =val ;
+          db("...stored max", tblNone[tNum][di], "in tblNone[", tNum, "][", di, "]");
         }
-
+        popIndent();
       }
+      popIndent();
+
       if (db) {
         db(VERT_SP);
-        dumpTable("nohold", tblNone, transIndex);
-        dumpTable("hold", tblSome, transIndex);
+        dumpTable("some", tblSome, tNum);
+        dumpTable("none", tblNone, tNum);
       }
     }
 
