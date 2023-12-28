@@ -154,14 +154,21 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
       db("buy/sell prices:", darray(buySellPoints));
     }
 
+    // We maintain two sets of tables:
+    // One for being 'out' of the market (no shares currently bought),
+    // and one for being 'in' the market (shares were bought, but not yet sold)
+    //
     // We pad the transaction count (k) and time (t) with an extra value 
     // so -1 is a valid index
+    //
     int kOrigin = 1;
     int tOrigin = 1;
     int[][] tblOut = new int[k + kOrigin][tOrigin + buySellPoints.length];
     int[][] tblIn = new int[k + kOrigin][tOrigin + buySellPoints.length];
 
-    // Initialize table
+    // Initialize the 'in' table so the logic forces a purchase, even if that puts the
+    // profit into negative territory
+    //
     for (int kIndex = 0; kIndex < tblIn.length; kIndex++) {
       var tbl = tblIn[kIndex];
       if (kIndex >= kOrigin) {
@@ -173,33 +180,16 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     for (int kIndex = kOrigin; kIndex < k + kOrigin; kIndex++) {
 
       db("kIndex:", kIndex);
+      var inTable = tblIn[kIndex];
+      var outTable = tblOut[kIndex];
+      var prevOutTable = tblOut[kIndex - 1];
+
       pushIndent(2);
 
-      for (int time = 0; time < buySellPoints.length; time++) {
-        db("time:", time);
-        pushIndent(2);
-        int price = buySellPoints[time];
-        db("price:", price);
-        {
-          // process buy
-
-          var prevIn = tblIn[kIndex][time + tOrigin - 1];
-          var prevOut = tblOut[kIndex - 1][time + tOrigin];
-
-          var v = Math.max(prevIn, prevOut - price);
-          tblIn[kIndex][time + tOrigin] = v;
-          db("..storing", v, "in tblIn[", kIndex, "][", time + tOrigin, "]");
-        }
-
-        {
-          // process sell
-          int prevOut = tblOut[kIndex][time + tOrigin - 1];
-          int prevIn = tblIn[kIndex][time + tOrigin - 1];
-          var val = Math.max(prevOut, prevIn + price);
-          tblOut[kIndex][time + tOrigin] = val;
-          db("...stored max", val, "in tblOut[", kIndex, "][", time + tOrigin, "]");
-        }
-        popIndent();
+      for (int time = tOrigin; time < tOrigin + buySellPoints.length; time++) {
+        int price = buySellPoints[time - tOrigin];
+        inTable[time] = Math.max(inTable[time - 1], prevOutTable[time] - price);
+        outTable[time] = Math.max(outTable[time - 1], inTable[time - 1] + price);
       }
       popIndent();
 
@@ -211,9 +201,8 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     }
 
     int maxProfit = 0;
-    for (var x : tblOut[kOrigin + k - 1]) {
+    for (var x : tblOut[kOrigin + k - 1])
       maxProfit = Math.max(maxProfit, x);
-    }
 
     db("...best profit:", maxProfit);
     return maxProfit;
