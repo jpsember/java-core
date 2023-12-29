@@ -122,27 +122,6 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
     verify(result, expected);
   }
 
-  private static final int MIN_VAL = -999;
-
-  private void dumpTable(String prompt, int[][] table, int maxRow) {
-    pr(prompt);
-    pr("----------------------------------------");
-    for (int i = maxRow; i >= 0; i--) {
-      var sb = new StringBuilder();
-      var row = table[i];
-      for (int j = 0; j < row.length; j++) {
-        var v = row[j];
-        tab(sb, 3 + j * 6);
-        if (v > MIN_VAL)
-          sb.append(v);
-        else
-          sb.append("-");
-      }
-      pr(sb);
-    }
-    pr("----------------------------------------");
-  }
-
   // ------------------------------------------------------------------
 
   public int maxProfit(final int k, final int[] prices) {
