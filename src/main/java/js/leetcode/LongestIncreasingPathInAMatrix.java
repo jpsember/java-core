@@ -5,6 +5,11 @@ import static js.base.Tools.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Very slow (bottom 5%).
+ * 
+ * Maybe a breadth-first search?
+ */
 public class LongestIncreasingPathInAMatrix extends LeetCode {
 
   public static void main(String[] args) {
@@ -35,8 +40,6 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
     visitFlags = new int[matrixHeight][matrixWidth];
     this.matrix = matrix;
 
-    db("matrix:", INDENT, strTable(matrix));
-
     List<State> stack = new ArrayList<>();
 
     for (int y = matrixHeight - 1; y >= 0; y--) {
@@ -50,19 +53,14 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
 
     int maxLen = 0;
 
-    int iterCount = 0;
-
     while (!stack.isEmpty()) {
-      iterCount++;
       var topOfStack = stack.size() - 1;
       var s = stack.remove(topOfStack);
 
       maxLen = Math.max(maxLen, s.pathLength);
-      db(VERT_SP, "popped state:", s);
 
       var oldPathLength = visitFlags[s.y][s.x];
       if (oldPathLength >= s.pathLength) {
-        db("...already visited by longer path:", oldPathLength);
         continue;
       }
       visitFlags[s.y][s.x] = s.pathLength;
@@ -74,12 +72,12 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
       searchNeighbor(s, 0, -1);
       searchNeighbor(s, 0, 1);
 
-      // Sort so lower-valued states are searched first
+      // Sort so lower-valued states are searched first.
+      // This definitely helps!
       if (nbrs.size() >= 2)
         nbrs.sort((a, b) -> compareStates(b, a));
       stack.addAll(nbrs);
     }
-    db("...itercount:", iterCount);
     return maxLen;
   }
 
@@ -97,7 +95,6 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
 
     var expandedPathLength = s.pathLength + 1;
     var newState = new State(nx, ny, expandedPathLength);
-    db("......pushing", newState);
     nbrs.add(newState);
   }
 
@@ -111,11 +108,6 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
 
     public int value() {
       return matrix[y][x];
-    }
-
-    @Override
-    public String toString() {
-      return "(" + x + " " + y + " len:" + pathLength + " val:" + value() + ")";
     }
 
     final int x;
