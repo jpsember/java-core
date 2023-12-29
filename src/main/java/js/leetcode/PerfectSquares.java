@@ -40,10 +40,8 @@ public class PerfectSquares extends LeetCode {
       return 0;
     int key = (n << 8) | maxRoot;
     int result = memo.getOrDefault(key, -1);
-    checkState(result != -2);
     if (result < 0) {
       db("aux, n:", n, "maxRoot:", maxRoot);
-      memo.put(key, -2);
       result = calc(n, maxRoot);
       memo.put(key, result);
       db("storing", n, "|", maxRoot, "=>", result);
@@ -54,9 +52,13 @@ public class PerfectSquares extends LeetCode {
   private int calc(int n, int maxRoot) {
     int j = maxRoot;
 
-    while (n < (j - 1) * (j - 1)) {
+    // Find largest square that is not greater than n
+    while (n < (j - 1) * (j - 1))
       j--;
-    }
+
+    // Examine all solutions made with squares not exceeding j, j-1, j-2, ..., 
+    // since the best solution is not necessarily j.
+    //
     var bestResult = -1;
     for (int k = j; k > 0; k--) {
       var square = k * k;
