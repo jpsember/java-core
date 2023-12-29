@@ -15,10 +15,10 @@ public class PerfectSquares extends LeetCode {
   }
 
   public void run() {
-    if (true) {
-      x(166, 3);
-      return;
-    }
+//    if (true) {
+//      x(166, 3);
+//      return;
+//    }
 
     x(12, 3);
     x(13, 2);
@@ -53,16 +53,15 @@ public class PerfectSquares extends LeetCode {
     int key = (n << 8) | maxRoot;
     int result = memo.getOrDefault(key, -1);
     if (result < 0) {
-      // db("aux, n:", n, "maxRoot:", maxRoot);
-      var sb = new StringBuilder();
-      result = calc(n, maxRoot, sb);
+      db("aux, n:", n, "maxRoot:", maxRoot);
+      result = calc(n, maxRoot);
       memo.put(key, result);
-      pr("storing", n, "|", maxRoot, "=>", result, ";", INDENT, sb);
+      db("storing", n, "|", maxRoot, "=>", result);
     }
     return result;
   }
 
-  private int calc(int n, int maxRoot, StringBuilder sb) {
+  private int calc(int n, int maxRoot) {
     // Find largest j such that j*j <= n
     int j = (int) Math.sqrt(n);
 
@@ -71,37 +70,20 @@ public class PerfectSquares extends LeetCode {
     //
     // Stop when n / square exceeds the best result so far 
     //
-    String bestResultStr = null;
-    if (sb != null) {
-      sb.setLength(0);
-      sb.append("n:");
-      sb.append(n);
-    }
     var bestResult = Integer.MAX_VALUE;
     for (int k = j; k > 0; k--) {
       var square = k * k;
       var factor = n / square;
+      // If this first term coefficient exceeds the best sum we found so far, stop
       if (factor > bestResult) {
-        pr("...stopping, since n", n, "/ highest square", square, "is", factor, "which exceeds best result",
-            bestResult);
         break;
-      }
-      if (sb != null) {
-        sb.append(" ");
-        sb.append(square);
-        sb.append(".");
-        sb.append(factor);
       }
       var remainder = n % square;
       var result = factor + aux(remainder, k - 1);
       if (result < bestResult) {
         bestResult = result;
-        if (sb != null)
-          bestResultStr = sb.toString();
       }
     }
-    if (bestResultStr != null)
-      pr("........", bestResultStr);
     return bestResult;
   }
 
