@@ -20,8 +20,8 @@ public class PerfectSquares extends LeetCode {
     //      return;
     //    }
 
-//    x(12, 3);
-//    x(13, 2);
+    //    x(12, 3);
+    //    x(13, 2);
 
     checkpoint("starting");
     for (int n = 1; n <= 10000; n = (int) (n * 1.01 + 1)) {
@@ -31,8 +31,6 @@ public class PerfectSquares extends LeetCode {
   }
 
   private void x(int n, int expected) {
-    memo.clear();
-
     db = false;
     var result = numSquares(n);
     if (expected >= 0)
@@ -42,46 +40,33 @@ public class PerfectSquares extends LeetCode {
   // ------------------------------------------------------------------
 
   public int numSquares(int n) {
-    return aux(n, 100);
-  }
 
-  private int aux(int n, int maxRoot) {
-    if (n == 0)
-      return 0;
-    int key = (n << 8) | maxRoot;
-    int result = memo.getOrDefault(key, -1);
-    if (result < 0) {
-      result = calc(n, maxRoot);
-      memo.put(key, result);
-    }
-    return result;
-  }
+    int squares[] = new int[100];
+    for (int i = 0; i < 100; i++)
+      squares[i] = (i + 1) * (i + 1);
 
-  private int calc(int n, int maxRoot) {
-    // Find largest j such that j*j <= n
-    int j = (int) Math.sqrt(n);
+    int table[] = new int[n + 1];
+    int denom[] = new int[n + 1];
 
-    // Examine all solutions made with squares not exceeding j, j-1, j-2, ..., 
-    // since the best solution is not necessarily j.
-    //
-    // Stop when n / square exceeds the best result so far 
-    //
-    var bestResult = Integer.MAX_VALUE;
-    for (int k = j; k > 0; k--) {
-      var square = k * k;
-      var factor = n / square;
-      // If this first term coefficient exceeds the best sum we found so far, stop
-      if (factor > bestResult) {
-        break;
+    table[0] = 0;
+    for (int p = 1; p <= n; p++) {
+      var minNumCoins = Integer.MAX_VALUE;
+      int minCoinDenom = -1;
+      for (var coinDenom : squares) {
+        // Stop scanning coins if coin is worth more than sum we are making change for
+        if (p < coinDenom)
+          break;
+        var remainder = p - coinDenom;
+        var countForRemainder = table[remainder];
+        if (1 + countForRemainder < minNumCoins) {
+          minNumCoins = 1 + countForRemainder;
+          minCoinDenom = coinDenom;
+        }
       }
-      var remainder = n % square;
-      var result = factor + aux(remainder, k - 1);
-      if (result < bestResult) {
-        bestResult = result;
-      }
+      table[p] = minNumCoins;
+      denom[p] = minCoinDenom;
     }
-    return bestResult;
+    return table[n];
   }
 
-  private static Map<Integer, Integer> memo = new HashMap<>();
 }
