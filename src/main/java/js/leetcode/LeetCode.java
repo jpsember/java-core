@@ -199,6 +199,51 @@ public abstract class LeetCode {
     db = pop(dbStack);
   }
 
+  public static String strTable(int[][] m) {
+    if (!db)
+      return "";
+
+    int ht = m.length;
+    int wd = m[0].length;
+
+    var sb = new StringBuilder();
+    var dash = "---------------------------------";
+    int fieldWidth = 5;
+    int lblWidth = 6;
+    var dl = wd * fieldWidth + fieldWidth;
+    while (dash.length() < dl)
+      dash = dash + dash;
+    dash = dash.substring(0, dl) + "\n";
+    sb.append(dash);
+    for (int y = ht - 1; y >= 0; y--) {
+      var c = sb.length();
+      sb.append(y + " |");
+      var row = m[y];
+      int x = -1;
+      for (var val : row) {
+        x++;
+        tab(sb, c + lblWidth + x * fieldWidth);
+        if (val == 0)
+          sb.append("_");
+        else
+          sb.append(val);
+      }
+      sb.append('\n');
+    }
+    sb.append(dash);
+
+    {
+      var c = sb.length();
+      for (int x = 0; x < wd; x++) {
+        tab(sb, c + lblWidth + x * fieldWidth);
+        sb.append(x);
+      }
+      sb.append('\n');
+    }
+
+    return sb.toString();
+  }
+
   private static List<Boolean> dbStack = arrayList();
   private static List<Integer> indStack = arrayList();
 
