@@ -170,13 +170,14 @@ public class BestTimeToBuyAndSellStockIV extends LeetCode {
 
     // Initialize the 'in' table so the logic forces a purchase, even if that puts the
     // profit into negative territory
-    inTable[tOrigin - 1] = MIN_VAL;
+    inTable[tOrigin - 1] = Integer.MIN_VALUE;
 
     for (int kCount = 0; kCount < k; kCount++) {
       var time = tOrigin;
       for (var price : buySellPoints) {
-        inTable[time] = Math.max(inTable[time - 1], prevOutTable[time] - price);
-        outTable[time] = Math.max(outTable[time - 1], inTable[time - 1] + price);
+        var prevTime = inTable[time-1];
+        inTable[time] = Math.max(prevTime, prevOutTable[time] - price);
+        outTable[time] = Math.max(outTable[time - 1], prevTime + price);
         time++;
       }
       var tmp = prevOutTable;
