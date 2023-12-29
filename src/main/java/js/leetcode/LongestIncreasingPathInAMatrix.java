@@ -48,21 +48,22 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
     // we perform a depth-first search
     stack.sort((a, b) -> compareStates(b, a));
 
-    pr("stack contents:",stack);
     int maxLen = 0;
 
     int iterCount = 0;
 
     while (!stack.isEmpty()) {
       iterCount++;
-      var s = stack.remove(stack.size() - 1);
+      var topOfStack = stack.size() - 1;
+      var s = stack.remove(topOfStack);
+
       maxLen = Math.max(maxLen, s.pathLength);
       db(VERT_SP, "popped state:", s);
 
       var oldPathLength = visitFlags[s.y][s.x];
       if (oldPathLength >= s.pathLength) {
         db("...already visited by longer path:", oldPathLength);
-        break;
+        continue;
       }
       visitFlags[s.y][s.x] = s.pathLength;
 
@@ -90,18 +91,11 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
     int ny = s.y + ym;
     if (ny < 0 || ny >= matrixHeight)
       return;
-    // db("...expand to:", nx, ny, "? value", matrix[ny][nx]);
     if (matrix[ny][nx] <= s.value()) {
-      // db("......no, value isn't higher");
       return;
     }
 
     var expandedPathLength = s.pathLength + 1;
-    //    if (visitFlags[ny][nx] >= expandedPathLength) {
-    //      db(".......no, path length is not less than ours");
-    //      return;
-    //    }
-
     var newState = new State(nx, ny, expandedPathLength);
     db("......pushing", newState);
     nbrs.add(newState);
