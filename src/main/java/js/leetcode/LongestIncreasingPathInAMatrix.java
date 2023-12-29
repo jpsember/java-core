@@ -78,7 +78,10 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
 
     int maxLen = 0;
 
+    int iterCount = 0;
+    
     while (!stack.isEmpty()) {
+      iterCount++;
       var s = stack.remove(stack.size() - 1);
       maxLen = Math.max(maxLen, s.pathLength);
       db(VERT_SP, "popped state:", s);
@@ -89,16 +92,18 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
       visitFlags[s.y][s.x] = s.pathLength;
 
       // Expand search to neighbors with greater values 
-      todo("search lower values first");
       nbrs.clear();
       searchNeighbor(s, -1, 0);
       searchNeighbor(s, 1, 0);
       searchNeighbor(s, 0, -1);
       searchNeighbor(s, 0, 1);
+
+      // Sort so lower-valued states are searched first
       if (nbrs.size() >= 2)
         nbrs.sort((a, b) -> compareStates(b, a));
       stack.addAll(nbrs);
     }
+    db("...itercount:",iterCount);
     return maxLen;
   }
 
