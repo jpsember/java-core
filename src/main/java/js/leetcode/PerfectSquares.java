@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Beats 5% runtime
+ * Beats 15% runtime
  */
 public class PerfectSquares extends LeetCode {
 
@@ -15,13 +15,13 @@ public class PerfectSquares extends LeetCode {
   }
 
   public void run() {
-//    if (true) {
-//      x(166, 3);
-//      return;
-//    }
+    //    if (true) {
+    //      x(166, 3);
+    //      return;
+    //    }
 
-    x(12, 3);
-    x(13, 2);
+//    x(12, 3);
+//    x(13, 2);
 
     checkpoint("starting");
     for (int n = 1; n <= 10000; n = (int) (n * 1.01 + 1)) {
@@ -35,7 +35,6 @@ public class PerfectSquares extends LeetCode {
 
     db = false;
     var result = numSquares(n);
-    db("n:", n, result);
     if (expected >= 0)
       verify(result, expected);
   }
@@ -43,8 +42,7 @@ public class PerfectSquares extends LeetCode {
   // ------------------------------------------------------------------
 
   public int numSquares(int n) {
-    var result = aux(n, 100);
-    return result;
+    return aux(n, 100);
   }
 
   private int aux(int n, int maxRoot) {
@@ -53,10 +51,8 @@ public class PerfectSquares extends LeetCode {
     int key = (n << 8) | maxRoot;
     int result = memo.getOrDefault(key, -1);
     if (result < 0) {
-      db("aux, n:", n, "maxRoot:", maxRoot);
       result = calc(n, maxRoot);
       memo.put(key, result);
-      db("storing", n, "|", maxRoot, "=>", result);
     }
     return result;
   }
@@ -87,5 +83,5 @@ public class PerfectSquares extends LeetCode {
     return bestResult;
   }
 
-  private Map<Integer, Integer> memo = new HashMap<>();
+  private static Map<Integer, Integer> memo = new HashMap<>();
 }
