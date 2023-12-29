@@ -66,6 +66,19 @@ public abstract class LeetCode {
     return DataUtil.intArray(res);
   }
 
+  public static int[][] extractMatrix(String s, int width) {
+    var ints = extractNums(s);
+    checkArgument(ints.length % width == 0, "unexpected count:", ints.length, "not multiple of width", width);
+    int[][] result = new int[ints.length / width][width];
+    int i = 0;
+    for (var row : result) {
+      for (int j = 0; j < width; j++, i++) {
+        row[j] = ints[i];
+      }
+    }
+    return result;
+  }
+
   public static int[] subints(int[] array, int min, int max) {
     return Arrays.copyOfRange(array, min, max);
   }

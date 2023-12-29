@@ -2,9 +2,6 @@ package js.leetcode;
 
 import static js.base.Tools.*;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * Beats 15% runtime
  */
@@ -15,14 +12,6 @@ public class PerfectSquares extends LeetCode {
   }
 
   public void run() {
-    //    if (true) {
-    //      x(166, 3);
-    //      return;
-    //    }
-
-    //    x(12, 3);
-    //    x(13, 2);
-
     checkpoint("starting");
     for (int n = 1; n <= 10000; n = (int) (n * 1.01 + 1)) {
       x(n, -1);
