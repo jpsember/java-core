@@ -4,6 +4,7 @@ import static js.base.Tools.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.List;
 
 /**
@@ -18,6 +19,10 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
   }
 
   public void run() {
+
+    x("[[13,6,16,6,16,4],[9,13,5,13,7,11],[11,7,9,17,0,7],[7,8,5,14,11,8],[14,2,8,7,9,5],[1,15,3,11,11,6]]",
+        6, -1);
+
     if (false) {
       x(200, 200, 1965);
       return;
@@ -79,15 +84,14 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
     var rowOffset = width + 1;
     var origin = rowOffset + 1;
 
-    final int qlen = width * height; // This could be decreased I suppose
+    final int qlen = width * height * 2; // This could be decreased I suppose
     int[] q1 = new int[qlen];
     int[] q2 = new int[qlen];
     int c1 = 0;
     int c2 = 0;
 
-    // Don't push the same cell on the stack if it was already visited in this or an earlier iteration
-    var visited = new int[a.length];
-    // Arrays.fill(visited, Integer.MAX_VALUE);
+    var visited = new BitSet(a.length);
+
     // Populate the initial horizon with those cells that have no in edges.
     {
       var cursor = origin;
@@ -100,7 +104,6 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
               && !(y < height - 1 && a[cursor + rowOffset] < mc) //
           ) {
             q1[c1++] = cursor;
-            pr("c1:", c1);
           }
         }
       }
@@ -118,25 +121,31 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
       if (db) {
         maxQueueSize = Math.max(maxQueueSize, c1);
       }
+
+      visited.clear();
       while (c1-- != 0) {
         var ca = q1[c1];
-        // If we visited this cell in this iteration already, don't add it again
-        if (visited[ca] == len)
-          continue;
-        visited[ca] = len;
         var v = a[ca];
         var cb = ca - 1;
-        if (v < a[cb])
+        if (v < a[cb] && !visited.get(cb)) {
           q2[c2++] = cb;
+          visited.set(cb);
+        }
         cb = ca + 1;
-        if (v < a[cb])
+        if (v < a[cb] && !visited.get(cb)) {
           q2[c2++] = cb;
+          visited.set(cb);
+        }
         cb = ca - rowOffset;
-        if (v < a[cb])
+        if (v < a[cb] && !visited.get(cb)) {
           q2[c2++] = cb;
+          visited.set(cb);
+        }
         cb = ca + rowOffset;
-        if (v < a[cb])
+        if (v < a[cb] && !visited.get(cb)) {
           q2[c2++] = cb;
+          visited.set(cb);
+        }
       }
       var tmp = q2;
       q2 = q1;
