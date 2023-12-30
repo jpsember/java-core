@@ -18,11 +18,20 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
   }
 
   public void run() {
-    if (true) {
+    if (false) {
       x(200, 200, 1965);
       return;
     }
-    x("[[1,6,12,1,3],[8,4,6,10,5],[12,11,7,12,2],[2,3,4,1,13],[14,6,0,14,13]]", 5, -1);
+
+    //    x("[12,11,7],[2,3,14]]", 3, -1);
+    //
+    //    x("[12,11,7,12,2],[2,3,4,1,13]]", 5, -1);
+    //
+    //    x("[[1,6,12,1,3],[8,4,6,10,5],[12,11,7,12,2],[2,3,4,1,13],[14,6,0,14,13]]", 5, -1);
+
+    x("[[0,1,2,3,4,5,6],[7,8,9,10,11,12,13],[14,15,16,17,18,19,20],[21,22,23,24,25,26,27],[28,29,30,31,32,33,34],[35,36,37,38,39,40,41],[42,43,44,45,46,47,48]]",
+        7, -1);
+
     // x("[[9,9,4],[6,6,8],[2,1,1]]", 3, 4);
     // x("[[3,4,5],[3,2,6],[2,2,1]]", 3, 4);
   }
@@ -49,6 +58,9 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
 
     var matrix = extractMatrix(s, width);
 
+    if (db)
+      db("matrix:", INDENT, strTable(matrix));
+
     var result = longestIncreasingPath(matrix);
     pr("path length:", result);
 
@@ -60,80 +72,91 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
 
   // ------------------------------------------------------------------
 
-  public int longestIncreasingPath(int[][] matrix) {
+  private String pt(int cursor, int[][] matrix) {
+    int w = matrix[0].length;
+    return "(" + (cursor % (w + 1) - 1) + " " + (cursor / (w + 1) - 1) + ")";
+  }
 
-    if (db)
-      db("matrix:", INDENT, strTable(matrix));
-    var mat2 = pad(matrix);
+  public int longestIncreasingPath(int[][] matrix) {
     var width = matrix[0].length;
     var height = matrix.length;
+    var a = pad(matrix);
     var rowOffset = width + 1;
     var origin = rowOffset + 1;
 
-    final boolean SPECIAL_POP = true; // definitely helps
-    final int qlen = SPECIAL_POP ? width * height : 3 * width * height;
-    int[] q = new int[qlen];
+    final int qlen = width * height;
+    int[] q1 = new int[qlen];
     int[] q2 = new int[qlen];
-    int qc = 0;
-    int q2c = 0;
+    int c1 = 0;
+    int c2 = 0;
 
-    if (SPECIAL_POP)
+    // Don't push the same cell on the stack if it was already visited in this or an earlier iteration
+    var visited = new int[a.length];
+    // Arrays.fill(visited, Integer.MAX_VALUE);
     // Populate the initial horizon with those cells that have no in edges.
     {
       var cursor = origin;
       for (int y = 0; y < height; y++, cursor += rowOffset - width) {
         for (int x = 0; x < width; x++, cursor++) {
-          var mc = mat2[cursor];
-          if (!(x > 0 && mat2[cursor - 1] < mc) //
-              && !(x < width - 1 && mat2[cursor + 1] < mc) //
-              && !(y > 0 && mat2[cursor - rowOffset] < mc) //
-              && !(y < height - 1 && mat2[cursor + rowOffset] < mc) //
+          var mc = a[cursor];
+          if (!(x > 0 && a[cursor - 1] < mc) //
+              && !(x < width - 1 && a[cursor + 1] < mc) //
+              && !(y > 0 && a[cursor - rowOffset] < mc) //
+              && !(y < height - 1 && a[cursor + rowOffset] < mc) //
           ) {
-            q[qc++] = cursor;
+            q1[c1++] = cursor;
+            pr("c1:", c1);
           }
         }
       }
-    } else {
-      // Populate the initial horizon with all cells.
-      var cursor = origin;
-      for (int y = 0; y < height; y++, cursor += rowOffset) {
-        for (int x = 0; x < width; x++) {
-          q[qc++] = cursor + x;
+    }
+
+    // Keep advancing a step in the BFS until the horizon is empty.
+    // The longest path length is the number of iterations.
+
+    int maxQueueSize = 0;
+    int len = 0;
+    while (c1 != 0) {
+      len++;
+      pr(VERT_SP, "length:", len, "horizon:", darray(q1, c1));
+      c2 = 0;
+      if (maxQueueSize < c1) {
+        maxQueueSize = c1;
+        pr("maxQueueSize:", maxQueueSize);
+      }
+      while (c1-- != 0) {
+        var ca = q1[c1];
+        //  pr("popped cursor", ca, "pt:", pt(ca, matrix), "visited:", visited[ca]);
+        if (visited[ca] >= len)
+          continue;
+        visited[ca] = len;
+        //  pr("...setting visited:", ca, "pt:", pt(ca, matrix));
+        var v = a[ca];
+        var cb = ca - 1;
+        if (v < a[cb]) {
+          q2[c2++] = cb;
+        }
+        cb = ca + 1;
+        if (v < a[cb]) {
+          q2[c2++] = cb;
+        }
+        cb = ca - rowOffset;
+        if (v < a[cb]) {
+          q2[c2++] = cb;
+
+        }
+        cb = ca + rowOffset;
+        if (v < a[cb]) {
+          q2[c2++] = cb;
+
         }
       }
-    }
-
-    int len = 0;
-    while (qc != 0) {
-      len++;
-      q2c = 0;
-      while (qc-- != 0) {
-        var c = q[qc];
-
-        var v = mat2[c];
-
-        var c2 = c - 1;
-        if (v < mat2[c2])
-          q2[q2c++] = c2;
-
-        c2 = c + 1;
-        if (v < mat2[c2])
-          q2[q2c++] = c2;
-
-        c2 = c - rowOffset;
-        if (v < mat2[c2])
-          q2[q2c++] = c2;
-
-        c2 = c + rowOffset;
-        if (v < mat2[c2])
-          q2[q2c++] = c2;
-      }
       var tmp = q2;
-      q2 = q;
-      q = tmp;
-      qc = q2c;
+      q2 = q1;
+      q1 = tmp;
+      c1 = c2;
     }
-
+    pr("maxQueueSize:", maxQueueSize);
     return len;
   }
 

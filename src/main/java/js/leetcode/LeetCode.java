@@ -179,7 +179,7 @@ public abstract class LeetCode {
     size = Math.min(size, array.length);
     int maxSize = 30;
     if (size <= maxSize) {
-      return JSList.with(array).toString();
+      return JSList.with(Arrays.copyOfRange(array, 0, size)).toString();
     }
     return JSList.with(Arrays.copyOfRange(array, 0, maxSize)).toString() + "... size:" + size;
   }
