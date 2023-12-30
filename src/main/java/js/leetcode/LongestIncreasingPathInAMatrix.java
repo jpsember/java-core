@@ -72,11 +72,6 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
 
   // ------------------------------------------------------------------
 
-  private String pt(int cursor, int[][] matrix) {
-    int w = matrix[0].length;
-    return "(" + (cursor % (w + 1) - 1) + " " + (cursor / (w + 1) - 1) + ")";
-  }
-
   public int longestIncreasingPath(int[][] matrix) {
     var width = matrix[0].length;
     var height = matrix.length;
@@ -84,7 +79,7 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
     var rowOffset = width + 1;
     var origin = rowOffset + 1;
 
-    final int qlen = width * height;
+    final int qlen = width * height; // This could be decreased I suppose
     int[] q1 = new int[qlen];
     int[] q2 = new int[qlen];
     int c1 = 0;
@@ -120,43 +115,35 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
       len++;
       pr(VERT_SP, "length:", len, "horizon:", darray(q1, c1));
       c2 = 0;
-      if (maxQueueSize < c1) {
-        maxQueueSize = c1;
-        pr("maxQueueSize:", maxQueueSize);
+      if (db) {
+        maxQueueSize = Math.max(maxQueueSize, c1);
       }
       while (c1-- != 0) {
         var ca = q1[c1];
-        //  pr("popped cursor", ca, "pt:", pt(ca, matrix), "visited:", visited[ca]);
-        if (visited[ca] >= len)
+        // If we visited this cell in this iteration already, don't add it again
+        if (visited[ca] == len)
           continue;
         visited[ca] = len;
-        //  pr("...setting visited:", ca, "pt:", pt(ca, matrix));
         var v = a[ca];
         var cb = ca - 1;
-        if (v < a[cb]) {
+        if (v < a[cb])
           q2[c2++] = cb;
-        }
         cb = ca + 1;
-        if (v < a[cb]) {
+        if (v < a[cb])
           q2[c2++] = cb;
-        }
         cb = ca - rowOffset;
-        if (v < a[cb]) {
+        if (v < a[cb])
           q2[c2++] = cb;
-
-        }
         cb = ca + rowOffset;
-        if (v < a[cb]) {
+        if (v < a[cb])
           q2[c2++] = cb;
-
-        }
       }
       var tmp = q2;
       q2 = q1;
       q1 = tmp;
       c1 = c2;
     }
-    pr("maxQueueSize:", maxQueueSize);
+    db("maxQueueSize:", maxQueueSize);
     return len;
   }
 
