@@ -2,10 +2,7 @@ package js.leetcode;
 
 import static js.base.Tools.*;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.BitSet;
-import java.util.List;
 
 /**
  * Very slow (bottom 5%).
@@ -20,18 +17,20 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
 
   public void run() {
 
+    x(200, 200, 1965);
+
+    x("[[3,4,5],[3,2,6],[2,2,1]]", 3, 4);
+
     x("[[13,6,16,6,16,4],[9,13,5,13,7,11],[11,7,9,17,0,7],[7,8,5,14,11,8],[14,2,8,7,9,5],[1,15,3,11,11,6]]",
         6, -1);
-    {
-      x(200, 200, 1965);
-    }
+
     x("[12,11,7],[2,3,14]]", 3, -1);
     x("[12,11,7,12,2],[2,3,4,1,13]]", 5, -1);
     x("[[1,6,12,1,3],[8,4,6,10,5],[12,11,7,12,2],[2,3,4,1,13],[14,6,0,14,13]]", 5, -1);
     x("[[0,1,2,3,4,5,6],[7,8,9,10,11,12,13],[14,15,16,17,18,19,20],[21,22,23,24,25,26,27],[28,29,30,31,32,33,34],[35,36,37,38,39,40,41],[42,43,44,45,46,47,48]]",
         7, -1);
     x("[[9,9,4],[6,6,8],[2,1,1]]", 3, 4);
-    x("[[3,4,5],[3,2,6],[2,2,1]]", 3, 4);
+
   }
 
   private void x(int width, int height, int seed) {
@@ -45,8 +44,12 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
     pr(strTable(matrix));
     checkpoint("starting");
     int result = 0;
-    for (int i = 0; i < 100; i++)
-      result = longestIncreasingPath(matrix);
+    for (int i = 0; i < 100; i++) {
+      if (false)
+        result = new SLOWLongestIncreasingPath().longestIncreasingPath(matrix);
+      else
+        result = longestIncreasingPath(matrix);
+    }
     checkpoint("stopping");
     pr("path length:", result);
   }
@@ -71,9 +74,69 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
   // ------------------------------------------------------------------
 
   public int longestIncreasingPath(int[][] matrix) {
-    return -1;
+    h = matrix.length;
+    w = matrix[0].length;
+    mat = matrix;
+
+    // This is the dynamic programming grid.  It will record the length of the longest
+    // path that ends at that particular cell.
+    dp = new int[h][w];
+    db = w * h < 16;
+
+    var longest = 0;
+    for (int y = 0; y < h; y++) {
+      for (int x = 0; x < w; x++) {
+        longest = Math.max(longest, aux(x, y));
+      }
+    }
+    return longest;
   }
 
+  private int[][] mat;
+  private int[][] dp;
+  private int h, w;
+
+  private static int[] xMoves = { -1, 0, 1, 0 };
+  private static int[] yMoves = { 0, -1, 0, 1 };
+
+  private int aux(int x, int y) {
+    db("aux", x, y, "value", mat[y][x], "dp", dp[y][x]);
+    pushIndent();
+
+    var result = dp[y][x];
+    if (result == 0) {
+
+      // Look for longest path leading to this cell
+      // in each of the four directions.
+
+      // To avoid attempting to access this cell's value in recursive calls,
+      // temporarily set its value very low
+      dp[y][x] = -1;
+
+      result = 1;
+      var val1 = mat[y][x];
+      for (int dir = 0; dir < 4; dir++) {
+        var x2 = x + xMoves[dir];
+        if (x2 < 0 || x2 >= w)
+          continue;
+        var y2 = y + yMoves[dir];
+        if (y2 < 0 || y2 >= h)
+          continue;
+        var val2 = mat[y2][x2];
+        db("neighbor", x2, y2, "value:", val2);
+        // If neighbor is not less than us, it can't lead to us
+        if (val2 >= val1)
+          continue;
+
+        // Make a recursive call
+        result = Math.max(result, aux(x2, y2) + 1);
+      }
+      db("storing", x, y, "=>", result, VERT_SP);
+      dp[y][x] = result;
+    }
+    popIndent();
+    return result;
+  }
 }
 
 // ------------------------------------------------------------------
