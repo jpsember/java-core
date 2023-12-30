@@ -6,7 +6,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * I think this is easy?  I guess I must be wrong
+ * I think this is easy? I guess I must be wrong.
+ * 
+ * Actually, it is easy, once I dealt with a degenerate case.
  */
 public class SelfCrossing extends LeetCode {
 
@@ -36,6 +38,10 @@ public class SelfCrossing extends LeetCode {
   public boolean isSelfCrossing(int[] distance) {
     List<Seg> s = new ArrayList<>();
     var origin = new Pt(0, 0);
+    // To deal with the special case of a segment intersecting its (parallel) segment
+    // 4 segments back (with no 5th segment), add a zero-length segment immediately
+    // to act as this missing 5th segment
+    s.add(new Seg(origin, origin));
     for (int d : distance) {
       var seg = new Seg(origin, new Pt(origin.x, origin.y + d));
       db("constructed:", seg);
