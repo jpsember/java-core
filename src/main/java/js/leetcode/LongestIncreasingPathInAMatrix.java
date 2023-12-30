@@ -83,6 +83,8 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
     dp = new int[h][w];
     db = w * h < 16;
 
+    // We must explicitly calculate the longest path ending at each cell,
+    // to guarantee that all such paths are explored
     var longest = 0;
     for (int y = 0; y < h; y++) {
       for (int x = 0; x < w; x++) {
@@ -109,9 +111,9 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
       // Look for longest path leading to this cell
       // in each of the four directions.
 
-      // To avoid attempting to access this cell's value in recursive calls,
-      // temporarily set its value very low
-      dp[y][x] = -1;
+      // We won't be attempting to recursively solve for this particular
+      // cell while doing this, since its value is greater than that of
+      // any cell we're making recursive calls to solve for.
 
       result = 1;
       var val1 = mat[y][x];
