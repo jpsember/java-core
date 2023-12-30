@@ -71,12 +71,20 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
     verify(result, expected);
   }
 
+  private String pt(int cursor) {
+    return "(" + (cursor % (debugw + 1) - 1) + " " + (cursor / (debugw + 1) - 1) + ")";
+  }
+
+  private int debugw;
+  
   // ------------------------------------------------------------------
 
   public int longestIncreasingPath(int[][] matrix) {
-    h = matrix.length;
-    w = matrix[0].length;
-    mat = pad(matrix);
+    max = 0;
+    var h = matrix.length;
+    var w = matrix[0].length;
+    this.debugw = w;
+    var mat = pad(matrix);
     int rowOffset = w + 1;
     int cursorStart = rowOffset + 1;
     int cursorEnd = mat.length - rowOffset;
@@ -88,28 +96,28 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
 
     // This is the dynamic programming grid.  It will record the length of the longest
     // path that ends at that particular cell.
-    dp = new int[mat.length];
+    var dp = new int[mat.length];
     db = w * h < 16;
 
     // We must explicitly calculate the longest path ending at each cell,
     // to guarantee that all such paths are explored
-    var longest = 0;
+
     for (int cursor = cursorStart; cursor < cursorEnd; cursor += rowOffset) {
       for (int x = 0; x < w; x++) {
-        longest = Math.max(longest, aux(cursor + x));
+        int i = cursor + x;
+        if (dp[i] == 0)
+          aux(mat, dp, i);
       }
     }
-    return longest;
+    return max;
   }
 
-  private int[] mat;
-  private int[] dp;
-  private int h, w;
+  private int max;
 
   private static int[] moves;
 
-  private int aux(int cursor) {
-    db("aux", cursor, "value", mat[cursor], "dp", dp[cursor]);
+  private int aux(int[] mat, int[] dp, int cursor) {
+    db("aux", cursor, pt(cursor), "value", mat[cursor], "dp", dp[cursor], "max:", max);
     pushIndent();
 
     var result = dp[cursor];
@@ -133,10 +141,12 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
           continue;
 
         // Make a recursive call
-        result = Math.max(result, aux(cursor2) + 1);
+        result = Math.max(result, aux(mat, dp, cursor2) + 1);
       }
       db("storing", cursor, "=>", result, VERT_SP);
       dp[cursor] = result;
+      if (max < result)
+        max = result;
     }
     popIndent();
     return result;
