@@ -2,9 +2,6 @@ package js.leetcode;
 
 import static js.base.Tools.*;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * I think this is easy? I guess I must be wrong.
  * 
@@ -35,41 +32,94 @@ public class SelfCrossing extends LeetCode {
 
   }
 
+  private String dumpSegs(int[] segs, int nseg) {
+    var js = list();
+    for (int i = 0; i < nseg; i++)
+      js.add(new Pt(segs[i * 2], segs[i * 2 + 1]).toString());
+    return js.prettyPrint();
+  }
+
   public boolean isSelfCrossing(int[] distance) {
-    List<Seg> s = new ArrayList<>();
-    var origin = new Pt(0, 0);
+    final int MAX_SEGS = 6;
+    // One additional point for each segment, including initial starting point
+    int[] pts = new int[(MAX_SEGS + 1) * 2];
+
+    // Add an origin 0,0
+    int npts = addSeg(pts, 0, 0, 0);
+
     // To deal with the special case of a segment intersecting its (parallel) segment
     // 4 segments back (with no 5th segment), add a zero-length segment immediately
     // to act as this missing 5th segment
-    s.add(new Seg(origin, origin));
-    for (int d : distance) {
-      var seg = new Seg(origin, new Pt(origin.x, origin.y + d));
-      db("constructed:", seg);
-      s.add(seg);
+    npts = addSeg(pts, npts, 0, 0);
 
-      int sz = s.size();
-      if (sz > 3) {
-        if (seg.intersects(s.get(sz - 1 - 3)))
+    for (int d : distance) {
+      db(VERT_SP, "distance:", d, INDENT, dumpSegs(pts, npts));
+      var nx = 0;
+      var ny = d;
+
+      npts = addSeg(pts, npts, nx, ny);
+      db("after adding segment:", dumpSegs(pts, npts));
+
+      if (npts >= 5) {
+        db("...checking for intersection with -5");
+        if (segsIntersect(pts, npts - 2, npts - 5))
           return true;
-        if (sz > 5) {
-          if (seg.intersects(s.get(sz - 1 - 5)))
+        if (npts >= 7) {
+          db("...checking for intersection with -7");
+          if (segsIntersect(pts, npts - 2, npts - 7))
             return true;
         }
       }
 
-      var newOrigin = seg.p1;
-      for (int i = 0; i < s.size(); i++) {
-        var seg2 = s.get(i);
-        seg2 = seg2.translate(-newOrigin.x, -newOrigin.y);
-        seg2 = seg2.rotate(-1);
-        s.set(i, seg2);
-      }
-      if (s.size() > 5)
-        s.remove(0);
+      int tx = -nx;
+      int ty = -ny;
 
-      db("rotated and translated:", INDENT, s);
+      for (int i = 0; i < npts; i++) {
+        int c = i * 2;
+        int x = pts[c];
+        int y = pts[c + 1];
+        x += tx;
+        y += ty;
+
+        pts[c] = y;
+        pts[c + 1] = -x;
+      }
+      int removePtsCount = npts - MAX_SEGS;
+      if (removePtsCount > 0) {
+        System.arraycopy(pts, removePtsCount * 2, pts, 0, pts.length - removePtsCount * 2);
+        npts = MAX_SEGS;
+      }
     }
     return false;
+  }
+
+  private boolean segsIntersect(int[] pts, int segA, int segB) {
+    // We can assume s is horizontal and we are vertical
+
+    db("segsIntersect a:", segA, "b:", segB, pts);
+
+    int p0x = pts[segA * 2];
+    int p0y = pts[segA * 2 + 1];
+    int p1y = pts[(segA+1) * 2 + 1];
+
+    db("...A:",p0x,p0y,"...",p0x,p1y);
+    
+    int sx0 = pts[segB * 2] - p0x;
+    int sx1 = pts[(segB + 1) * 2] - p0y;
+    int sy0 = pts[segB * 2 + 1] - p0y;
+    db("...B:",sx0,sy0,"...",sx1,sy0);
+    
+    if (Math.max(sx0, sx1) < 0 || Math.min(sx0, sx1) > 0)
+      return false;
+    if (sy0 < 0 || sy0 > p1y)
+      return false;
+    return true;
+  }
+
+  private int addSeg(int[] segs, int nseg, int x1, int y1) {
+    segs[nseg * 2] = x1;
+    segs[nseg * 2 + 1] = y1;
+    return nseg + 1;
   }
 
   private class Pt {
@@ -124,7 +174,6 @@ public class SelfCrossing extends LeetCode {
     }
 
     boolean intersects(Seg s) {
-      pr("seg", this, "intersects", s, "?");
       // We can assume s is horizontal and we are vertical
       checkState(p0.x == p1.x);
       checkState(p1.y >= p0.y);
@@ -132,7 +181,6 @@ public class SelfCrossing extends LeetCode {
       int sx1 = s.p1.x - p0.x;
       checkState(s.p0.y == s.p1.y);
       int sy0 = s.p0.y - p0.y;
-      //  int sy1 = s.p1.y - p0.y;
       if (Math.max(sx0, sx1) < 0 || Math.min(sx0, sx1) > 0)
         return false;
       if (sy0 < 0 || sy0 > p1.y)
