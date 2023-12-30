@@ -77,12 +77,20 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
 
   // ------------------------------------------------------------------
 
+  private String pt(int cursor) {
+    return "(" + (cursor % (mwidth + 1) - 1) + " " + (cursor / (mwidth + 1) - 1) + ")";
+  }
+
+  private int mwidth;
+
   public int longestIncreasingPath(int[][] matrix) {
     var width = matrix[0].length;
+    mwidth = width;
     var height = matrix.length;
     var a = pad(matrix);
     var rowOffset = width + 1;
     var origin = rowOffset + 1;
+    var cursorEnd = a.length - rowOffset;
 
     final int qlen = width * height * 2; // This could be decreased I suppose
     int[] q1 = new int[qlen];
@@ -90,21 +98,28 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
     int c1 = 0;
     int c2 = 0;
 
-    var visited = new BitSet(a.length);
+    int[] cursorMoves = { -1, 1, -rowOffset, rowOffset };
 
-    // Populate the initial horizon with those cells that have no in edges.
+    var inEdgeCount = new byte[a.length];
+
+    // Determine in edge counts for each cell, and populate the initial frontier
+    // with those cells that have edge counts of zero
     {
-      var cursor = origin;
-      for (int y = 0; y < height; y++, cursor += rowOffset - width) {
-        for (int x = 0; x < width; x++, cursor++) {
-          var mc = a[cursor];
-          if (!(x > 0 && a[cursor - 1] < mc) //
-              && !(x < width - 1 && a[cursor + 1] < mc) //
-              && !(y > 0 && a[cursor - rowOffset] < mc) //
-              && !(y < height - 1 && a[cursor + rowOffset] < mc) //
-          ) {
-            q1[c1++] = cursor;
-          }
+      for (var cursor = origin; cursor < cursorEnd; cursor++) {
+        var count = 0;
+        var mc = a[cursor];
+        if (mc < 0) // padding cell?
+          continue;
+        for (var cursorMove : cursorMoves) {
+          var nb = a[cursor + cursorMove];
+          // Don't include padding cells
+          if (nb >= 0 && nb < mc)
+            count++;
+        }
+        inEdgeCount[cursor] = (byte) count;
+        if (count == 0) {
+          db("adding seed point", pt(cursor));
+          q1[c1++] = cursor;
         }
       }
     }
@@ -116,35 +131,30 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
     int len = 0;
     while (c1 != 0) {
       len++;
-      pr(VERT_SP, "length:", len, "horizon:", darray(q1, c1));
+      if (db)
+        db(VERT_SP, "length:", len, "horizon:", darray(q1, c1));
       c2 = 0;
       if (db) {
         maxQueueSize = Math.max(maxQueueSize, c1);
       }
 
-      visited.clear();
       while (c1-- != 0) {
         var ca = q1[c1];
         var v = a[ca];
-        var cb = ca - 1;
-        if (v < a[cb] && !visited.get(cb)) {
+
+        // Try moving to each adjacent cell
+
+        for (var movement : cursorMoves) {
+          // Determine index of adjacent cell
+          var cb = ca + movement;
+          // Is this a valid move (neighbor has higher value)?
+          if (v >= a[cb])
+            continue;
+          // If we are the last possible visitor to this cell, add to frontier;
+          // otherwise, act as if it's an invalid move
+          if (--inEdgeCount[cb] != 0)
+            continue;
           q2[c2++] = cb;
-          visited.set(cb);
-        }
-        cb = ca + 1;
-        if (v < a[cb] && !visited.get(cb)) {
-          q2[c2++] = cb;
-          visited.set(cb);
-        }
-        cb = ca - rowOffset;
-        if (v < a[cb] && !visited.get(cb)) {
-          q2[c2++] = cb;
-          visited.set(cb);
-        }
-        cb = ca + rowOffset;
-        if (v < a[cb] && !visited.get(cb)) {
-          q2[c2++] = cb;
-          visited.set(cb);
         }
       }
       var tmp = q2;
@@ -152,6 +162,7 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
       q1 = tmp;
       c1 = c2;
     }
+
     db("maxQueueSize:", maxQueueSize);
     return len;
   }
@@ -167,6 +178,9 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
       System.arraycopy(row, 0, res, cursor, w - 1);
       cursor += w;
     }
+    //    pr("w:",matrix[0].length,"h:",matrix.length);
+    //    pr("padd:",INDENT,res,res.length);
+    //    halt();
     return res;
   }
 
