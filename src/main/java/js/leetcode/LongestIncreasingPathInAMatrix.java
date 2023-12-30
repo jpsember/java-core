@@ -76,36 +76,43 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
   public int longestIncreasingPath(int[][] matrix) {
     h = matrix.length;
     w = matrix[0].length;
-    mat = matrix;
+    mat = pad(matrix);
+    int rowOffset = w + 1;
+    int cursorStart = rowOffset + 1;
+    int cursorEnd = mat.length - rowOffset;
+    moves = new int[4];
+    moves[0] = -1;
+    moves[1] = 1;
+    moves[2] = -rowOffset;
+    moves[3] = rowOffset;
 
     // This is the dynamic programming grid.  It will record the length of the longest
     // path that ends at that particular cell.
-    dp = new int[h][w];
+    dp = new int[mat.length];
     db = w * h < 16;
 
     // We must explicitly calculate the longest path ending at each cell,
     // to guarantee that all such paths are explored
     var longest = 0;
-    for (int y = 0; y < h; y++) {
+    for (int cursor = cursorStart; cursor < cursorEnd; cursor += rowOffset) {
       for (int x = 0; x < w; x++) {
-        longest = Math.max(longest, aux(x, y));
+        longest = Math.max(longest, aux(cursor + x));
       }
     }
     return longest;
   }
 
-  private int[][] mat;
-  private int[][] dp;
+  private int[] mat;
+  private int[] dp;
   private int h, w;
 
-  private static int[] xMoves = { -1, 0, 1, 0 };
-  private static int[] yMoves = { 0, -1, 0, 1 };
+  private static int[] moves;
 
-  private int aux(int x, int y) {
-    db("aux", x, y, "value", mat[y][x], "dp", dp[y][x]);
+  private int aux(int cursor) {
+    db("aux", cursor, "value", mat[cursor], "dp", dp[cursor]);
     pushIndent();
 
-    var result = dp[y][x];
+    var result = dp[cursor];
     if (result == 0) {
 
       // Look for longest path leading to this cell
@@ -116,28 +123,37 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
       // any cell we're making recursive calls to solve for.
 
       result = 1;
-      var val1 = mat[y][x];
+      var val1 = mat[cursor];
       for (int dir = 0; dir < 4; dir++) {
-        var x2 = x + xMoves[dir];
-        if (x2 < 0 || x2 >= w)
-          continue;
-        var y2 = y + yMoves[dir];
-        if (y2 < 0 || y2 >= h)
-          continue;
-        var val2 = mat[y2][x2];
-        db("neighbor", x2, y2, "value:", val2);
+        var cursor2 = cursor + moves[dir];
+        var val2 = mat[cursor2];
+        db("neighbor", cursor2, "value:", val2);
         // If neighbor is not less than us, it can't lead to us
         if (val2 >= val1)
           continue;
 
         // Make a recursive call
-        result = Math.max(result, aux(x2, y2) + 1);
+        result = Math.max(result, aux(cursor2) + 1);
       }
-      db("storing", x, y, "=>", result, VERT_SP);
-      dp[y][x] = result;
+      db("storing", cursor, "=>", result, VERT_SP);
+      dp[cursor] = result;
     }
     popIndent();
     return result;
+  }
+
+  // Pad matrix with MAX_VALUE so we don't need to do clipping, and convert to a flat array
+  private int[] pad(int[][] matrix) {
+    int w = matrix[0].length + 1;
+    int h = matrix.length + 2;
+    var res = new int[w * h];
+    Arrays.fill(res, Integer.MAX_VALUE);
+    int cursor = 1 + w;
+    for (var row : matrix) {
+      System.arraycopy(row, 0, res, cursor, w - 1);
+      cursor += w;
+    }
+    return res;
   }
 }
 
