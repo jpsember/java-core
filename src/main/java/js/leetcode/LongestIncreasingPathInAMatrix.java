@@ -18,7 +18,7 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
   }
 
   public void run() {
-    if (false) {
+    if (true) {
       x(200, 200, 1965);
       return;
     }
@@ -64,99 +64,93 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
 
     if (db)
       db("matrix:", INDENT, strTable(matrix));
-    mat2 = pad(matrix);
-    width = matrix[0].length;
-    height = matrix.length;
-    rowOffset = width + 1;
-    origin = rowOffset + 1;
+    var mat2 = pad(matrix);
+    var width = matrix[0].length;
+    var height = matrix.length;
+    var rowOffset = width + 1;
+    var origin = rowOffset + 1;
 
-    List<Integer> q = new ArrayList<>();
-    var cursor = origin;
-    for (int y = 0; y < height; y++, cursor += rowOffset - width) {
-      for (int x = 0; x < width; x++, cursor++) {
-        var mc = mat2[cursor];
-        if (!(x > 0 && mat2[cursor - 1] < mc) //
-            && !(x < width - 1 && mat2[cursor + 1] < mc) //
-            && !(y > 0 && mat2[cursor - rowOffset] < mc) //
-            && !(y < height - 1 && mat2[cursor + rowOffset] < mc) //
-        ) {
-          q.add(cursor);
+    final boolean SPECIAL_POP = true; // definitely helps
+    final int qlen = SPECIAL_POP ? width * height : 3 * width * height;
+    int[] q = new int[qlen];
+    int[] q2 = new int[qlen];
+    int qc = 0;
+    int q2c = 0;
+
+    if (SPECIAL_POP)
+    // Populate the initial horizon with those cells that have no in edges.
+    {
+      var cursor = origin;
+      for (int y = 0; y < height; y++, cursor += rowOffset - width) {
+        for (int x = 0; x < width; x++, cursor++) {
+          var mc = mat2[cursor];
+          if (!(x > 0 && mat2[cursor - 1] < mc) //
+              && !(x < width - 1 && mat2[cursor + 1] < mc) //
+              && !(y > 0 && mat2[cursor - rowOffset] < mc) //
+              && !(y < height - 1 && mat2[cursor + rowOffset] < mc) //
+          ) {
+            q[qc++] = cursor;
+          }
+        }
+      }
+    } else {
+      // Populate the initial horizon with all cells.
+      var cursor = origin;
+      for (int y = 0; y < height; y++, cursor += rowOffset) {
+        for (int x = 0; x < width; x++) {
+          q[qc++] = cursor + x;
         }
       }
     }
-    pr("root nodes:", q);
-
-    List<Integer> q2 = new ArrayList<>();
 
     int len = 0;
-    while (!q.isEmpty()) {
+    while (qc != 0) {
       len++;
-      q2.clear();
-      for (var c : q) {
+      q2c = 0;
+      while (qc-- != 0) {
+        var c = q[qc];
+
         var v = mat2[c];
-        {
-          var c2 = c - 1;
-          if (v < mat2[c2]) {
-            q2.add(c2);
-          }
-        }
-        {
-          var c2 = c + 1;
-          if (v < mat2[c2]) {
-            q2.add(c2);
-          }
-        }
-        {
-          var c2 = c - rowOffset;
-          if (v < mat2[c2]) {
-            q2.add(c2);
-          }
-        }
-        {
-          var c2 = c + rowOffset;
-          if (v < mat2[c2]) {
-            q2.add(c2);
-          }
-        }
+
+        var c2 = c - 1;
+        if (v < mat2[c2])
+          q2[q2c++] = c2;
+
+        c2 = c + 1;
+        if (v < mat2[c2])
+          q2[q2c++] = c2;
+
+        c2 = c - rowOffset;
+        if (v < mat2[c2])
+          q2[q2c++] = c2;
+
+        c2 = c + rowOffset;
+        if (v < mat2[c2])
+          q2[q2c++] = c2;
       }
       var tmp = q2;
       q2 = q;
       q = tmp;
+      qc = q2c;
     }
 
     return len;
   }
 
-  private String pt(int cursor) {
-    return "(" + (cursor % rowOffset - 1) + " " + (cursor / rowOffset - 1) + ")";
-  }
-
-  private int width, height;
-  private int rowOffset, origin;
-  private int[] mat2;
-
   // Pad matrix with -1 so we don't need to do clipping, and convert to a flat array
   private int[] pad(int[][] matrix) {
-    pr("orig:", INDENT, strTable(matrix));
     int w = matrix[0].length + 1;
     int h = matrix.length + 2;
-
     var res = new int[w * h];
     Arrays.fill(res, -1);
     int cursor = 1 + w;
-
     for (var row : matrix) {
       System.arraycopy(row, 0, res, cursor, w - 1);
       cursor += w;
     }
-    pr("padded:", INDENT, res);
     return res;
   }
 
-  //  private int[][] visitFlags;
-  //  private int[][] matrix;
-  //  private int matrixWidth;
-  //  private int matrixHeight;
 }
 
 // ------------------------------------------------------------------
