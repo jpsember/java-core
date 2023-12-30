@@ -5,6 +5,9 @@ import static js.base.Tools.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * I think this is easy?  I guess I must be wrong
+ */
 public class SelfCrossing extends LeetCode {
 
   public static void main(String[] args) {
