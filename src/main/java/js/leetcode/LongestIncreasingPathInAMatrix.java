@@ -3,6 +3,7 @@ package js.leetcode;
 import static js.base.Tools.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -60,7 +61,33 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
   // ------------------------------------------------------------------
 
   public int longestIncreasingPath(int[][] matrix) {
+    matrix = pad(matrix);
+    int w = matrix[0].length;
+    int h = matrix.length;
+    List<Integer> q = new ArrayList<>();
+    for (int y = 0; y < h; y++) {
+      var row = matrix[y];
+      for (int x = 0; x < w; x++) {
+
+      }
+    }
     return -1;
+  }
+
+  // Pad matrix with -1 so we don't need to do clipping
+  private int[][] pad(int[][] matrix) {
+    pr("orig:", INDENT, strTable(matrix));
+    int w = matrix[0].length + 2;
+    int h = matrix.length + 2;
+    var res = new int[h][w];
+    for (int y = 0; y < h; y++) {
+      var row = res[y];
+      Arrays.fill(row, -1);
+      if (y >= 1 && y < h - 1)
+        System.arraycopy(matrix[y - 1], 0, row, 1, h - 2);
+    }
+    pr("padded:", INDENT, strTable(res));
+    return res;
   }
 
   //  private int[][] visitFlags;
@@ -102,11 +129,8 @@ class SLOWLongestIncreasingPath extends LeetCode {
     // pr("stack contents:", stack);
     int maxLen = 0;
 
-    int iterCount = 0;
-
     int sp = 0;
     while (stack.size() > sp) {
-      iterCount++;
       var s = stack.get(sp++);
       maxLen = Math.max(maxLen, s.pathLength);
       db(VERT_SP, "popped state:", s);
@@ -130,7 +154,6 @@ class SLOWLongestIncreasingPath extends LeetCode {
         nbrs.sort((a, b) -> compareStates(a, b));
       stack.addAll(nbrs);
     }
-    db("...itercount:", iterCount);
     return maxLen;
   }
 
