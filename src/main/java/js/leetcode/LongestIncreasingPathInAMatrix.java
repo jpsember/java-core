@@ -17,11 +17,11 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
   }
 
   public void run() {
-    if (true) {
+    if (false) {
       x(200, 200, 1965);
       return;
     }
-    x("[[1,6,12,1,3],[8,4,6,10,5],[12,11,7,12,2],[2,3,4,1,13],[14,6,0,14,13]]", 5, 6);
+    x("[[1,6,12,1,3],[8,4,6,10,5],[12,11,7,12,2],[2,3,4,1,13],[14,6,0,14,13]]", 5, -1);
     // x("[[9,9,4],[6,6,8],[2,1,1]]", 3, 4);
     // x("[[3,4,5],[3,2,6],[2,2,1]]", 3, 4);
   }
@@ -50,10 +50,33 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
 
     var result = longestIncreasingPath(matrix);
     pr("path length:", result);
+
+    if (expected < 0)
+      expected = new SLOWLongestIncreasingPath().longestIncreasingPath(matrix);
+
     verify(result, expected);
   }
 
   // ------------------------------------------------------------------
+
+  public int longestIncreasingPath(int[][] matrix) {
+    return -1;
+  }
+
+  //  private int[][] visitFlags;
+  //  private int[][] matrix;
+  //  private int matrixWidth;
+  //  private int matrixHeight;
+}
+
+// ------------------------------------------------------------------
+
+class SLOWLongestIncreasingPath extends LeetCode {
+
+  @Override
+  public void run() {
+    throw notSupported();
+  }
 
   public int longestIncreasingPath(int[][] matrix) {
 
@@ -72,18 +95,19 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
         stack.add(new State(x, y, 1));
       }
     }
-    // Sort so higher priority states are at the END of the stack, so
-    // we perform a depth-first search
-    stack.sort((a, b) -> compareStates(b, a));
+    // Sort so higher priority states are at the start of the queue,
+    // to perform a BFS
+    stack.sort((a, b) -> compareStates(a, b));
 
-   // pr("stack contents:", stack);
+    // pr("stack contents:", stack);
     int maxLen = 0;
 
     int iterCount = 0;
 
-    while (!stack.isEmpty()) {
+    int sp = 0;
+    while (stack.size() > sp) {
       iterCount++;
-      var s = stack.remove(stack.size() - 1);
+      var s = stack.get(sp++);
       maxLen = Math.max(maxLen, s.pathLength);
       db(VERT_SP, "popped state:", s);
 
@@ -103,7 +127,7 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
 
       // Sort so lower-valued states are searched first
       if (nbrs.size() >= 2)
-        nbrs.sort((a, b) -> compareStates(b, a));
+        nbrs.sort((a, b) -> compareStates(a, b));
       stack.addAll(nbrs);
     }
     db("...itercount:", iterCount);
@@ -171,4 +195,5 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
   private int[][] matrix;
   private int matrixWidth;
   private int matrixHeight;
+
 }
