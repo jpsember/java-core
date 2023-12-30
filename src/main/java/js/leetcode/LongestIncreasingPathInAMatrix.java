@@ -74,19 +74,57 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
     var cursor = origin;
     for (int y = 0; y < height; y++, cursor += rowOffset - width) {
       for (int x = 0; x < width; x++, cursor++) {
-        if ( //
-        !(x > 0 && canMove(cursor - 1, cursor)) //
-            && !(x < width - 1 && canMove(cursor + 1, cursor)) //
-            && !(y > 0 && canMove(cursor - rowOffset, cursor)) //
-            && !(y < height - 1 && canMove(cursor + rowOffset, cursor)) //
+        var mc = mat2[cursor];
+        if (!(x > 0 && mat2[cursor - 1] < mc) //
+            && !(x < width - 1 && mat2[cursor + 1] < mc) //
+            && !(y > 0 && mat2[cursor - rowOffset] < mc) //
+            && !(y < height - 1 && mat2[cursor + rowOffset] < mc) //
         ) {
-          pr("adding", cursor, pt(cursor));
           q.add(cursor);
         }
       }
     }
     pr("root nodes:", q);
-    return -1;
+
+    List<Integer> q2 = new ArrayList<>();
+
+    int len = 0;
+    while (!q.isEmpty()) {
+      len++;
+      q2.clear();
+      for (var c : q) {
+        var v = mat2[c];
+        {
+          var c2 = c - 1;
+          if (v < mat2[c2]) {
+            q2.add(c2);
+          }
+        }
+        {
+          var c2 = c + 1;
+          if (v < mat2[c2]) {
+            q2.add(c2);
+          }
+        }
+        {
+          var c2 = c - rowOffset;
+          if (v < mat2[c2]) {
+            q2.add(c2);
+          }
+        }
+        {
+          var c2 = c + rowOffset;
+          if (v < mat2[c2]) {
+            q2.add(c2);
+          }
+        }
+      }
+      var tmp = q2;
+      q2 = q;
+      q = tmp;
+    }
+
+    return len;
   }
 
   private String pt(int cursor) {
@@ -96,10 +134,6 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
   private int width, height;
   private int rowOffset, origin;
   private int[] mat2;
-
-  private boolean canMove(int c1, int c2) {
-    return mat2[c1] < mat2[c2];
-  }
 
   // Pad matrix with -1 so we don't need to do clipping, and convert to a flat array
   private int[] pad(int[][] matrix) {
