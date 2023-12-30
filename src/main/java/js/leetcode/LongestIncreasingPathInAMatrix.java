@@ -62,16 +62,24 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
 
   public int longestIncreasingPath(int[][] matrix) {
     matrix = pad(matrix);
+    mMat = matrix;
     int w = matrix[0].length;
     int h = matrix.length;
     List<Integer> q = new ArrayList<>();
-    for (int y = 0; y < h; y++) {
-      var row = matrix[y];
-      for (int x = 0; x < w; x++) {
-
+    for (int y = 1; y < h - 1; y++) {
+      for (int x = 1; x < w - 1; x++) {
+        if (!canMove(x - 1, y, x, y) && !canMove(x + 1, y, x, y) && !canMove(x, y - 1, x, y)
+            && !canMove(x, y + 1, x, y))
+          q.add((y << 8) | x);
       }
     }
     return -1;
+  }
+
+  private int[][] mMat;
+
+  private boolean canMove(int x1, int y1, int x2, int y2) {
+    return mMat[y1][x1] < mMat[y2][x2];
   }
 
   // Pad matrix with -1 so we don't need to do clipping
