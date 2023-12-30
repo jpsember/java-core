@@ -61,40 +61,61 @@ public class LongestIncreasingPathInAMatrix extends LeetCode {
   // ------------------------------------------------------------------
 
   public int longestIncreasingPath(int[][] matrix) {
-    matrix = pad(matrix);
-    mMat = matrix;
-    int w = matrix[0].length;
-    int h = matrix.length;
+
+    if (db)
+      db("matrix:", INDENT, strTable(matrix));
+    mat2 = pad(matrix);
+    width = matrix[0].length;
+    height = matrix.length;
+    rowOffset = width + 1;
+    origin = rowOffset + 1;
+
     List<Integer> q = new ArrayList<>();
-    for (int y = 1; y < h - 1; y++) {
-      for (int x = 1; x < w - 1; x++) {
-        if (!canMove(x - 1, y, x, y) && !canMove(x + 1, y, x, y) && !canMove(x, y - 1, x, y)
-            && !canMove(x, y + 1, x, y))
-          q.add((y << 8) | x);
+    var cursor = origin;
+    for (int y = 0; y < height; y++, cursor += rowOffset - width) {
+      for (int x = 0; x < width; x++, cursor++) {
+        if ( //
+        !(x > 0 && canMove(cursor - 1, cursor)) //
+            && !(x < width - 1 && canMove(cursor + 1, cursor)) //
+            && !(y > 0 && canMove(cursor - rowOffset, cursor)) //
+            && !(y < height - 1 && canMove(cursor + rowOffset, cursor)) //
+        ) {
+          pr("adding", cursor, pt(cursor));
+          q.add(cursor);
+        }
       }
     }
+    pr("root nodes:", q);
     return -1;
   }
 
-  private int[][] mMat;
-
-  private boolean canMove(int x1, int y1, int x2, int y2) {
-    return mMat[y1][x1] < mMat[y2][x2];
+  private String pt(int cursor) {
+    return "(" + (cursor % rowOffset - 1) + " " + (cursor / rowOffset - 1) + ")";
   }
 
-  // Pad matrix with -1 so we don't need to do clipping
-  private int[][] pad(int[][] matrix) {
+  private int width, height;
+  private int rowOffset, origin;
+  private int[] mat2;
+
+  private boolean canMove(int c1, int c2) {
+    return mat2[c1] < mat2[c2];
+  }
+
+  // Pad matrix with -1 so we don't need to do clipping, and convert to a flat array
+  private int[] pad(int[][] matrix) {
     pr("orig:", INDENT, strTable(matrix));
-    int w = matrix[0].length + 2;
+    int w = matrix[0].length + 1;
     int h = matrix.length + 2;
-    var res = new int[h][w];
-    for (int y = 0; y < h; y++) {
-      var row = res[y];
-      Arrays.fill(row, -1);
-      if (y >= 1 && y < h - 1)
-        System.arraycopy(matrix[y - 1], 0, row, 1, h - 2);
+
+    var res = new int[w * h];
+    Arrays.fill(res, -1);
+    int cursor = 1 + w;
+
+    for (var row : matrix) {
+      System.arraycopy(row, 0, res, cursor, w - 1);
+      cursor += w;
     }
-    pr("padded:", INDENT, strTable(res));
+    pr("padded:", INDENT, res);
     return res;
   }
 
@@ -120,9 +141,6 @@ class SLOWLongestIncreasingPath extends LeetCode {
     visitFlags = new int[matrixHeight][matrixWidth];
     this.matrix = matrix;
 
-    if (db)
-      db("matrix:", INDENT, strTable(matrix));
-
     List<State> stack = new ArrayList<>();
 
     for (int y = matrixHeight - 1; y >= 0; y--) {
@@ -134,18 +152,14 @@ class SLOWLongestIncreasingPath extends LeetCode {
     // to perform a BFS
     stack.sort((a, b) -> compareStates(a, b));
 
-    // pr("stack contents:", stack);
     int maxLen = 0;
 
     int sp = 0;
     while (stack.size() > sp) {
       var s = stack.get(sp++);
       maxLen = Math.max(maxLen, s.pathLength);
-      db(VERT_SP, "popped state:", s);
-
       var oldPathLength = visitFlags[s.y][s.x];
       if (oldPathLength >= s.pathLength) {
-        db("...already visited by longer path:", oldPathLength);
         continue;
       }
       visitFlags[s.y][s.x] = s.pathLength;
@@ -173,20 +187,11 @@ class SLOWLongestIncreasingPath extends LeetCode {
     int ny = s.y + ym;
     if (ny < 0 || ny >= matrixHeight)
       return;
-    // db("...expand to:", nx, ny, "? value", matrix[ny][nx]);
     if (matrix[ny][nx] <= s.value()) {
-      // db("......no, value isn't higher");
       return;
     }
-
     var expandedPathLength = s.pathLength + 1;
-    //    if (visitFlags[ny][nx] >= expandedPathLength) {
-    //      db(".......no, path length is not less than ours");
-    //      return;
-    //    }
-
     var newState = new State(nx, ny, expandedPathLength);
-    db("......pushing", newState);
     nbrs.add(newState);
   }
 
