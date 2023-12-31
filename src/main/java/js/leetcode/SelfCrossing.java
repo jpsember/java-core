@@ -35,10 +35,11 @@ public class SelfCrossing extends LeetCode {
   // ------------------------------------------------------------------
 
   public boolean isSelfCrossing(int[] distance) {
+    
     final int MAX_SEGS = 6;
     // One additional point for each segment, including initial starting point
-    int[] pts = new int[(distance.length + 1) * 2];
-
+    int[] pts = new int[(MAX_SEGS + 1) * 2];
+    
     // Add an origin 0,0
     int npts = addPoint(pts, 0, 0, 0);
 
