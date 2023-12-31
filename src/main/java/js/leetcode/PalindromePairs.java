@@ -3,7 +3,10 @@ package js.leetcode;
 import static js.base.Tools.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import js.json.JSList;
 
@@ -22,18 +25,29 @@ public class PalindromePairs extends LeetCode {
 
   private void x(String s, String sExp) {
     db = true;
-
     var words = new JSList(s);
     var exp = new JSList(sExp);
-
     var wlist = words.asStringArray();
     var result = palindromePairs(wlist);
     var res = list();
     for (var p : result)
       res.add(list().add(p.get(0)).add(p.get(1)));
-    pr(res);
-    pr("palindromePairs", words, res);
+    db("palindromePairs", words, INDENT, res);
+    sort(res);
+    sort(exp);
     verify(res, exp);
+  }
+
+  private void sort(JSList res) {
+    Map<String, Object> sorted = new TreeMap<>();
+    for (JSList x : res.asLists()) {
+      sorted.put(x.toString(), x);
+    }
+    var s = list();
+    for (var ent : sorted.entrySet())
+      s.addUnsafe(ent.getValue());
+    res.clear();
+    res.append(s);
   }
 
   // ------------------------------------------------------------------
@@ -41,42 +55,40 @@ public class PalindromePairs extends LeetCode {
   public List<List<Integer>> palindromePairs(String[] words) {
     var result = new ArrayList<List<Integer>>();
 
-    var fwdTrie = new Trie();
-    for (int i = 0; i < words.length; i++) {
-      fwdTrie.add(words[i], i);
-    }
-
-    pr(fwdTrie);
+    var trie = new Trie();
+    for (int i = 0; i < words.length; i++)
+      trie.add(words[i], i);
 
     int wordNumber = -1;
     for (var w : words) {
       wordNumber++;
+      if (db) {
+        db(VERT_SP, "Examining word #" + wordNumber, quote(w));
+      }
       int i = w.length();
-      var t = fwdTrie;
-      int lastWord = -1;
-      while (i >= 0) {
-        if (t.index >= 0) {
-          lastWord = t.index;
+      var t = trie;
+      while (t != null) {
+        if (t.index >= 0 && t.index != wordNumber) {
           var prefix = w.substring(0, i);
-          pr("found prefix at i:", i, quote(prefix));
+          if (db) {
+            db("found prefix at i:", i, "index:", t.index, quote(prefix));
+          }
           if (isPal(prefix)) {
             var res = new ArrayList<Integer>(2);
-            res.add(lastWord);
+            res.add(t.index);
             res.add(wordNumber);
+            if (db) {
+              db("...prefix", quote(prefix), "is palindrome, adding:", res);
+            }
             result.add(res);
           }
         }
         if (i == 0)
           break;
         i--;
-        var x = w.charAt(i);
-        t = t.child(x);
-        if (t == null)
-          break;
+        t = t.child(w.charAt(i));
       }
-
     }
-
     return result;
   }
 
