@@ -52,51 +52,44 @@ public class PalindromePairs extends LeetCode {
 
   // ------------------------------------------------------------------
 
-  public List<List<Integer>> palindromePairs(String[] words) {
+  public List<List<Integer>> palindromePairs(String[] wordsw) {
     var result = new ArrayList<List<Integer>>();
 
+    byte[][] wordsAsBytes = new byte[wordsw.length][];
+    for (int i = 0; i < wordsw.length; i++)
+      wordsAsBytes[i] = stringToBytes(wordsw[i]);
+
     var trie = new Trie();
-    for (int i = 0; i < words.length; i++)
-      trie.add(words[i], i);
+    for (int i = 0; i < wordsAsBytes.length; i++)
+      trie.add(wordsAsBytes[i], i);
 
     int wordNumber = -1;
-    for (var w : words) {
+    for (var w : wordsAsBytes) {
       wordNumber++;
-      if (db) {
-        db(VERT_SP, "Examining word #" + wordNumber, quote(w));
-      }
-      int i = w.length();
+      int i = w.length;
       var t = trie;
       while (t != null) {
         if (t.index >= 0 && t.index != wordNumber) {
-          var prefix = w.substring(0, i);
-          if (db) {
-            db("found prefix at i:", i, "index:", t.index, quote(prefix));
-          }
-          if (isPal(prefix)) {
+          if (isPal(w, i)) {
             var res = new ArrayList<Integer>(2);
             res.add(t.index);
             res.add(wordNumber);
-            if (db) {
-              db("...prefix", quote(prefix), "is palindrome, adding:", res);
-            }
             result.add(res);
           }
         }
         if (i == 0)
           break;
         i--;
-        t = t.child(w.charAt(i));
+        t = t.child(w[i]);
       }
     }
     return result;
   }
 
-  private static boolean isPal(String s) {
-    int i = s.length();
+  private static boolean isPal(byte[] bytes, int i) {
     int j = 0;
     while (i > j) {
-      if (s.charAt(i - 1) != s.charAt(j))
+      if (bytes[i - 1] != bytes[j])
         return false;
       i--;
       j++;
@@ -106,15 +99,14 @@ public class PalindromePairs extends LeetCode {
 
   private class Trie {
 
-    public Trie child(char c) {
-      int i = c - 'a';
+    public Trie child(int i) {
       return children[i];
     }
 
-    public void add(String word, int index) {
+    public void add(byte[] word, int index) {
       var node = this;
-      for (int i = 0; i < word.length(); i++) {
-        int c = word.charAt(i) - 'a';
+      for (int i = 0; i < word.length; i++) {
+        var c = word[i];
         var child = node.children[c];
         if (child == null) {
           child = new Trie();
@@ -159,4 +151,10 @@ public class PalindromePairs extends LeetCode {
     private int index = -1;
   }
 
+  private static byte[] stringToBytes(String s) {
+    var res = new byte[s.length()];
+    for (int i = 0; i < s.length(); i++)
+      res[i] = (byte) (s.charAt(i) - 'a');
+    return res;
+  }
 }
