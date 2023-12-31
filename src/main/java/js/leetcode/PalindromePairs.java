@@ -20,6 +20,7 @@ public class PalindromePairs extends LeetCode {
   }
 
   public void run() {
+    x("[\"a\",\"\"]","[[0,1],[1,0]]");
     x("[\"abcd\",\"dcba\",\"lls\",\"s\",\"sssll\"]", "[[0,1],[1,0],[3,2],[2,4]]");
   }
 
@@ -117,35 +118,35 @@ public class PalindromePairs extends LeetCode {
       node.index = index;
     }
 
-    @Override
-    public String toString() {
-      StringBuilder sb = new StringBuilder();
-      aux(sb, 2);
-      return sb.toString();
-    }
+    //    @Override
+    //    public String toString() {
+    //      StringBuilder sb = new StringBuilder();
+    //      aux(sb, 2);
+    //      return sb.toString();
+    //    }
 
-    private void aux(StringBuilder sb, int indent) {
-      if (index >= 0) {
-        sb.append('*');
-        sb.append(index);
-      }
-      boolean anyChild = false;
-      for (int i = 0; i < 26; i++) {
-        var child = children[i];
-        if (child == null)
-          continue;
-        if (!anyChild) {
-          sb.append("[");
-          anyChild = true;
-        }
-        sb.append('\n');
-        sb.append(spaces(indent));
-        sb.append((char) (i + 'a'));
-        child.aux(sb, indent + 2);
-      }
-      if (anyChild)
-        sb.append("]");
-    }
+//    private void aux(StringBuilder sb, int indent) {
+//      if (index >= 0) {
+//        sb.append('*');
+//        sb.append(index);
+//      }
+//      boolean anyChild = false;
+//      for (int i = 0; i < 26; i++) {
+//        var child = children[i];
+//        if (child == null)
+//          continue;
+//        if (!anyChild) {
+//          sb.append("[");
+//          anyChild = true;
+//        }
+//        sb.append('\n');
+//        sb.append(spaces(indent));
+//        sb.append((char) (i + 'a'));
+//        child.aux(sb, indent + 2);
+//      }
+//      if (anyChild)
+//        sb.append("]");
+//    }
 
     private Trie[] children = new Trie[26];
     private int index = -1;
