@@ -20,7 +20,7 @@ public class PalindromePairs extends LeetCode {
   }
 
   public void run() {
-    x("[\"a\",\"\"]","[[0,1],[1,0]]");
+   // x("[\"a\",\"\"]", "[[0,1],[1,0]]");
     x("[\"abcd\",\"dcba\",\"lls\",\"s\",\"sssll\"]", "[[0,1],[1,0],[3,2],[2,4]]");
   }
 
@@ -60,30 +60,37 @@ public class PalindromePairs extends LeetCode {
     for (int i = 0; i < wordsw.length; i++)
       wordsAsBytes[i] = stringToBytes(wordsw[i]);
 
-    var trie = new Trie();
-    for (int i = 0; i < wordsAsBytes.length; i++)
-      trie.add(wordsAsBytes[i], i);
+    todo("I think I do need a 'reversed' trie, and walk leftward and rightward resp.");
+    todo("But does that still ensure a linear run time?");
 
-    int wordNumber = -1;
-    for (var w : wordsAsBytes) {
-      wordNumber++;
-      int i = w.length;
-      var t = trie;
-      while (t != null) {
-        if (t.index >= 0 && t.index != wordNumber) {
-          if (isPal(w, i)) {
-            var res = new ArrayList<Integer>(2);
-            res.add(t.index);
-            res.add(wordNumber);
-            result.add(res);
-          }
-        }
-        if (i == 0)
-          break;
-        i--;
-        t = t.child(w[i]);
-      }
+    var fwdTrie = new Trie();
+    for (int i = 0; i < wordsAsBytes.length; i++) {
+      fwdTrie.add(wordsAsBytes[i], i, true);
+      fwdTrie.add(wordsAsBytes[i], i, false);
     }
+    pr("fwd:", INDENT, fwdTrie);
+    halt();
+
+    //    int wordNumber = -1;
+    //    for (var w : wordsAsBytes) {
+    //      wordNumber++;
+    //      int i = w.length;
+    //      var t = fwdTrie;
+    //      while (t != null) {
+    //        if (t.index >= 0 && t.index != wordNumber) {
+    //          if (isPal(w, i)) {
+    //            var res = new ArrayList<Integer>(2);
+    //            res.add(t.index);
+    //            res.add(wordNumber);
+    //            result.add(res);
+    //          }
+    //        }
+    //        if (i == 0)
+    //          break;
+    //        i--;
+    //        t = t.child(w[i]);
+    //      }
+    //    }
     return result;
   }
 
@@ -104,10 +111,10 @@ public class PalindromePairs extends LeetCode {
       return children[i];
     }
 
-    public void add(byte[] word, int index) {
+    public void add(byte[] word, int index, boolean fwd) {
       var node = this;
       for (int i = 0; i < word.length; i++) {
-        var c = word[i];
+        var c = word[fwd ? i : word.length - i - 1];
         var child = node.children[c];
         if (child == null) {
           child = new Trie();
@@ -115,47 +122,70 @@ public class PalindromePairs extends LeetCode {
         }
         node = child;
       }
-      node.index = index;
+      if (fwd)
+        node.fwdIndex = index;
+      else
+        node.bwdIndex = index;
     }
 
-    //    @Override
-    //    public String toString() {
-    //      StringBuilder sb = new StringBuilder();
-    //      aux(sb, 2);
-    //      return sb.toString();
-    //    }
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder();
+      aux(sb, 2);
+      return sb.toString();
+    }
 
-//    private void aux(StringBuilder sb, int indent) {
-//      if (index >= 0) {
-//        sb.append('*');
-//        sb.append(index);
-//      }
-//      boolean anyChild = false;
-//      for (int i = 0; i < 26; i++) {
-//        var child = children[i];
-//        if (child == null)
-//          continue;
-//        if (!anyChild) {
-//          sb.append("[");
-//          anyChild = true;
-//        }
-//        sb.append('\n');
-//        sb.append(spaces(indent));
-//        sb.append((char) (i + 'a'));
-//        child.aux(sb, indent + 2);
-//      }
-//      if (anyChild)
-//        sb.append("]");
-//    }
+    private void aux(StringBuilder sb, int indent) {
+      if (fwdIndex >= 0 || bwdIndex >= 0) {
+        sb.append(" [");
+        if (fwdIndex >= 0) {
+          sb.append(fwdIndex);
+        } else {
+          sb.append('-');
+        }
+        sb.append('|');
+        if (bwdIndex >= 0) {
+          sb.append(bwdIndex);
+        } else {
+          sb.append('-');
+        }
+        sb.append("] ");
+      }
+      boolean anyChild = false;
+      for (int i = 0; i < 26; i++) {
+        var child = children[i];
+        if (child == null)
+          continue;
+        if (!anyChild) {
+          sb.append("{");
+          anyChild = true;
+        }
+        sb.append('\n');
+        sb.append(spaces(indent));
+        sb.append((char) (i + 'a'));
+        child.aux(sb, indent + 2);
+      }
+      if (anyChild)
+        sb.append("}");
+    }
 
     private Trie[] children = new Trie[26];
-    private int index = -1;
+    private int fwdIndex = -1;
+    private int bwdIndex = -1;
   }
 
   private static byte[] stringToBytes(String s) {
     var res = new byte[s.length()];
     for (int i = 0; i < s.length(); i++)
       res[i] = (byte) (s.charAt(i) - 'a');
+    return res;
+  }
+
+  private static byte[] reversed(byte[] b) {
+    var res = new byte[b.length];
+    for (int i = 0; i < b.length; i++)
+      res[i] = b[b.length - 1 - i];
+    pr("reverse:", JSList.with(b), JSList.with(res));
     return res;
   }
 }
