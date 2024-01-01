@@ -3,7 +3,6 @@ package js.leetcode;
 import static js.base.Tools.*;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -20,7 +19,7 @@ public class PalindromePairs extends LeetCode {
   }
 
   public void run() {
-   // x("[\"a\",\"\"]", "[[0,1],[1,0]]");
+    // x("[\"a\",\"\"]", "[[0,1],[1,0]]");
     x("[\"abcd\",\"dcba\",\"lls\",\"s\",\"sssll\"]", "[[0,1],[1,0],[3,2],[2,4]]");
   }
 
@@ -54,7 +53,7 @@ public class PalindromePairs extends LeetCode {
   // ------------------------------------------------------------------
 
   public List<List<Integer>> palindromePairs(String[] wordsw) {
-    var result = new ArrayList<List<Integer>>();
+    result.clear();
 
     byte[][] wordsAsBytes = new byte[wordsw.length][];
     for (int i = 0; i < wordsw.length; i++)
@@ -63,13 +62,15 @@ public class PalindromePairs extends LeetCode {
     todo("I think I do need a 'reversed' trie, and walk leftward and rightward resp.");
     todo("But does that still ensure a linear run time?");
 
-    var fwdTrie = new Trie();
+    var trie = new Trie();
     for (int i = 0; i < wordsAsBytes.length; i++) {
-      fwdTrie.add(wordsAsBytes[i], i, true);
-      fwdTrie.add(wordsAsBytes[i], i, false);
+      trie.add(wordsAsBytes[i], i, true);
+      trie.add(wordsAsBytes[i], i, false);
     }
-    pr("fwd:", INDENT, fwdTrie);
-    halt();
+    pr("fwd:", INDENT, trie);
+
+    var node = trie;
+    aux(trie, node);
 
     //    int wordNumber = -1;
     //    for (var w : wordsAsBytes) {
@@ -94,22 +95,60 @@ public class PalindromePairs extends LeetCode {
     return result;
   }
 
-  private static boolean isPal(byte[] bytes, int i) {
-    int j = 0;
-    while (i > j) {
-      if (bytes[i - 1] != bytes[j])
-        return false;
-      i--;
-      j++;
+  private ArrayList<List<Integer>> result = new ArrayList<>();
+
+  private void aux(Trie root, Trie node) {
+    if (node == null)
+      return;
+
+    // Case 1: Is this w'.end?   (' means bwd)
+    if (node.bwdIndex >= 0) {
+      aux2(node.bwdIndex, node, root);
     }
-    return true;
+
+    //    // Case 2: Is this v.end?
+    //    if (node.fwdIndex >= 0) {
+    //    }
+
+    for (var child : node.children)
+      aux(root, child);
   }
+
+  private void addResult(int v, int w) {
+    if (v == w)
+      return;
+    var r = new ArrayList<Integer>(2);
+    r.add(v);
+    r.add(w);
+    result.add(r);
+  }
+
+  private void aux2(int bwdIndex, Trie t1, Trie t2) {
+    if (t1 == null || t2 == null)
+      return;
+    if (t1.fwdIndex >= 0) {
+      addResult(t1.fwdIndex, bwdIndex);
+    }
+    for (int i = 0; i < 26; i++)
+      aux2(bwdIndex, t1.children[i], t2.children[i]);
+  }
+  //
+  //  private static boolean isPal(byte[] bytes, int i) {
+  //    int j = 0;
+  //    while (i > j) {
+  //      if (bytes[i - 1] != bytes[j])
+  //        return false;
+  //      i--;
+  //      j++;
+  //    }
+  //    return true;
+  //  }
 
   private class Trie {
 
-    public Trie child(int i) {
-      return children[i];
-    }
+    //    public Trie child(int i) {
+    //      return children[i];
+    //    }
 
     public void add(byte[] word, int index, boolean fwd) {
       var node = this;
@@ -181,11 +220,11 @@ public class PalindromePairs extends LeetCode {
     return res;
   }
 
-  private static byte[] reversed(byte[] b) {
-    var res = new byte[b.length];
-    for (int i = 0; i < b.length; i++)
-      res[i] = b[b.length - 1 - i];
-    pr("reverse:", JSList.with(b), JSList.with(res));
-    return res;
-  }
+//  private static byte[] reversed(byte[] b) {
+//    var res = new byte[b.length];
+//    for (int i = 0; i < b.length; i++)
+//      res[i] = b[b.length - 1 - i];
+//    pr("reverse:", JSList.with(b), JSList.with(res));
+//    return res;
+//  }
 }
