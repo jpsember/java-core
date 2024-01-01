@@ -3,6 +3,7 @@ package js.leetcode;
 import static js.base.Tools.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -18,12 +19,32 @@ public class PalindromePairs extends LeetCode {
     new PalindromePairs().run();
   }
 
+  private static String rep(String s, int count) {
+    var sb = new StringBuilder();
+    while (count-- > 0)
+      sb.append(s);
+    return sb.toString();
+  }
+
   public void run() {
     x("[\"a\",\"\"]", "[[0,1],[1,0]]");
     x("[\"abcd\",\"dcba\",\"lls\",\"s\",\"sssll\"]", "[[0,1],[1,0],[3,2],[2,4]]");
     x("[\"z\",\"a\",\"bcd\",\"cb\"]", "[[2,3]]");
     x("[\"zy\",\"abx\",\"ba\",\"bb\"]", "[[1,2]]");
     x("[\"abc\",\"ba\",\"cba\",\"dcba\"]", "[[0,1],[0,2],[0,3],[2,0]]");
+
+    {
+      var wd = list();
+      var as = rep("a", 300);
+      int run = 150;
+      run = 8;
+      wd.add(as.substring(0, run - 1) + "b" + as.substring(0, run));
+      wd.add("a");
+      wd.add(as.substring(0, run) + "b" + as.substring(0, run - 1));
+      pr(wd);
+      var exp = new JSList("[ [ 0,2 ],[ 1,0 ],[ 2,0 ],[ 2,1 ] ]");
+      y(wd, exp);
+    }
 
     todo("But why does this work?");
     todo("And how can we be sure it's O(n)?");
@@ -33,6 +54,11 @@ public class PalindromePairs extends LeetCode {
     db = true;
     var words = new JSList(s);
     var exp = new JSList(sExp);
+    y(words, exp);
+
+  }
+
+  private void y(JSList words, JSList exp) {
     var wlist = words.asStringArray();
     var result = palindromePairs(wlist);
     var res = list();
@@ -62,8 +88,10 @@ public class PalindromePairs extends LeetCode {
     result.clear();
 
     byte[][] wordsAsBytes = new byte[wordsw.length][];
-    for (int i = 0; i < wordsw.length; i++)
+    for (int i = 0; i < wordsw.length; i++) {
       wordsAsBytes[i] = stringToBytes(wordsw[i]);
+      pr("cvt:", wordsw[i], "to:", JSList.with(wordsAsBytes[i]));
+    }
 
     // Construct a trie.
     // Add all the forward (normal) words to it.
@@ -190,11 +218,51 @@ public class PalindromePairs extends LeetCode {
     private int bwdIndex = -1;
   }
 
+  private static byte[] work = new byte[300];
+
   private static byte[] stringToBytes(String s) {
-    var res = new byte[s.length()];
-    for (int i = 0; i < s.length(); i++)
-      res[i] = (byte) (s.charAt(i) - 'a');
-    return res;
+    if (true) {
+      var res = work;
+      int cursor = 0;
+      int prevVal = -1;
+      int count = 0;
+      for (int i = 0; i <= s.length(); i++) {
+        int val = -1;
+        if (i != s.length()) {
+          val = s.charAt(i) - 'a';
+          //    pr("i:", i, s.charAt(i), "val:", val);
+        }
+        if (val != prevVal) {
+          if (count != 0) {
+            if (count <= 5) {
+              for (int j = 0; j < count; j++)
+                res[cursor++] = (byte) prevVal;
+            } else {
+              // We need to store a count up to 300; use base 32
+              int c1 = (count >> 5) + 26;
+              int c2 = (count & (0x1f)) + 26;
+              res[cursor + 0] = (byte) c1;
+              res[cursor + 1] = (byte) c2;
+              res[cursor + 3] = (byte) prevVal;
+              res[cursor + 4] = (byte) c2;
+              res[cursor + 5] = (byte) c1;
+              //  pr("stored special as c1:", c1, "c2:", c2);
+            }
+          }
+          if (val < 0)
+            break;
+          prevVal = val;
+          count = 0;
+        }
+        count++;
+      }
+      return Arrays.copyOf(res, cursor);
+    } else {
+      var res = work;
+      for (int i = 0; i < s.length(); i++)
+        res[i] = (byte) (s.charAt(i) - 'a');
+      return Arrays.copyOf(res, s.length());
+    }
   }
 
 }
