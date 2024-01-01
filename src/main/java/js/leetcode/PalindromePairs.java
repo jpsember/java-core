@@ -19,8 +19,14 @@ public class PalindromePairs extends LeetCode {
   }
 
   public void run() {
-    // x("[\"a\",\"\"]", "[[0,1],[1,0]]");
+    x("[\"a\",\"\"]", "[[0,1],[1,0]]");
     x("[\"abcd\",\"dcba\",\"lls\",\"s\",\"sssll\"]", "[[0,1],[1,0],[3,2],[2,4]]");
+    x("[\"z\",\"a\",\"bcd\",\"cb\"]", "[[2,3]]");
+    x("[\"zy\",\"abx\",\"ba\",\"bb\"]", "[[1,2]]");
+    x("[\"abc\",\"ba\",\"cba\",\"dcba\"]", "[[0,1],[0,2],[0,3],[2,0]]");
+
+    todo("But why does this work?");
+    todo("And how can we be sure it's O(n)?");
   }
 
   private void x(String s, String sExp) {
@@ -59,59 +65,35 @@ public class PalindromePairs extends LeetCode {
     for (int i = 0; i < wordsw.length; i++)
       wordsAsBytes[i] = stringToBytes(wordsw[i]);
 
-    todo("I think I do need a 'reversed' trie, and walk leftward and rightward resp.");
-    todo("But does that still ensure a linear run time?");
-
+    // Construct a trie.
+    // Add all the forward (normal) words to it.
+    // Also add all the backward (reversed) words to it.
+    // Store appropriate indices in the leaf nodes.
     var trie = new Trie();
     for (int i = 0; i < wordsAsBytes.length; i++) {
       trie.add(wordsAsBytes[i], i, true);
       trie.add(wordsAsBytes[i], i, false);
     }
-    pr("fwd:", INDENT, trie);
+    db("Trie:", INDENT, trie);
 
-    var node = trie;
-    aux(trie, node);
-
-    //    int wordNumber = -1;
-    //    for (var w : wordsAsBytes) {
-    //      wordNumber++;
-    //      int i = w.length;
-    //      var t = fwdTrie;
-    //      while (t != null) {
-    //        if (t.index >= 0 && t.index != wordNumber) {
-    //          if (isPal(w, i)) {
-    //            var res = new ArrayList<Integer>(2);
-    //            res.add(t.index);
-    //            res.add(wordNumber);
-    //            result.add(res);
-    //          }
-    //        }
-    //        if (i == 0)
-    //          break;
-    //        i--;
-    //        t = t.child(w[i]);
-    //      }
-    //    }
+    lookForPrefixWord(trie, trie);
     return result;
   }
 
-  private ArrayList<List<Integer>> result = new ArrayList<>();
-
-  private void aux(Trie root, Trie node) {
+  private void lookForPrefixWord(Trie root, Trie node) {
     if (node == null)
       return;
 
     // Case 1: Is this w'.end?   (' means bwd)
-    if (node.bwdIndex >= 0) {
-      aux2(node.bwdIndex, node, root);
-    }
+    if (node.bwdIndex >= 0)
+      lookForMatchingWordAsSuffix(node.bwdIndex, node, root);
 
-    //    // Case 2: Is this v.end?
-    //    if (node.fwdIndex >= 0) {
-    //    }
+    // Case 2: Is this v.end?
+    if (node.fwdIndex >= 0)
+      lookForMatchingWordAsPrefix(node.fwdIndex, node, root);
 
     for (var child : node.children)
-      aux(root, child);
+      lookForPrefixWord(root, child);
   }
 
   private void addResult(int v, int w) {
@@ -123,32 +105,27 @@ public class PalindromePairs extends LeetCode {
     result.add(r);
   }
 
-  private void aux2(int bwdIndex, Trie t1, Trie t2) {
+  private void lookForMatchingWordAsSuffix(int bwdIndex, Trie t1, Trie t2) {
     if (t1 == null || t2 == null)
       return;
-    if (t1.fwdIndex >= 0) {
+    if (t1.fwdIndex >= 0)
       addResult(t1.fwdIndex, bwdIndex);
-    }
     for (int i = 0; i < 26; i++)
-      aux2(bwdIndex, t1.children[i], t2.children[i]);
+      lookForMatchingWordAsSuffix(bwdIndex, t1.children[i], t2.children[i]);
   }
-  //
-  //  private static boolean isPal(byte[] bytes, int i) {
-  //    int j = 0;
-  //    while (i > j) {
-  //      if (bytes[i - 1] != bytes[j])
-  //        return false;
-  //      i--;
-  //      j++;
-  //    }
-  //    return true;
-  //  }
+
+  private void lookForMatchingWordAsPrefix(int fwdIndex, Trie t1, Trie t2) {
+    if (t1 == null || t2 == null)
+      return;
+    if (t1.bwdIndex >= 0)
+      addResult(fwdIndex, t1.bwdIndex);
+    for (int i = 0; i < 26; i++)
+      lookForMatchingWordAsPrefix(fwdIndex, t1.children[i], t2.children[i]);
+  }
+
+  private ArrayList<List<Integer>> result = new ArrayList<>();
 
   private class Trie {
-
-    //    public Trie child(int i) {
-    //      return children[i];
-    //    }
 
     public void add(byte[] word, int index, boolean fwd) {
       var node = this;
@@ -220,11 +197,4 @@ public class PalindromePairs extends LeetCode {
     return res;
   }
 
-//  private static byte[] reversed(byte[] b) {
-//    var res = new byte[b.length];
-//    for (int i = 0; i < b.length; i++)
-//      res[i] = b[b.length - 1 - i];
-//    pr("reverse:", JSList.with(b), JSList.with(res));
-//    return res;
-//  }
 }
