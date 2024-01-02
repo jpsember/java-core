@@ -4,11 +4,14 @@ import static js.base.Tools.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 import js.base.BasePrinter;
 import js.data.DataUtil;
+import js.geometry.MyMath;
 import js.json.JSList;
 import js.json.JSObject;
 
@@ -242,6 +245,28 @@ public abstract class LeetCode {
     }
 
     return sb.toString();
+  }
+
+  public StringBuilder sb() {
+    return new StringBuilder();
+  }
+
+  public String randWord(String alphabet, int avgLength) {
+    if (alphabet == null)
+      alphabet = "abcdefghjkmnpqrstuvwxyz";
+    int len = MyMath.clamp((int) ((rand().nextGaussian() + 0.5) * avgLength), 1, avgLength * 3);
+    var sb = sb();
+    for (int i = 0; i < len; i++)
+      sb.append(alphabet.charAt(rand().nextInt(alphabet.length())));
+    return sb.toString();
+  }
+
+  public List<String> randWords(int count) {
+    var words = new HashSet();
+    while (words.size() < count) {
+      words.add(randWord("abcdefgh", 3));
+    }
+    return new ArrayList<>(words);
   }
 
   private static List<Boolean> dbStack = arrayList();
