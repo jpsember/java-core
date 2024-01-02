@@ -19,55 +19,35 @@ public class PalindromePairs extends LeetCode {
     new PalindromePairs().run();
   }
 
-  private static String rep(String s, int count) {
-    var sb = new StringBuilder();
-    while (count-- > 0)
-      sb.append(s);
-    return sb.toString();
-  }
-
   public void run() {
-    x("[\"ab\",\"ba\"]", "[[0,1],[1,0]]");
+    x("[\"ab\",\"ba\"]");
+    x("[\"abcd\",\"dcba\",\"lls\",\"s\",\"sssll\"]");
+    x("[\"a\",\"\"]");
+    x("[\"z\",\"a\",\"bcd\",\"cb\"]");
+    x("[\"zy\",\"abx\",\"ba\",\"bb\"]");
+    x("[\"abc\",\"ba\",\"cba\",\"dcba\"]");
 
-    x("[\"abcd\",\"dcba\",\"lls\",\"s\",\"sssll\"]", "[[0,1],[1,0],[3,2],[2,4]]");
-    x("[\"a\",\"\"]", "[[0,1],[1,0]]");
-    x("[\"z\",\"a\",\"bcd\",\"cb\"]", "[[2,3]]");
-    x("[\"zy\",\"abx\",\"ba\",\"bb\"]", "[[1,2]]");
-    x("[\"abc\",\"ba\",\"cba\",\"dcba\"]", "[[0,1],[0,2],[0,3],[2,0]]");
-
-    x("[\"a\",\"abc\",\"aba\",\"\"]", "[[0,3],[3,0],[2,3],[3,2]]");
-
-    {
-      var wd = list();
-      var as = rep("a", 300);
-      int run = 150;
-      run = 8;
-      wd.add(as.substring(0, run - 1) + "b" + as.substring(0, run));
-      wd.add("a");
-      wd.add(as.substring(0, run) + "b" + as.substring(0, run - 1));
-      pr(wd);
-      var exp = new JSList("[ [ 0,2 ],[ 1,0 ],[ 2,0 ],[ 2,1 ] ]");
-      y(wd, exp);
-    }
-
-    todo("But why does this work?");
-    todo("And how can we be sure it's O(n)?");
+    x("[\"a\",\"abc\",\"aba\",\"\"]");
+    x("[\"jcbbha\",\"afjg\",\"hhdc\",\"acffiaiidggfjahd\",\"hddgdgdg\",\"ceaidddhcjcbhihhacgc\",\"ghfdb\",\"hai\",\"j\",\"hicfeebdjfhccjhadeih\",\"jfgfaehbhidjfggdfb\",\"bejcfhbcdfdejdhf\",\"dh\",\"ijcf\",\"gj\",\"dhedijfhfhgbecgg\",\"hhehadhbfbfbigg\",\"daehhjcaiiaebgcgd\",\"gjcj\",\"ajh\",\"gajea\",\"hjcbgedbffgga\",\"hbjibge\",\"gabbdejaecjbceih\",\"jdhjdja\",\"abdaibbcgbb\",\"efbbfichj\",\"aaaachheagihe\",\"adgi\",\"cjhcagbhjdcchaaaaifh\",\"ebg\",\"afdffeag\",\"jdebghbfejgf\",\"daghaghhcfjaec\",\"jceef\",\"bjhf\",\"djjibceajgcadfibcga\",\"bieifhcagid\",\"edfeaeidbjibgihi\",\"agcdabhdcfacjibeb\",\"dafaifeddgadacaic\",\"gaghddaebiicefeahij\",\"gdj\",\"bic\",\"bafffajdcffcjb\",\"bagcgggejjffgdifba\",\"hb\",\"fjgdihjjacbaagec\",\"b\",\"fgihfaffhb\",\"bffjafig\",\"jbhibcbejjd\",\"gjdcee\",\"cdeecbbhbfabhiebdd\",\"cijbdjaediccg\",\"aejahhdhbcbiaicaccif\",\"eeedjjabhibdah\",\"fgdij\",\"bcdhdghddhbfjbaccg\",\"dbigdhagifjic\",\"hghcabbaajei\",\"ea\",\"hgah\",\"eacg\",\"jeafhafggjhegjiabjhj\",\"hffhihcdhecabefeaa\",\"egdjihdc\",\"gddjjcdeifcfhcch\",\"achaifgbb\",\"bgejgiaafgfajjehdjdb\",\"ccieedfdegefdjcaifg\",\"hebjhghjafbhcjg\",\"hcibafcchig\",\"ahhdhabee\",\"iaicfii\",\"bgafgejh\",\"gjfaejjaibgiifg\",\"fgihijba\",\"aadgiajfiifg\",\"cegjgibjafiifaijdb\",\"afdihddihh\",\"ecaheeic\",\"eahedei\",\"ifgjbajaccdifhg\",\"eajaij\",\"ffcfgfbhiaebaeaaacb\",\"fdcgdbhfbihgicdhbf\",\"acj\",\"bggdibjgaciijccdaii\",\"fagfdfhfccbjeighf\",\"cffffdcffchg\",\"iadbdbfaijji\",\"cdech\",\"ajgjfjbab\",\"ihefbbcc\",\"cgadda\",\"fajabajafjedjdacb\",\"ch\",\"f\",\"eigafjadfgbfjcadbhcd\",\"ajbcfbaiihacec\",\"abjbbjifca\",\"gdfgefeeiedbhdbfhci\",\"egigcihfjbaiiffdibg\",\"eejfgeigaabbcaaiedi\",\"acgbfh\",\"dbfcihd\",\"hi\",\"cg\",\"edcbgbddjfccfghjacbc\",\"jedjacijfjiacefhi\",\"fibiicheeicdeehicg\",\"fbahafhjchbi\",\"haacgejdijhbid\",\"ajbhj\",\"fehjfbehddcdadbdb\",\"cihficdjjehiahgfaa\",\"bgbijfgeae\",\"hfdhdceccbiaccb\",\"jcibchfg\",\"ddjabaigh\",\"bb\",\"fhhciadihc\",\"digfbhg\",\"hbg\",\"dfeciajfjfgighi\",\"debaij\",\"fc\",\"gbjiabfjbgfgjaa\",\"abgjfheb\",\"jjehi\",\"iidace\",\"ijecaagffiae\",\"cgahbii\",\"igb\",\"ahedhifceachccibj\",\"h\",\"jbjgaajiedff\",\"bc\",\"eiifj\",\"ejeidigiiibec\",\"dbchbddggb\",\"fbabhj\",\"igh\",\"hegddcj\",\"gddgah\",\"egjdiidjgc\",\"abhfhagcifhcaiidf\",\"jfi\",\"i\",\"fdbiaieab\",\"hgcccdchadje\",\"ahihhafi\",\"ddgeegjijbebeeibbdg\",\"fcabgbejfdjaj\",\"jfibdiafgfgecjee\",\"idejgface\",\"ecieajdagcbbc\",\"eiehghedcg\",\"jdeedjaieebaedih\",\"gifbdecjcda\",\"ggibecafcebedifd\",\"adcbghdhh\",\"hjdhd\",\"hbeejddd\",\"jdceejbiccbgefidc\",\"ebe\",\"dg\",\"fiicdbibjced\",\"fdbfceibccdgcicgcjgh\",\"cfbheeadeiciaa\",\"agiddbbijjieb\",\"cabcbddf\",\"effci\",\"fcgbcfj\",\"cddacbcfcfd\",\"fabbeigjijciche\",\"ed\",\"ehdcfeejeae\",\"gbagecegcjaiefdc\",\"ggghjecjiijcc\",\"ehheec\",\"cjajgicccbffffhaai\",\"eecgfdahha\",\"bf\",\"eidcghceihhfhdeih\",\"dfdiaegficdiihigaifb\",\"fiiadifh\",\"djgfiagggj\",\"hgcghe\",\"gibafbccbbcdedjaeed\",\"egji\",\"efbcbdcgbgg\",\"aidbaaaeeajhjechcc\",\"cgcb\",\"hbcbgcdbejdicijaee\",\"cih\",\"ibjecgjjbd\",\"ijjdhgjagf\",\"a\",\"ediggeieghhijbe\",\"ifgfjaidieifhcgd\",\"dibfabcdeebjgjba\",\"gahcabhbcfhd\",\"bicegiehj\",\"aaahbjifgcea\",\"bdbhaehgbejdf\",\"iiahiia\",\"egibgiadi\",\"eficbcacbh\",\"hahhhadjabeacea\",\"cejhhe\",\"dhabbjgcjehbgff\",\"ffdjghd\",\"eadjdfjdhcgjifedeb\",\"hgihajefhfbbhcai\",\"jdaeieecgijhifjejfd\",\"hbgidf\",\"ifhjgigiaai\",\"fgiadieigcdbcj\",\"hgdjfhgh\",\"hfifhbehhfa\",\"hafjaegjdj\",\"dgeiiibfjciadd\",\"eh\",\"hjijjihbafh\",\"cjjccfjfeahifecffa\",\"ciabgchjdgcccgf\",\"jcdabhcdjfcagdga\",\"d\",\"g\",\"aahidacabheejdhjg\",\"gbaegcffhegihbi\",\"ae\",\"ggbhjcgbdgffegagfag\",\"ejabehcfbfddjhc\",\"addida\",\"ebhcgejjjjgj\",\"aebaibfijibhecjc\",\"ciehjcgjigbae\",\"ibjebbdbeg\",\"cdcjbbicehjee\",\"gjffaccgadjh\",\"fifhjg\",\"efi\",\"befgii\",\"bcghgchhhdfgi\",\"efgghcbhgjh\",\"aabghdbgj\",\"cche\",\"ij\",\"aghadedcji\",\"ehgdajhfeicahig\",\"hd\",\"agbiehefjdfbijg\",\"djeiighaceidgdbjhj\",\"fabbjhj\",\"ghjfbdehggbfeceggaf\",\"hcfjhajdfbgceceddhcf\",\"jee\",\"ifcjaacfbijjgacdih\",\"gedhefbea\",\"bha\",\"fbjjfieedbdfbdeaaba\",\"fdhecficdajcjddd\",\"iahcie\",\"cdhdabchegjhhgcdede\",\"jifjhcbfgahhffggh\",\"jajdefcifaejij\",\"ibiegjiiffcj\",\"fjab\",\"addfagdjiehcf\",\"acefjda\",\"bh\",\"iegea\",\"eefegfbddf\",\"geedeejcgcghiee\",\"cjjgbdjibhhgbgjecjb\",\"jgbdfjjeg\",\"diijgfe\",\"bbejehacgfjccidcbh\",\"dagcihcfbbibffjje\",\"jidgfaajbgcahde\",\"ef\",\"hjh\",\"biabbcjacfcihce\",\"dbhaigjajefabhhfiid\",\"bfbfdiajb\",\"dijdcbb\",\"fbhjbic\",\"bggehggefjdcagbjj\",\"ehfd\",\"jciddhj\",\"fejgjagjdiai\",\"fiaef\",\"hffhdg\",\"feeffgj\",\"ebgcaaagcefdbhbbci\",\"jicjbbbecdjh\",\"cbjfefbg\",\"jacfcfi\",\"cieb\",\"dgghiddj\",\"ibebbegigidbddadadfg\",\"ddfjiccj\",\"ichj\",\"chddgfiadcdgajfjafa\",\"cicdbfidi\",\"ghjbibddjef\",\"hcdaiicbd\",\"hda\",\"cejjeejieebegaid\",\"cadiff\",\"cebd\",\"af\",\"jfggiab\",\"eeaacbbcjhfgge\",\"ijecagdb\",\"iecjbbiebehbibg\",\"fiacjagf\",\"icghdiadggdagi\",\"cibgdhfbahcihbhjei\",\"ejbceehedid\",\"hbiihhiffdf\",\"icadi\",\"geffhg\",\"cdifdhafjceafcha\",\"dcjhbdgdjhfaceahfhcg\",\"fa\",\"iefdcc\",\"ehaddejhbcabiacbi\",\"geahhbbfdjegjccd\",\"jbfdggjhfcdjdbigei\",\"ihjeeegiebjbihhf\",\"dcj\",\"jebcc\",\"igaaciee\",\"cefaibfd\",\"gddeabfedjgdcdfchhc\",\"bjfhdgidhg\",\"cbai\",\"bafdhbdbfhajihfhjdb\",\"dffcaedjecjgeecfdcec\",\"fefd\",\"hffcdhgfedhgbidejce\",\"bfhj\",\"c\",\"cidcghdcecfcgfdfgbif\",\"jdjggeicb\",\"bff\",\"achejibgiggahfhede\",\"hehgeeifgfcbadjdab\",\"jdei\",\"ifcbhjhdhidgdjii\",\"digibfcagbcgijafabji\",\"fchjhbejaibefhegf\",\"idjac\",\"bchjebeejjic\",\"dheahe\",\"chcijggbfjbdc\",\"cjabcibcajjeifedieeh\",\"bhecabgaffdidgeccdaj\",\"agaefjhjhcc\",\"icihfhaaifbdgehhbg\",\"jfajhi\",\"eccic\",\"iecbbeggadjcdjfgbdeg\",\"e\",\"ijijaahacahj\",\"hdheidggdjg\",\"caegbf\",\"jbhchhbchci\",\"aiihcddbghgjijbhf\",\"cfagaebcigdchfjahhfg\",\"eb\",\"ijghecgaifcgd\",\"hdcejafhgda\",\"fefaifd\",\"iiiigfdbbcgcij\",\"ibcgafaheadeacjbh\",\"fijjbaidjeiaj\",\"gdiedchbid\",\"idcjgfdbgjf\",\"edjaibgcie\",\"aifhadhfdh\",\"aajeb\",\"hc\",\"aiiafhece\",\"dfbig\",\"hif\",\"gjbjeffbcjbcbejejdcf\",\"fjedhbibah\",\"bijhd\",\"ice\",\"dcia\",\"fehfjedj\",\"igidafjiejdheiehg\",\"hihcdje\",\"ghcbighfgbijbigci\",\"hcbhjacacbbjbcbhgdcd\",\"djfabdbabjbabgidacdi\",\"ddjibhfjiied\",\"acfbagiai\",\"ibjijedccbeebbcggdgb\",\"egjabieicjgjabdcaced\",\"dbbiiegh\",\"haegai\",\"dfgfijibfhjbieebdh\",\"jfifccifjaej\",\"gibceajgiihj\",\"fhbfaijjbhig\",\"eebagjggjfdcfbebdhb\",\"dcdajbcfdfccaadfj\",\"ehhdbibiefdbadcecjj\",\"chgbbhifbha\",\"bbagddefdegcjc\",\"ecbidjdgaedgh\",\"idg\",\"haafe\",\"eeeheabiahgcc\",\"ffcdja\",\"eed\",\"ceggbeace\",\"fhgfb\",\"ccdedfdfchjb\",\"jfjfefddfehef\",\"dejhbed\",\"cfdhjij\",\"jdahafaec\",\"jcccjadfcig\",\"edfbbbaeiccfff\",\"fbfdbhhchfjfeiad\",\"hcifddgddefaj\",\"gjafighje\",\"id\",\"dcffefbaehj\",\"gcaac\",\"cjaggigcabaaeegjdef\",\"hbcjejfdeiiheeghi\",\"abababffeajifaea\",\"bbihbhfaf\",\"gjihbe\",\"afabadfjcee\",\"ihbjhfajf\",\"fjchejfg\",\"dc\",\"gaajagfaadeacdjcgd\",\"fb\",\"fjhgfiehib\",\"cibcgbcjdgiibdjbf\",\"gbjdfhihfjj\",\"gjgcabiicijihggbeafi\",\"fdeh\",\"ijiibbecjcjeicd\",\"bgecihj\",\"gbdiificgccgh\",\"deebegbfgcdbjjcdjh\",\"ihfgbhiaahhfggcjcdh\",\"cabj\",\"cahaf\",\"jhicdadegjgjed\",\"cecjceghgigjgejacj\",\"didhi\",\"if\",\"fgadbhgech\",\"bgchbchfeibdcid\",\"cjefhigjdgggegghbeic\",\"cgg\",\"fiagcgjdbcf\",\"ejbabaedgbiba\",\"gccadcjjaadej\",\"fd\",\"jbghjdicbeaaa\",\"fg\",\"jefi\",\"dabcaad\",\"aaicbhhdicf\",\"defjf\",\"bieije\",\"bghdghhhhdbba\",\"ieajfh\",\"cff\",\"adehegigacdg\",\"affi\",\"jdaejihbifbbddd\",\"df\",\"cb\",\"dbee\",\"cj\",\"cjd\",\"fde\",\"dhejdfighhejhgc\",\"fdd\",\"ie\",\"ecbjbjajagi\",\"fgbiieeeccfcgb\",\"bbifdhehcaj\",\"fjchi\",\"ab\",\"ggcbdggciaigbhgegdhh\",\"cee\",\"cecjjhcbge\",\"iejf\",\"beeahabi\",\"ce\",\"gedbacfcfhgdhcagd\",\"ggd\",\"decdfcgjaagjifjb\",\"gjhbjajgcfgcfjgb\",\"jhfaejjcga\",\"gcag\",\"hhaafheeecfg\",\"gihajbebhgbcji\",\"afjh\",\"hccbbige\",\"ifaih\",\"fcdjhj\",\"aajeibbefghajje\",\"ghj\",\"jfaacdggacbhdif\",\"eefcaefhaijebchddej\",\"gggiiagfijjffeiccbd\",\"aeheifif\",\"cfcdjjedjefjcig\",\"hhceccjfbjebdbbgad\",\"egjhjjaajdciiehicd\",\"jgjedigaj\",\"abdjhjhd\",\"jahgcghhiccbf\",\"jdaigcdha\",\"ifjdci\",\"ghjhghbgdhghhdadehjd\",\"ccejgigceidb\",\"gejcgdaebfjdj\",\"gjjhiehdig\",\"idcebjagc\",\"aedchhdgdagjhbg\",\"ejghchgbegcdjjh\",\"jijbeacegdgaiegec\",\"bcdehbjaf\",\"ge\",\"beabcgicibagjddeg\",\"ddgcggbgf\",\"aeciafhchhdgcifhda\",\"cgcgaigdifjgj\",\"cehjhhbaehfab\",\"ehacaf\",\"ggiheda\",\"jafhabhdijejj\",\"igbghjaiefg\",\"iejicejecfgacieb\",\"ghadfggbhaecfibggd\",\"ehbieibfcfdgchgfhhij\",\"dhedicbgdjai\",\"dcddcejahagabhdgfefj\",\"djjidbagfdgadbdcadbg\",\"ajfihcaajbibgja\",\"ecjgegbifha\",\"chahafbfhebjadjhifai\",\"hfaeaejdihfjjdfgafhc\",\"jai\",\"aeabaiai\",\"iehe\",\"ieeejb\",\"dbehfcgfgbceef\",\"beefg\",\"ifhfdabfhjeb\",\"edbjabda\",\"bbbhbdciiaeaefia\",\"hdehfjhfgggbccf\",\"ibhhfgdbadd\",\"ahcfigciefjjadc\",\"hgcgaebjdafhi\",\"idbgg\",\"jfee\",\"hegchgecdajabfh\",\"gjjh\",\"jdfacjhfiajd\",\"jddefjh\",\"eefgacgdcbj\",\"agjhjecdgghccf\",\"ecjceih\",\"ieai\",\"dbgah\",\"eeb\",\"dbedhffjjhhdg\",\"higfdjgdcefihjjhcjic\",\"cjfbcbbc\",\"fbjfdjiagdhead\",\"geejhgdacig\",\"bjgjcdhbdfdejf\",\"hgedeb\",\"abi\",\"ji\",\"jc\",\"cajgjacgfbbd\",\"agjgfii\",\"bheaeaafceidhcb\",\"giijcgjdbb\",\"hfbeeceadijjjadb\",\"gacghgiadgh\",\"fcdedaabbge\",\"egfdbjiiaafe\",\"jej\",\"bdcacifcfjjafhajeh\",\"fajjja\",\"gagigecgedchg\",\"bdefaihfjbdjjgchidg\",\"idjdiiaed\",\"bhjfajfggbaf\",\"hdaeidgc\",\"jh\",\"cha\",\"ijeicagebcci\",\"hbfaafig\",\"dhhc\",\"bcfcaeefbafbbe\",\"cghdhchechebjcic\",\"fedaiggh\",\"jcgjbidcefg\",\"ggagcbbfafbcbd\",\"facee\",\"jijfdfecfbidcciai\",\"hedfgahgcdbech\",\"cc\",\"ghjffahcajaga\",\"ajgaea\",\"bbjgbaacd\",\"adcea\",\"befahhbhb\"]");
   }
 
-  private void x(String s, String sExp) {
+  private void x(String s) {
     db = true;
     var words = new JSList(s);
-    var exp = new JSList(sExp);
-    y(words, exp);
+    y(words);
   }
 
-  private void y(JSList words, JSList exp) {
+  private void y(JSList words) {
     var wlist = words.asStringArray();
+    var result2 = new SLOWPairs().palindromePairs(wlist);
+
+    var exp = list();
+    for (var p : result2)
+      exp.add(list().add(p.get(0)).add(p.get(1)));
     var result = palindromePairs(wlist);
     var res = list();
     for (var p : result)
       res.add(list().add(p.get(0)).add(p.get(1)));
-    db("palindromePairs", words, INDENT, res);
     sort(res);
     sort(exp);
     verify(res, exp);
@@ -75,9 +55,8 @@ public class PalindromePairs extends LeetCode {
 
   private void sort(JSList res) {
     Map<String, Object> sorted = new TreeMap<>();
-    for (JSList x : res.asLists()) {
+    for (JSList x : res.asLists())
       sorted.put(x.toString(), x);
-    }
     var s = list();
     if (sorted.size() != res.size()) {
       s.add(list().add("sorted size differs from input"));
@@ -88,16 +67,54 @@ public class PalindromePairs extends LeetCode {
     res.append(s);
   }
 
+  private class SLOWPairs {
+    public List<List<Integer>> palindromePairs(String[] wordsw) {
+      result.clear();
+      {
+        int i = INIT_INDEX;
+        for (var a : wordsw) {
+          i++;
+          int j = INIT_INDEX;
+          for (var b : wordsw) {
+            j++;
+            if (i == j) continue;
+            var s = a + b;
+            if (isPal(s)) {
+              var r = new ArrayList<Integer>(2);
+              r.add(i);
+              r.add(j);
+              result.add(r);
+            }
+          }
+        }
+      }
+
+      return result;
+    }
+
+    private List<List<Integer>> result = new ArrayList<>();
+
+    private boolean isPal(String s) {
+      int i = 0;
+      int j = s.length() - 1;
+      while (i < j) {
+        if (s.charAt(i) != s.charAt(j))
+          return false;
+        i++;
+        j--;
+      }
+      return true;
+    }
+  }
+
   // ------------------------------------------------------------------
 
   public List<List<Integer>> palindromePairs(String[] wordsw) {
     result.clear();
 
     byte[][] wordsAsBytes = new byte[wordsw.length][];
-    for (int i = 0; i < wordsw.length; i++) {
+    for (int i = 0; i < wordsw.length; i++)
       wordsAsBytes[i] = stringToBytes(wordsw[i]);
-      pr("cvt:", wordsw[i], "to:", JSList.with(wordsAsBytes[i]));
-    }
 
     // Construct a trie.
     // Add all the forward (normal) words to it.
