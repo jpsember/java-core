@@ -3,6 +3,7 @@ package js.leetcode;
 import static js.base.Tools.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -26,11 +27,15 @@ public class PalindromePairs extends LeetCode {
   }
 
   public void run() {
-    x("[\"a\",\"\"]", "[[0,1],[1,0]]");
+    x("[\"ab\",\"ba\"]", "[[0,1],[1,0]]");
+
     x("[\"abcd\",\"dcba\",\"lls\",\"s\",\"sssll\"]", "[[0,1],[1,0],[3,2],[2,4]]");
+    x("[\"a\",\"\"]", "[[0,1],[1,0]]");
     x("[\"z\",\"a\",\"bcd\",\"cb\"]", "[[2,3]]");
     x("[\"zy\",\"abx\",\"ba\",\"bb\"]", "[[1,2]]");
     x("[\"abc\",\"ba\",\"cba\",\"dcba\"]", "[[0,1],[0,2],[0,3],[2,0]]");
+
+    x("[\"a\",\"abc\",\"aba\",\"\"]", "[[0,3],[3,0],[2,3],[3,2]]");
 
     {
       var wd = list();
@@ -54,7 +59,6 @@ public class PalindromePairs extends LeetCode {
     var words = new JSList(s);
     var exp = new JSList(sExp);
     y(words, exp);
-
   }
 
   private void y(JSList words, JSList exp) {
@@ -75,6 +79,9 @@ public class PalindromePairs extends LeetCode {
       sorted.put(x.toString(), x);
     }
     var s = list();
+    if (sorted.size() != res.size()) {
+      s.add(list().add("sorted size differs from input"));
+    }
     for (var ent : sorted.entrySet())
       s.addUnsafe(ent.getValue());
     res.clear();
@@ -104,7 +111,7 @@ public class PalindromePairs extends LeetCode {
     db("Trie:", INDENT, trie);
 
     lookForPrefixWord(trie, trie);
-    return result;
+    return new ArrayList<List<Integer>>(result.values());
   }
 
   private void lookForPrefixWord(Trie root, Trie node) {
@@ -113,11 +120,11 @@ public class PalindromePairs extends LeetCode {
 
     // Case 1: Is this w'.end?   (' means bwd)
     if (node.bwdIndex >= 0)
-      lookForMatchingWordAsSuffix(node.bwdIndex, node, root);
+      lookForMatchingWordAsSuffix(node.bwdIndex, node, root, 0);
 
     // Case 2: Is this v.end?
     if (node.fwdIndex >= 0)
-      lookForMatchingWordAsPrefix(node.fwdIndex, node, root);
+      lookForMatchingWordAsPrefix(node.fwdIndex, node, root, 0);
 
     for (var child : node.children)
       lookForPrefixWord(root, child);
@@ -129,28 +136,39 @@ public class PalindromePairs extends LeetCode {
     var r = new ArrayList<Integer>(2);
     r.add(v);
     r.add(w);
-    result.add(r);
+    result.put((v << 9) | w, r);
   }
 
-  private void lookForMatchingWordAsSuffix(int bwdIndex, Trie t1, Trie t2) {
+  private byte[] suffixWork = new byte[300];
+
+  private void lookForMatchingWordAsSuffix(int bwdIndex, Trie t1, Trie t2, int suffixLength) {
     if (t1 == null || t2 == null)
       return;
-    if (t1.fwdIndex >= 0)
-      addResult(t1.fwdIndex, bwdIndex);
-    for (int i = 0; i < 26; i++)
-      lookForMatchingWordAsSuffix(bwdIndex, t1.children[i], t2.children[i]);
+
+    if (t1.fwdIndex >= 0) {
+      if (isPal(suffixWork, suffixLength))
+        addResult(t1.fwdIndex, bwdIndex);
+    }
+    for (int i = 0; i < 26; i++) {
+      suffixWork[suffixLength] = (byte) i;
+      lookForMatchingWordAsSuffix(bwdIndex, t1.children[i], t2.children[i], suffixLength + 1);
+    }
   }
 
-  private void lookForMatchingWordAsPrefix(int fwdIndex, Trie t1, Trie t2) {
+  private void lookForMatchingWordAsPrefix(int fwdIndex, Trie t1, Trie t2, int suffixLength) {
     if (t1 == null || t2 == null)
       return;
-    if (t1.bwdIndex >= 0)
-      addResult(fwdIndex, t1.bwdIndex);
-    for (int i = 0; i < 26; i++)
-      lookForMatchingWordAsPrefix(fwdIndex, t1.children[i], t2.children[i]);
+    if (t1.bwdIndex >= 0) {
+      if (isPal(suffixWork, suffixLength))
+        addResult(fwdIndex, t1.bwdIndex);
+    }
+    for (int i = 0; i < 26; i++) {
+      suffixWork[suffixLength] = (byte) i;
+      lookForMatchingWordAsPrefix(fwdIndex, t1.children[i], t2.children[i], suffixLength + 1);
+    }
   }
 
-  private ArrayList<List<Integer>> result = new ArrayList<>();
+  private Map<Integer, List<Integer>> result = new HashMap<>();
 
   private class Trie {
 
@@ -222,6 +240,18 @@ public class PalindromePairs extends LeetCode {
     for (int i = 0; i < s.length(); i++)
       res[i] = (byte) (s.charAt(i) - 'a');
     return res;
+  }
+
+  private static boolean isPal(byte[] b, int len) {
+    int i = 0;
+    int j = len - 1;
+    while (i < j) {
+      if (b[i] != b[j])
+        return false;
+      i++;
+      j--;
+    }
+    return true;
   }
 
 }
