@@ -78,12 +78,6 @@ public class PalindromePairs extends LeetCode {
     var ress = res.prettyPrint();
 
     if (!exps.equals(ress)) {
-      showStringDiff(exps, ress);
-      halt();
-
-      pr("exp:", exp);
-      pr("res:", res);
-
       var missing = exp.deepCopy();
       missing.wrappedMap().keySet().removeAll(res.keySet());
 
@@ -156,7 +150,6 @@ public class PalindromePairs extends LeetCode {
           }
         }
       }
-      // pr("result size:", result.size());
       return result;
     }
 
