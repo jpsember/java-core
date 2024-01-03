@@ -14,7 +14,9 @@ import js.json.JSList;
 import js.json.JSMap;
 
 /**
- * I think I need to use a trie data structure
+ * This is worse than the first version!  
+ * 
+ * Beats 6.59%
  */
 public class PalindromePairs extends LeetCode {
 
