@@ -55,6 +55,19 @@ public abstract class LeetCode {
     return s;
   }
 
+  public static String[] extractStrings(String s) {
+    var cs = "[],";
+    for (int i = 0; i < cs.length(); i++) {
+      s = s.replace(cs.charAt(i), ' ');
+    }
+    var res = new ArrayList<String>();
+    for (var q : split(s, ' ')) {
+      if (!q.isEmpty())
+        res.add(q);
+    }
+    return DataUtil.toStringArray(res);
+  }
+
   public static int[] extractNums(String s) {
     var cs = "[],";
     for (int i = 0; i < cs.length(); i++) {
