@@ -272,10 +272,7 @@ public abstract class LeetCode {
     List<IntPair> out = arrayList();
     for (var x : lists)
       out.add(new IntPair(x));
-    pr("constructed list of intpairs from:", INDENT, lists);
-    pr("list is:", INDENT, out);
     out.sort(null);
-    pr("sorted:", INDENT, out);
     return out;
   }
 

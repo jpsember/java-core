@@ -64,31 +64,19 @@ public class PalindromePairs extends LeetCode {
     for (var pt : x) {
       m.put(pt.toString(), wlist[pt.a] + " " + wlist[pt.b]);
     }
-    pr("asMap, x:", x, INDENT, "wlist:", wlist, CR, "result:", m);
     return m;
   }
 
   private void y(String[] wlist) {
-
-    pr(VERT_SP);
     var result2 = intPairs(new SLOWPairs().palindromePairs(wlist));
     var exp = asMap(result2, wlist);
-    pr("Expected map:", exp);
-
     var result = intPairs(palindromePairs(wlist));
     var res = asMap(result, wlist);
-    pr("Result map:", res);
-
     var exps = exp.prettyPrint();
     var ress = res.prettyPrint();
 
-    pr("Expected:", INDENT, exps);
-    pr("Results:", INDENT, ress);
-
     if (!exps.equals(ress)) {
       var missing = exp.deepCopy();
-      pr("res.keyset:", res.keySet());
-      pr("missing keyset:", missing.keySet());
       missing.wrappedMap().keySet().removeAll(res.keySet());
 
       var unexp = res.deepCopy();
@@ -174,32 +162,31 @@ public class PalindromePairs extends LeetCode {
       fwdWordsSet.put(s, i);
       bwdWordsSet.put(reverse(s), i);
     }
-    pr("fwdWordsSet:", fwdWordsSet);
-    pr("bwdWordsSet:", bwdWordsSet);
 
     for (var pass = 0; pass < 2; pass++) {
-      if (false && pass == 1 && alert("skipping pass 2"))
-        continue;
-
       for (var entry : fwdWordsSet.entrySet()) {
         var s = entry.getKey();
-        var index = entry.getValue();
-        pr("fwdWord index:", index, quote(s));
+        // This bit me: unbox the map value to allow comparisons via '=='!
+        var index = entry.getValue().intValue();
+
         int sLength = s.length();
         for (int slen = 0; slen <= sLength; slen++) {
           var prefix = s.substring(0, sLength - slen);
           var bwdIndex = bwdWordsSet.getOrDefault(prefix, -1);
-          pr("...prefix", slen, quote(prefix), "bwdIndex:", bwdIndex);
           if (bwdIndex < 0 || bwdIndex == index)
             continue;
+
           if (slen > 1) {
-            pr("......checking if suffix is palindrome:", quote(s.substring(sLength - slen)));
             if (!isPal(s, sLength - slen, sLength)) {
               continue;
             }
           }
-          pr("...adding result:", index, bwdIndex);
-          addResult(index, bwdIndex);
+
+          if (pass == 0) {
+            addResult(index, bwdIndex);
+          } else {
+            addResult(bwdIndex, index);
+          }
         }
       }
       var tmp = fwdWordsSet;
@@ -219,7 +206,6 @@ public class PalindromePairs extends LeetCode {
   }
 
   private boolean isPal(String s, int start, int stop) {
-
     int i = start;
     int j = stop - 1;
     while (i < j) {
