@@ -269,6 +269,24 @@ public abstract class LeetCode {
     return new ArrayList<>(words);
   }
 
+  public void showStringDiff(String a, String b) {
+    if (a.equals(b))
+      return;
+
+    int i = 0;
+    while (a.charAt(i) == b.charAt(i))
+      i++;
+    if (i >= 30) {
+      a = a.substring(i - 20);
+      b = b.substring(i - 20);
+      i = 20;
+    }
+
+    pr(a.substring(0, i) + "[!!!!!!:]" + a.substring(i));
+    pr(b.substring(0, i) + "[!!!!!!:]" + b.substring(i));
+
+  }
+
   private static List<Boolean> dbStack = arrayList();
   private static List<Integer> indStack = arrayList();
 
