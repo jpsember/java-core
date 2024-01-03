@@ -7,7 +7,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
-import java.util.Set;
 
 import js.base.BasePrinter;
 import js.data.DataUtil;
@@ -269,6 +268,14 @@ public abstract class LeetCode {
     return new ArrayList<>(words);
   }
 
+  public List<IntPair> intPairs(List<List<Integer>> lists) {
+    List<IntPair> out = arrayList();
+    for (var x : lists)
+      out.add(new IntPair(x));
+    out.sort(null);
+    return out;
+  }
+
   public void showStringDiff(String a, String b) {
     if (a.equals(b))
       return;
@@ -291,5 +298,37 @@ public abstract class LeetCode {
   private static List<Integer> indStack = arrayList();
 
   public static boolean db;
+
+}
+
+class IntPair implements Comparable {
+  public IntPair(List<Integer> list) {
+    if (list.size() != 2)
+      badArg("expected two elements:", list);
+    this.a = list.get(0);
+    this.b = list.get(1);
+  }
+
+  public IntPair(int a, int b) {
+    this.a = a;
+    this.b = b;
+  }
+
+  public final int a;
+  public final int b;
+
+  @Override
+  public String toString() {
+    return "(" + a + " " + b + ")";
+  }
+
+  @Override
+  public int compareTo(Object o) {
+    IntPair p = (IntPair) o;
+    int result = Integer.compare(a, p.a);
+    if (result == 0)
+      result = Integer.compare(b, p.b);
+    return result;
+  }
 
 }
