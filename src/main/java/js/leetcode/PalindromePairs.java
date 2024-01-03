@@ -62,23 +62,33 @@ public class PalindromePairs extends LeetCode {
   private JSMap asMap(List<IntPair> x, String[] wlist) {
     var m = map();
     for (var pt : x) {
-      m.put(x.toString(), wlist[pt.a] + " " + wlist[pt.b]);
+      m.put(pt.toString(), wlist[pt.a] + " " + wlist[pt.b]);
     }
+    pr("asMap, x:", x, INDENT, "wlist:", wlist, CR, "result:", m);
     return m;
   }
 
   private void y(String[] wlist) {
+
+    pr(VERT_SP);
     var result2 = intPairs(new SLOWPairs().palindromePairs(wlist));
     var exp = asMap(result2, wlist);
+    pr("Expected map:", exp);
 
     var result = intPairs(palindromePairs(wlist));
     var res = asMap(result, wlist);
+    pr("Result map:", res);
 
     var exps = exp.prettyPrint();
     var ress = res.prettyPrint();
 
+    pr("Expected:", INDENT, exps);
+    pr("Results:", INDENT, ress);
+
     if (!exps.equals(ress)) {
       var missing = exp.deepCopy();
+      pr("res.keyset:", res.keySet());
+      pr("missing keyset:", missing.keySet());
       missing.wrappedMap().keySet().removeAll(res.keySet());
 
       var unexp = res.deepCopy();
@@ -108,25 +118,7 @@ public class PalindromePairs extends LeetCode {
       combined.add(a + b);
     }
     y(combined);
-    //    var js = list();
-    //    for (var w : combined)
-    //      js.add(w);
-
   }
-  //
-  //  private void sort(JSList res) {
-  //    Map<String, Object> sorted = new TreeMap<>();
-  //    for (JSList x : res.asLists())
-  //      sorted.put(x.toString(), x);
-  //    var s = list();
-  //    if (sorted.size() != res.size()) {
-  //      s.add(list().add("sorted size differs from input"));
-  //    }
-  //    for (var ent : sorted.entrySet())
-  //      s.addUnsafe(ent.getValue());
-  //    res.clear();
-  //    res.append(s);
-  //  }
 
   private class SLOWPairs {
     public List<List<Integer>> palindromePairs(String[] wordsw) {
@@ -170,165 +162,90 @@ public class PalindromePairs extends LeetCode {
 
   // ------------------------------------------------------------------
 
-  public List<List<Integer>> palindromePairs(String[] wordsw) {
-    result.clear();
+  public List<List<Integer>> palindromePairs(String[] words) {
 
-    byte[][] wordsAsBytes = new byte[wordsw.length][];
-    for (int i = 0; i < wordsw.length; i++)
-      wordsAsBytes[i] = stringToBytes(wordsw[i]);
+    results.clear();
+    Map<String, Integer> fwdWordsSet = new HashMap<>();
+    Map<String, Integer> bwdWordsSet = new HashMap<>();
 
-    // Construct a trie.
-    // Add all the forward (normal) words to it.
-    // Also add all the backward (reversed) words to it.
-    // Store appropriate indices in the leaf nodes.
-    var trie = new Trie();
-    for (int i = 0; i < wordsAsBytes.length; i++) {
-      trie.add(wordsAsBytes[i], i, true);
-      trie.add(wordsAsBytes[i], i, false);
+    int i = -1;
+    for (var s : words) {
+      i++;
+      fwdWordsSet.put(s, i);
+      bwdWordsSet.put(reverse(s), i);
     }
-    lookForPrefixWord(trie, trie);
-    return new ArrayList<List<Integer>>(result.values());
-  }
+    pr("fwdWordsSet:", fwdWordsSet);
+    pr("bwdWordsSet:", bwdWordsSet);
 
-  private void lookForPrefixWord(Trie root, Trie node) {
-    if (node == null)
-      return;
+    for (var pass = 0; pass < 2; pass++) {
+      if (false && pass == 1 && alert("skipping pass 2"))
+        continue;
 
-    // Case 1: Is this w'.end?   (' means bwd)
-    if (node.bwdIndex >= 0)
-      lookForMatchingWordAsSuffix(node.bwdIndex, node, root, 0);
-
-    // Case 2: Is this v.end?
-    if (node.fwdIndex >= 0)
-      lookForMatchingWordAsPrefix(node.fwdIndex, node, root, 0);
-
-    for (var child : node.children)
-      lookForPrefixWord(root, child);
-  }
-
-  private void addResult(int v, int w) {
-    if (v == w)
-      return;
-    var r = new ArrayList<Integer>(2);
-    r.add(v);
-    r.add(w);
-    // Use a unique key.  The word indices use log2 (5000) bits = 13; 16 for safety
-    result.put((v << 16) | w, r);
-  }
-
-  private byte[] suffixWork = new byte[300];
-
-  private void lookForMatchingWordAsSuffix(int bwdIndex, Trie t1, Trie t2, int suffixLength) {
-    if (t1 == null || t2 == null)
-      return;
-    if (t1.fwdIndex >= 0) {
-      if (isPal(suffixWork, suffixLength))
-        addResult(t1.fwdIndex, bwdIndex);
-    }
-    for (int i = 0; i < 26; i++) {
-      suffixWork[suffixLength] = (byte) i;
-      lookForMatchingWordAsSuffix(bwdIndex, t1.children[i], t2.children[i], suffixLength + 1);
-    }
-  }
-
-  private void lookForMatchingWordAsPrefix(int fwdIndex, Trie t1, Trie t2, int suffixLength) {
-    if (t1 == null || t2 == null)
-      return;
-    if (t1.bwdIndex >= 0) {
-      if (isPal(suffixWork, suffixLength))
-        addResult(fwdIndex, t1.bwdIndex);
-    }
-    for (int i = 0; i < 26; i++) {
-      suffixWork[suffixLength] = (byte) i;
-      lookForMatchingWordAsPrefix(fwdIndex, t1.children[i], t2.children[i], suffixLength + 1);
-    }
-  }
-
-  private Map<Integer, List<Integer>> result = new HashMap<>();
-
-  private class Trie {
-
-    public void add(byte[] word, int index, boolean fwd) {
-      var node = this;
-      for (int i = 0; i < word.length; i++) {
-        var c = word[fwd ? i : word.length - i - 1];
-        var child = node.children[c];
-        if (child == null) {
-          child = new Trie();
-          node.children[c] = child;
+      for (var entry : fwdWordsSet.entrySet()) {
+        var s = entry.getKey();
+        var index = entry.getValue();
+        pr("fwdWord index:", index, quote(s));
+        int sLength = s.length();
+        for (int slen = 0; slen <= sLength; slen++) {
+          var prefix = s.substring(0, sLength - slen);
+          var bwdIndex = bwdWordsSet.getOrDefault(prefix, -1);
+          pr("...prefix", slen, quote(prefix), "bwdIndex:", bwdIndex);
+          if (bwdIndex < 0 || bwdIndex == index)
+            continue;
+          if (slen > 1) {
+            pr("......checking if suffix is palindrome:", quote(s.substring(sLength - slen)));
+            if (!isPal(s, sLength - slen, sLength)) {
+              continue;
+            }
+          }
+          pr("...adding result:", index, bwdIndex);
+          addResult(index, bwdIndex);
         }
-        node = child;
       }
-      if (fwd) {
-        node.fwdIndex = index;
-      } else {
-        node.bwdIndex = index;
-      }
+      var tmp = fwdWordsSet;
+      fwdWordsSet = bwdWordsSet;
+      bwdWordsSet = tmp;
     }
 
-    @Override
-    public String toString() {
-      StringBuilder sb = new StringBuilder();
-      aux(sb, 2);
-      return sb.toString();
+    List<List<Integer>> out = new ArrayList<List<Integer>>(results.size());
+    for (var x : results) {
+      var y = new ArrayList<Integer>(2);
+      y.add(x >> 16);
+      y.add(x & 0xffff);
+      out.add(y);
     }
 
-    private void aux(StringBuilder sb, int indent) {
-      if (fwdIndex >= 0 || bwdIndex >= 0) {
-        sb.append(" [");
-        if (fwdIndex >= 0) {
-          sb.append(fwdIndex);
-        } else {
-          sb.append('-');
-        }
-        sb.append('|');
-        if (bwdIndex >= 0) {
-          sb.append(bwdIndex);
-        } else {
-          sb.append('-');
-        }
-        sb.append("] ");
-      }
-      boolean anyChild = false;
-      for (int i = 0; i < 26; i++) {
-        var child = children[i];
-        if (child == null)
-          continue;
-        if (!anyChild) {
-          sb.append("{");
-          anyChild = true;
-        }
-        sb.append('\n');
-        sb.append(spaces(indent));
-        sb.append((char) (i + 'a'));
-        child.aux(sb, indent + 2);
-      }
-      if (anyChild)
-        sb.append("}");
-    }
-
-    private Trie[] children = new Trie[26];
-    private int fwdIndex = -1;
-    private int bwdIndex = -1;
+    return out;
   }
 
-  private static byte[] stringToBytes(String s) {
-    var res = new byte[s.length()];
-    for (int i = 0; i < s.length(); i++)
-      res[i] = (byte) (s.charAt(i) - 'a');
-    return res;
-  }
+  private boolean isPal(String s, int start, int stop) {
 
-  private static boolean isPal(byte[] b, int len) {
-    int i = 0;
-    int j = len - 1;
+    int i = start;
+    int j = stop - 1;
     while (i < j) {
-      if (b[i] != b[j])
+      if (s.charAt(i) != s.charAt(j))
         return false;
       i++;
       j--;
     }
     return true;
+  }
+
+  private Set<Integer> results = new HashSet<>();
+
+  private void addResult(int a, int b) {
+    var key = (a << 16) | b;
+    results.add(key);
+  }
+
+  private StringBuilder sbWork = new StringBuilder();
+
+  private String reverse(String s) {
+    var sb = sbWork;
+    sb.setLength(0);
+    for (int i = s.length() - 1; i >= 0; i--)
+      sb.append(s.charAt(i));
+    return sb.toString();
   }
 
 }

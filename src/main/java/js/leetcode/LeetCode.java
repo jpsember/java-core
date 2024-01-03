@@ -272,7 +272,10 @@ public abstract class LeetCode {
     List<IntPair> out = arrayList();
     for (var x : lists)
       out.add(new IntPair(x));
+    pr("constructed list of intpairs from:", INDENT, lists);
+    pr("list is:", INDENT, out);
     out.sort(null);
+    pr("sorted:", INDENT, out);
     return out;
   }
 
@@ -312,6 +315,21 @@ class IntPair implements Comparable {
   public IntPair(int a, int b) {
     this.a = a;
     this.b = b;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o)
+      return true;
+    if (o == null || getClass() != o.getClass())
+      return false;
+    IntPair f = (IntPair) o;
+    return f.a == a && f.b == b;
+  }
+
+  @Override
+  public int hashCode() {
+    return a * 7 + b * 13;
   }
 
   public final int a;
