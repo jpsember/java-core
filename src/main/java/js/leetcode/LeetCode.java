@@ -56,14 +56,15 @@ public abstract class LeetCode {
   }
 
   public static String[] extractStrings(String s) {
-    var cs = "[],";
+    var cs = "[],\"'";
     for (int i = 0; i < cs.length(); i++) {
       s = s.replace(cs.charAt(i), ' ');
     }
     var res = new ArrayList<String>();
     for (var q : split(s, ' ')) {
-      if (!q.isEmpty())
+      if (!q.isEmpty()) {
         res.add(q);
+      }
     }
     return DataUtil.toStringArray(res);
   }
