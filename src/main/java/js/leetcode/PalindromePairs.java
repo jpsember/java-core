@@ -12,7 +12,7 @@ import js.json.JSList;
 import js.json.JSMap;
 
 /**
- * Revisiting my trie approach
+ * Beats 96.42% of users with Java (CPU); memory is poor, about 11%
  */
 public class PalindromePairs extends LeetCode {
 
@@ -156,9 +156,6 @@ public class PalindromePairs extends LeetCode {
     for (int i = 0; i < wordsw.length; i++)
       wordsAsBytes[i] = stringToBytes(wordsw[i]);
 
-    // The empty string could be treated as a special case, but
-    // I don't think that will be necessary.
-
     // Construct two tries: one with forward words, one with reversed words.
 
     var trie1 = new Trie();
@@ -199,7 +196,7 @@ public class PalindromePairs extends LeetCode {
         while (true) {
           if (t2 == null)
             break;
-           if (t2.index >= 0 && isPalindrome(wb, 0, cursor))
+          if (t2.index >= 0 && isPalindrome(wb, 0, cursor))
             addResult(t2.index, i);
           if (cursor-- == 0)
             break;
@@ -236,7 +233,7 @@ public class PalindromePairs extends LeetCode {
 
   private Map<Integer, List<Integer>> result = new HashMap<>();
 
-  private class Trie {
+  private static class Trie {
 
     public void add(byte[] word, int index, boolean fwd) {
       var node = this;
