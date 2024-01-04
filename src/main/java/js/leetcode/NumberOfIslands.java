@@ -36,47 +36,46 @@ public class NumberOfIslands extends LeetCode {
   }
 
   public int numIslands(char[][] grid) {
-    int origWidth = grid[0].length;
-    int origHeight = grid.length;
+    int newWidth = grid[0].length;
+    int newHeight = grid.length;
 
-    // Construct a padded grid of bytes, with a one byte padded region of water.
-    // We omit vertical padding on the right, as the padding on the left will serve.
-    // 0 for water, 1 for (unlabelled) island, 2 for labelled island.
-    int newWidth = origWidth + 1;
-    int newHeight = origHeight + 2;
-    int numCells = newWidth * newHeight;
-    byte[] cells = new byte[numCells];
-    int origin = newWidth + 1;
-    int i = origin;
-    for (var row : grid) {
-      for (var c : row) {
-        if (c != '0')
-          cells[i] = 1;
-        i++;
-      }
-      i += newWidth - origWidth;
-    }
-
-    int[] stack = new int[numCells];
+    var stack = new short[newWidth * newHeight * 4];
     int islandCount = 0;
-    for (i = origin; i < numCells; i++) {
-      if (cells[i] == 1) {
-        int sp = 0;
-        stack[sp++] = i;
-        islandCount++;
-        while (sp != 0) {
-          int j = stack[--sp];
-          if (cells[j] != 1)
-            continue;
-          cells[j] = 0;
-          stack[sp] = j + 1;
-          stack[sp + 1] = j - 1;
-          stack[sp + 2] = j + newWidth;
-          stack[sp + 3] = j - newWidth;
-          sp += 4;
+    for (int y = 0; y < newHeight; y++) {
+      for (int x = 0; x < newWidth; x++) {
+        if (grid[y][x] == '1') {
+          int sp = 0;
+          stack[sp++] = (short) x;
+          stack[sp++] = (short) y;
+          islandCount++;
+          while (sp != 0) {
+            int sy = stack[sp - 1];
+            int sx = stack[sp - 2];
+            sp -= 2;
+            if (grid[sy][sx] != '1')
+              continue;
+            grid[sy][sx] = '0';
+            if (sx + 1 < newWidth) {
+              stack[sp++] = (short) (sx + 1);
+              stack[sp++] = (short) sy;
+            }
+            if (sx > 0) {
+              stack[sp++] = (short) (sx - 1);
+              stack[sp++] = (short) sy;
+            }
+            if (sy > 0) {
+              stack[sp++] = (short) sx;
+              stack[sp++] = (short) (sy - 1);
+            }
+            if (sy + 1 < newHeight) {
+              stack[sp++] = (short) sx;
+              stack[sp++] = (short) (sy + 1);
+            }
+          }
         }
       }
     }
+
     return islandCount;
   }
 }
