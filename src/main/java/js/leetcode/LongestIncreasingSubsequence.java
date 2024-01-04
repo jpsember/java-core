@@ -2,6 +2,10 @@ package js.leetcode;
 
 import static js.base.Tools.*;
 
+/**
+ * I think I can work backwards from the last element, deciding whether the LIS
+ * for the current index includes the current element or not.
+ */
 public class LongestIncreasingSubsequence extends LeetCode {
 
   public static void main(String[] args) {
