@@ -2,9 +2,17 @@ package js.leetcode;
 
 import static js.base.Tools.*;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
- * I think I can work backwards from the last element, deciding whether the LIS
- * for the current index includes the current element or not.
+ * I think this is a dynamic programming problem, working from the end of the
+ * list backward.
+ * 
+ * First attempt works, but runs out of time with long sequences.
+ * 
+ * I think the "min value" argument for the memo key is part of the problem... there can be a lot of min values
+ * producing the same result
  */
 public class LongestIncreasingSubsequence extends LeetCode {
 
@@ -14,16 +22,52 @@ public class LongestIncreasingSubsequence extends LeetCode {
 
   public void run() {
     x("[10,9,2,5,3,7,101,18]", 4);
+    x("[0,1,0,3,2,3]", 4);
+    x("[7,7,7,7,7,7,7]", 1);
+    int[] n = new int[2500];
+    for (int i = 0; i < n.length; i++)
+      n[i] = i + 1;
+    x(n, n.length);
   }
 
   private void x(String s, int expected) {
-    var nums = extractNums(s);
+    x(extractNums(s), expected);
+  }
+
+  private void x(int[] nums, int expected) {
     var res = lengthOfLIS(nums);
     pr("Result:", res);
     verify(res, expected);
   }
 
   public int lengthOfLIS(int[] nums) {
-    return 99;
+    mMemo.clear();
+    return aux(nums, 0, Integer.MIN_VALUE);
   }
+
+  private int aux(int[] nums, int start, int minValue) {
+    long key = (((long) minValue) << 32) | start;
+    int value = mMemo.getOrDefault(key, -1);
+    if (value >= 0)
+      return value;
+
+    // Base case
+    if (start == nums.length) {
+      value = 0;
+    } else {
+      // Can we include the start value?
+      int currentValue = nums[start];
+      if (minValue <= currentValue) {
+        value = 1 + aux(nums, start + 1, currentValue + 1);
+      }
+
+      // Determine result for omitting this value
+      int alternateValue = aux(nums, start + 1, minValue);
+      value = Math.max(value, alternateValue);
+    }
+    mMemo.put(key, value);
+    return value;
+  }
+
+  private Map<Long, Integer> mMemo = new HashMap<>();
 }
