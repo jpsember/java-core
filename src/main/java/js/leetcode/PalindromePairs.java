@@ -171,9 +171,6 @@ public class PalindromePairs extends LeetCode {
       trie.add(wb, i, false);
     }
 
-    //    db("trie:", INDENT, trie);
-    //    db("starting search for rev w prefixes");
-
     for (int i = 0; i < wordsAsBytes.length; i++) {
       var wb = wordsAsBytes[i];
 
@@ -182,14 +179,8 @@ public class PalindromePairs extends LeetCode {
         var t = trie;
         int cursor = 0;
         while (true) {
-          if (t.bwdIndex >= 0) {
-            if (isPalindrome(wb, cursor, wb.length)) {
-              if (false)
-                db("found w', bwdIndex", t.bwdIndex, "is palindrome:", bytesStr(wb, cursor, wb.length),
-                    "node:", t, VERT_SP);
-              addResult(i, t.bwdIndex);
-            }
-          }
+          if (t.bwdIndex >= 0 && isPalindrome(wb, cursor, wb.length))
+            addResult(i, t.bwdIndex);
           if (cursor == wb.length)
             break;
           t = t.children[wb[cursor]];
@@ -202,23 +193,16 @@ public class PalindromePairs extends LeetCode {
         var t = trie;
         int cursor = wb.length;
         while (true) {
-          if (t.fwdIndex >= 0) {
-            if (isPalindrome(wb, 0, cursor)) {
-              if (false)
-                db("found w', fwdIndex", t.fwdIndex, "is palindrome:", bytesStr(wb, 0, cursor), "node:", t);
-              addResult(t.fwdIndex, i);
-            }
-          }
-          if (cursor == 0)
+          if (t.fwdIndex >= 0 && isPalindrome(wb, 0, cursor))
+            addResult(t.fwdIndex, i);
+          if (cursor-- == 0)
             break;
-          cursor--;
           t = t.children[wb[cursor]];
         }
       }
     }
 
     return new ArrayList<List<Integer>>(result.values());
-
   }
 
   private boolean isPalindrome(byte[] b, int i, int iEnd) {
@@ -240,10 +224,7 @@ public class PalindromePairs extends LeetCode {
     r.add(w);
     // Use a unique key.  The word indices use log2 (5000) bits = 13; 16 for safety
     var key = (v << 16) | w;
-    var existing = result.put(key, r);
-    if (existing != null) {
-      pr("dup for key:", key, "=>", r, "v:", v, "w:", w, INDENT, existing);
-    }
+    result.put(key, r);
   }
 
   private Map<Integer, List<Integer>> result = new HashMap<>();
@@ -255,8 +236,6 @@ public class PalindromePairs extends LeetCode {
       final int wl = word.length - 1;
       for (int i = 0; i <= wl; i++) {
         var c = word[fwd ? i : wl - i];
-        if (c < 0 || c >= 26)
-          pr("c:", c, "word:", JSList.with(word), "index:", index, "fwd:", fwd);
         var child = node.children[c];
         if (child == null) {
           child = new Trie();
@@ -264,11 +243,10 @@ public class PalindromePairs extends LeetCode {
         }
         node = child;
       }
-      if (fwd) {
+      if (fwd)
         node.fwdIndex = index;
-      } else {
+      else
         node.bwdIndex = index;
-      }
     }
 
     @Override
@@ -322,14 +300,6 @@ public class PalindromePairs extends LeetCode {
     for (int i = 0; i < s.length(); i++)
       res[i] = (byte) (s.charAt(i) - 'a');
     return res;
-  }
-
-  private String bytesStr(byte[] bytes, int start, int end) {
-    var sb = sb();
-    while (start < end) {
-      sb.append((char) ('a' + bytes[start++]));
-    }
-    return quote(sb.toString());
   }
 
 }
