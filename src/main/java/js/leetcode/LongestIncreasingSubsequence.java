@@ -80,27 +80,33 @@ public class LongestIncreasingSubsequence extends LeetCode {
   }
 
   public int lengthOfLIS(int[] nums) {
-    //db("nums:", nums);
     final int nn = nums.length;
-    var tbl = new int[nn];
-    for (int i = nn - 1; i >= 0; i--) {
-      // Choose longest compatible subsequence beyond i to concatenate with nums[i]
+
+    // We reuse the nums[] array to store the longest length in the upper 16 bits.
+
+    for (int i = 0; i < nn; i++) {
+      // Make all numbers positive (as we process them) to avoid problems with sign bit interfering with upper bits
+      nums[i] += 10000;
+      // Choose longest compatible subsequence before i to concatenate with nums[i]
       // ...this will produce an n^2 algorithm
       int val = nums[i];
       int c = 0;
 
-      for (int j = i + 1; j < nn; j++) {
-        if (nums[j] > val) {
-          var tblVal = tbl[j];
+      for (int j = 0; j < i; j++) {
+        var numj = (nums[j] & 0xffff);
+        if (numj < val) {
+          var tblVal = nums[j] >> 16;
           if (tblVal > c)
             c = tblVal;
         }
       }
-      tbl[i] = 1 + c;
+      nums[i] |= (1 + c) << 16;
     }
     var max = 0;
-    for (var x : tbl)
-      max = max < x ? x : max;
+    for (var x : nums) {
+      var len = x >> 16;
+      max = max < len ? len : max;
+    }
     return max;
   }
 
