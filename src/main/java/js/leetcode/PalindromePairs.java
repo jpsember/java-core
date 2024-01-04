@@ -148,7 +148,7 @@ public class PalindromePairs extends LeetCode {
     //    V = W'X where W' is W reversed, and X is a palindrome;
     // or W = XV'.
     //
-    // We can use a trie to detect where V has W' as a prefix, or
+    // We can use tries to detect where V has W' as a prefix, or
     // W has V' as a suffix.  Then we can extract the appropriate 
     // substrings X, and determine if they are palindromes.
 
@@ -159,16 +159,14 @@ public class PalindromePairs extends LeetCode {
     // The empty string could be treated as a special case, but
     // I don't think that will be necessary.
 
-    // Construct a trie.
-    // Add all the forward (normal) words to it.
-    // Also add all the backward (reversed) words to it.
-    // Store appropriate indices in the leaf nodes.
+    // Construct two tries: one with forward words, one with reversed words.
 
-    var trie = new Trie();
+    var trie1 = new Trie();
+    var trie2 = new Trie();
     for (int i = 0; i < wordsAsBytes.length; i++) {
       var wb = wordsAsBytes[i];
-      trie.add(wb, i, true);
-      trie.add(wb, i, false);
+      trie1.add(wb, i, true);
+      trie2.add(wb, i, false);
     }
 
     for (int i = 0; i < wordsAsBytes.length; i++) {
@@ -176,28 +174,37 @@ public class PalindromePairs extends LeetCode {
 
       // Determine if word V has the form W'X for any W and palindrome X
       {
-        var t = trie;
+        var t1 = trie1;
+        var t2 = trie2;
         int cursor = 0;
         while (true) {
-          if (t.bwdIndex >= 0 && isPalindrome(wb, cursor, wb.length))
-            addResult(i, t.bwdIndex);
+          if (t2 == null)
+            break;
+          if (t2.index >= 0 && isPalindrome(wb, cursor, wb.length))
+            addResult(i, t2.index);
           if (cursor == wb.length)
             break;
-          t = t.children[wb[cursor]];
+          t1 = t1.children[wb[cursor]];
+          t2 = t2.children[wb[cursor]];
           cursor++;
         }
       }
+
       // Determine if word V has the form XW' for any W and palindrome X,
       // by walking tree for V'
       {
-        var t = trie;
+        var t1 = trie2;
+        var t2 = trie1;
         int cursor = wb.length;
         while (true) {
-          if (t.fwdIndex >= 0 && isPalindrome(wb, 0, cursor))
-            addResult(t.fwdIndex, i);
+          if (t2 == null)
+            break;
+           if (t2.index >= 0 && isPalindrome(wb, 0, cursor))
+            addResult(t2.index, i);
           if (cursor-- == 0)
             break;
-          t = t.children[wb[cursor]];
+          t1 = t1.children[wb[cursor]];
+          t2 = t2.children[wb[cursor]];
         }
       }
     }
@@ -243,10 +250,8 @@ public class PalindromePairs extends LeetCode {
         }
         node = child;
       }
-      if (fwd)
-        node.fwdIndex = index;
-      else
-        node.bwdIndex = index;
+      checkState(node.index < 0);
+      node.index = index;
     }
 
     @Override
@@ -257,19 +262,9 @@ public class PalindromePairs extends LeetCode {
     }
 
     private void aux(StringBuilder sb, int indent) {
-      if (fwdIndex >= 0 || bwdIndex >= 0) {
+      if (index >= 0) {
         sb.append(" [");
-        if (fwdIndex >= 0) {
-          sb.append(fwdIndex);
-        } else {
-          sb.append('-');
-        }
-        sb.append('|');
-        if (bwdIndex >= 0) {
-          sb.append(bwdIndex);
-        } else {
-          sb.append('-');
-        }
+        sb.append(index);
         sb.append("] ");
       }
       boolean anyChild = false;
@@ -291,8 +286,7 @@ public class PalindromePairs extends LeetCode {
     }
 
     private Trie[] children = new Trie[26];
-    private int fwdIndex = -1;
-    private int bwdIndex = -1;
+    private int index = -1;
   }
 
   private static byte[] stringToBytes(String s) {
