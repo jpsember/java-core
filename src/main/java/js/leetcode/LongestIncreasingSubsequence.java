@@ -40,7 +40,7 @@ public class LongestIncreasingSubsequence extends LeetCode {
   }
 
   private void x(int[] nums, int expected) {
-    db = true;
+    db = nums.length < 20;
     var res = lengthOfLIS(nums);
     pr("Result:", res);
     if (expected < 0)
@@ -49,42 +49,6 @@ public class LongestIncreasingSubsequence extends LeetCode {
   }
 
   //------------------------------
-
-  public int NEWlengthOfLIS(int[] nums) {
-    // This is a map whose key is a nums[] element, and the value is the 
-    // length of the longest subsequence whose first element is that element
-    // 
-    var bestResultsMap = new TreeMap<Integer, Integer>();
-    pr(nums);
-    for (int i = nums.length - 1; i >= 0; i--) {
-      int val = nums[i];
-      pr(VERT_SP, "val:", val);
-
-      // Let len0 length of longest subsequence in map whose first value = val (or 0)
-      // Let len1 be key in map of longest subsequence whose first value > val (or 0)
-      // Store (val, max(len0, 1+len1))
-      int len0 = 0;
-      int len1 = 0;
-
-      len0 = bestResultsMap.getOrDefault(val, 0);
-
-      var query = bestResultsMap.tailMap(val + 1);
-      if (!query.isEmpty()) {
-        len1 = query.get(query.firstKey());
-      }
-
-      var len = Math.max(len0, 1 + len1);
-
-      pr("storing", val, len);
-      // Store our result in the map
-      bestResultsMap.put(val, len);
-
-    }
-    int best = 0;
-    for (var x : bestResultsMap.values())
-      best = x > best ? x : best;
-    return best;
-  }
 
   private class SLOW {
     public int lengthOfLIS(int[] nums) {
@@ -122,29 +86,48 @@ public class LongestIncreasingSubsequence extends LeetCode {
 
   public int lengthOfLIS(int[] nums) {
     final int nn = nums.length;
-    
-    // Length of longest subsequence whose last element is nums[i]
-    var tbl = new int[nn];
 
+    // This is a map whose key is a nums[] element, and the value is the 
+    // length of the longest subsequence whose last element is <= key
+    // 
+    var bestResultsMap = new TreeMap<Integer, Integer>();
+
+    db(nums);
     for (int i = 0; i < nn; i++) {
-
-      // Choose longest compatible subsequence before i to concatenate with nums[i]
-      // ...this will produce an n^2 algorithm
       int val = nums[i];
-      int c = 0;
+      db(VERT_SP, "value:", val);
+      db("...map:", bestResultsMap);
+      int cCurr = bestResultsMap.getOrDefault(val, 1);
+      db("...seq len <=", val, ":", cCurr);
 
-      for (int j = 0; j < i; j++) {
-        var numj = nums[j];
-        if (numj < val) {
-          var tblVal = tbl[j];
-          if (tblVal > c)
-            c = tblVal;
-        }
+      var headMap = bestResultsMap.headMap(val);
+      int cPrev = 0;
+      if (!headMap.isEmpty()) {
+        var key = headMap.lastKey();
+        cPrev = bestResultsMap.get(key);
+        db("...seq len <= predecessor", key, ":", cPrev);
       }
-      tbl[i] = 1 + c;
+
+      var cNew = Math.max(cCurr, 1 + cPrev);
+      db("...storing:", val, "=>", cNew);
+      bestResultsMap.put(val, cNew);
+
+      // Delete any subsumed results
+      var subsumeEnd = val;
+      var tailMap = bestResultsMap.tailMap(val + 1);
+      for (var ent : tailMap.entrySet()) {
+        if (ent.getValue() > cNew)
+          break;
+        subsumeEnd = ent.getKey();
+      }
+      if (subsumeEnd > val) {
+        var subsumed = bestResultsMap.subMap(val + 1, subsumeEnd + 1);
+        db("...deleting subsumed:", subsumed);
+        subsumed.clear();
+      }
     }
     var max = 0;
-    for (var x : tbl) {
+    for (var x : bestResultsMap.values()) {
       max = max < x ? x : max;
     }
     return max;
