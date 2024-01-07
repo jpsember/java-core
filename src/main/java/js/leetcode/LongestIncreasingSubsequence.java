@@ -85,16 +85,14 @@ public class LongestIncreasingSubsequence extends LeetCode {
   }
 
   public int lengthOfLIS(int[] nums) {
-    final int nn = nums.length;
+    db(nums);
 
-    // This is a map whose key is a nums[] element, and the value is the 
-    // length of the longest subsequence whose last element is <= key
+    // This is a map (key=>val) where key = nums[i], and the value is the 
+    // length of the longest subsequence whose elements are <= val
     // 
     var bestResultsMap = new TreeMap<Integer, Integer>();
 
-    db(nums);
-    for (int i = 0; i < nn; i++) {
-      int val = nums[i];
+    for (var val : nums) {
       db(VERT_SP, "value:", val);
       db("...map:", bestResultsMap);
       int cCurr = bestResultsMap.getOrDefault(val, 1);
