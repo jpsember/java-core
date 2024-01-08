@@ -216,6 +216,11 @@ public abstract class LeetCode {
   }
 
   public static String strTable(int[][] m) {
+    return strTable(m, null, null);
+  }
+
+  public static String strTable(int[][] m, String columnLabels, String rowLabels) {
+
     if (!db)
       return "";
 
@@ -233,7 +238,12 @@ public abstract class LeetCode {
     sb.append(dash);
     for (int y = ht - 1; y >= 0; y--) {
       var c = sb.length();
-      sb.append(y + " |");
+      if (rowLabels != null) {
+        sb.append(rowLabels.charAt(y));
+      } else {
+        sb.append(y);
+      }
+      sb.append(" |");
       var row = m[y];
       int x = -1;
       for (var val : row) {
@@ -252,7 +262,10 @@ public abstract class LeetCode {
       var c = sb.length();
       for (int x = 0; x < wd; x++) {
         tab(sb, c + lblWidth + x * fieldWidth);
-        sb.append(x);
+        if (columnLabels != null)
+          sb.append(columnLabels.charAt(x));
+        else
+          sb.append(x);
       }
       sb.append('\n');
     }
