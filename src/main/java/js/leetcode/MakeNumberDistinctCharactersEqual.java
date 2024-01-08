@@ -11,8 +11,8 @@ public class MakeNumberDistinctCharactersEqual extends LeetCode {
   }
 
   public void run() {
-    x("zzzzzyyyywvvwwwxxxy","abbbbaaaacccceee",false);
-    
+    x("zzzzzyyyywvvwwwxxxy", "abbbbaaaacccceee", false);
+
     x("ac", "b", false);
     x("abcc", "aab", true);
     x("abcde", "fghij", true);
@@ -28,6 +28,16 @@ public class MakeNumberDistinctCharactersEqual extends LeetCode {
   public boolean isItPossible(String word1, String word2) {
     var a = prep(word1);
     var b = prep(word2);
+
+    int ca = 0;
+    int cb = 0;
+    while (true) {
+      if (ca < a.length) {
+        
+      } else if (cb < b.length) {
+      } else
+        break;
+    }
 
     return false;
   }
