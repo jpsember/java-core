@@ -90,42 +90,53 @@ public class LongestIncreasingSubsequence extends LeetCode {
     // This is a map (key=>val) where key = nums[i], and the value is the 
     // length of the longest subsequence whose elements are <= val
     // 
-    var bestResultsMap = new TreeMap<Integer, Integer>();
+    var subseqLenMap = new TreeMap<Integer, Integer>();
 
-    for (var val : nums) {
-      db(VERT_SP, "value:", val);
-      db("...map:", bestResultsMap);
-      int cCurr = bestResultsMap.getOrDefault(val, 1);
-      db("...seq len <=", val, ":", cCurr);
+    for (var num : nums) {
+      db(VERT_SP, "num:", num, INDENT, "map:", subseqLenMap);
 
-      var headMap = bestResultsMap.headMap(val);
-      int cPrev = 0;
+      // Let (key => len) be the map entry with the highest key <= num.
+      // If no such key exists, then store (num => 1) in the map.
+      //
+      // Otherwise, if key = num, do nothing (a sequence <= num already exists,
+      // and therefore has a length >= 1).
+      //
+      // Otherwise, store (key => 1 + num) (extending the < num sequence by one).
+
+      var newLen = 1;
+
+      // Get portion of map whose keys are <= num
+      var headMap = subseqLenMap.headMap(num + 1);
       if (!headMap.isEmpty()) {
         var key = headMap.lastKey();
-        cPrev = bestResultsMap.get(key);
-        db("...seq len <= predecessor", key, ":", cPrev);
+        if (key == num)
+          continue;
+        newLen = headMap.get(key) + 1;
       }
 
-      var cNew = Math.max(cCurr, 1 + cPrev);
-      db("...storing:", val, "=>", cNew);
-      bestResultsMap.put(val, cNew);
+      db("...storing:", num, "=>", newLen);
+      subseqLenMap.put(num, newLen);
 
-      // Delete any subsumed results
-      var subsumeEnd = val;
-      var tailMap = bestResultsMap.tailMap(val + 1);
-      for (var ent : tailMap.entrySet()) {
-        if (ent.getValue() > cNew)
+      // Delete any subsumed results.
+      //
+      // We want to delete all keys > num whose values are <= newLen.
+
+      var subsumeStart = num + 1;
+      var subsumeEnd = subsumeStart;
+      for (var ent : subseqLenMap.tailMap(subsumeStart).entrySet()) {
+        if (ent.getValue() > newLen)
           break;
-        subsumeEnd = ent.getKey();
+        subsumeEnd = ent.getKey() + 1;
       }
-      if (subsumeEnd > val) {
-        var subsumed = bestResultsMap.subMap(val + 1, subsumeEnd + 1);
+
+      if (subsumeEnd > subsumeStart) {
+        var subsumed = subseqLenMap.subMap(subsumeStart, subsumeEnd);
         db("...deleting subsumed:", subsumed);
         subsumed.clear();
       }
     }
     var max = 0;
-    for (var x : bestResultsMap.values()) {
+    for (var x : subseqLenMap.values()) {
       max = max < x ? x : max;
     }
     return max;
