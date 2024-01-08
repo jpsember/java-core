@@ -113,15 +113,19 @@ public class DistinctSubsequencesRevisited extends LeetCode {
     s = s + "$";
     t = t + "$";
 
+    // Convert strings to bytes for efficiency
+    var sb = s.getBytes();
+    var tb = t.getBytes();
+
     // For efficiency, read string lengths to local variables
-    final int slen = s.length();
-    final int tlen = t.length();
-    final var cell = new int[t.length()][s.length()];
+    final int slen = sb.length;
+    final int tlen = tb.length;
+    final var cell = new int[tlen][slen];
 
     // There is a single path initially (no splitting)
     cell[0][0] = 1;
 
-    for (int sCursor = 0; sCursor < s.length() - 1; sCursor++) {
+    for (int sCursor = 0; sCursor < slen - 1; sCursor++) {
 
       if (db) {
         db(VERT_SP, "s:", sCursor, INDENT, strTable(cell, s, t));
@@ -132,7 +136,7 @@ public class DistinctSubsequencesRevisited extends LeetCode {
         if (count == 0) // not strictly necessary, but more efficient
           continue;
         cell[tCursor][sCursor + 1] += count;
-        if (s.charAt(sCursor) == t.charAt(tCursor)) {
+        if (sb[sCursor] == tb[tCursor]) {
           cell[tCursor + 1][sCursor + 1] += count;
           db("...set", tCursor + 1, sCursor + 1, "=>", cell[tCursor + 1][sCursor + 1]);
         }
