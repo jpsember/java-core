@@ -7,15 +7,11 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * I think this is a dynamic programming problem, working from the end of the
- * list backward.
+ * Reworked to use a map to support logarithmic time searches for
+ * insertion point.
  * 
- * First attempt works, but runs out of time with long sequences.
- * 
- * I think the "min value" argument for the memo key is part of the problem...
- * there can be a lot of min values producing the same result
- *
- * Second attempt works and beats 72% of the other answers.
+ * I suspect the map operations are slowing things down, and a dynamic programming approach
+ * that avoids maps might be faster.
  */
 public class LongestIncreasingSubsequence extends LeetCode {
 
