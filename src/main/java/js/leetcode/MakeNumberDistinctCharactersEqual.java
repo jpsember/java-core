@@ -12,6 +12,8 @@ public class MakeNumberDistinctCharactersEqual extends LeetCode {
   }
 
   public void run() {
+    x("eeee", "eeee", true);
+
     x("az", "a", true);
     x("aa", "bcd", false);
 
@@ -81,7 +83,6 @@ public class MakeNumberDistinctCharactersEqual extends LeetCode {
         var right = match(a, b, 0, 0, 1, 1);
         removeCommon(left, right);
         result = nonEmpty(left, right);
-
       }
 
     }
@@ -145,7 +146,7 @@ public class MakeNumberDistinctCharactersEqual extends LeetCode {
   }
 
   private Set<Integer> match(int[] a, int[] b, int aMin, int aMax, int bMin, int bMax) {
-    var result = new HashSet<Integer>();
+    var result = set();
     for (int i = 0; i < 26; i++) {
       if (a[i] >= aMin && a[i] <= aMax && b[i] >= bMin && b[i] <= bMax) {
         result.add(i);
@@ -155,15 +156,14 @@ public class MakeNumberDistinctCharactersEqual extends LeetCode {
   }
 
   private Set<Integer> setDiff(Set<Integer> a, Set<Integer> b) {
-    Set<Integer> diff = new HashSet<Integer>();
-    diff.addAll(a);
+    var diff = setCopy(a);
     diff.removeAll(b);
     return diff;
   }
 
   private void removeCommon(Set<Integer> a, Set<Integer> b) {
-    Set<Integer> diff1 = setDiff(a, b);
-    Set<Integer> diff2 = setDiff(b, a);
+    var diff1 = setDiff(a, b);
+    var diff2 = setDiff(b, a);
     a.clear();
     a.addAll(diff1);
     b.clear();
@@ -174,7 +174,17 @@ public class MakeNumberDistinctCharactersEqual extends LeetCode {
     return !a.isEmpty() && !b.isEmpty();
   }
 
+  private Set<Integer> set() {
+    return new HashSet<Integer>();
+  }
+
+  private Set<Integer> setCopy(Set<Integer> a) {
+    return new HashSet<Integer>(a);
+  }
+
   private boolean hasCommon(Set<Integer> a, Set<Integer> b) {
-    return !setDiff(a, b).isEmpty() || !setDiff(b, a).isEmpty();
+    var w = setCopy(a);
+    w.retainAll(b);
+    return !w.isEmpty();
   }
 }
