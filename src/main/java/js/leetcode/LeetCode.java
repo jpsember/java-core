@@ -333,6 +333,10 @@ public abstract class LeetCode {
     return JSList.with(array).toString();
   }
 
+  public String toStr(int[] array, int start, int end) {
+    return toStr(Arrays.copyOfRange(array, start, end));
+  }
+
   private static List<Boolean> dbStack = arrayList();
   private static List<Integer> indStack = arrayList();
 

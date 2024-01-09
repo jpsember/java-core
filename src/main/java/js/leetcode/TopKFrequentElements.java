@@ -23,13 +23,15 @@ public class TopKFrequentElements extends LeetCode {
   }
 
   public void run() {
+    x("[5,6,6,7,7,7,7,8,8,8,8,9,9,9,9,9,9,9,9,9]", 2);
+
     x("[1,1,1,2,2,3]", 2);
     x("[1]", 1);
   }
 
   private void x(String numsStr, int k) {
     var nums = extractNums(numsStr);
-    db = nums.length < 20;
+    db = nums.length < 30;
     db(toStr(nums), INDENT, "k=", k);
     var res = topKFrequent(nums, k);
     var expected = SLOWTopKFrequent(nums, k);
@@ -57,6 +59,55 @@ public class TopKFrequentElements extends LeetCode {
   }
 
   public int[] topKFrequent(int[] nums, int k) {
+
+    // Build a histogram 
+
+    final int MIN_NUM = -10000;
+    final int MAX_NUM = 10000;
+    final int NUM_ORIGIN = -MIN_NUM;
+
+    int[] hist = new int[MAX_NUM + 1 - MIN_NUM];
+    int[] partition = new int[hist.length];
+    int d = 0;
+    for (var x : nums) {
+      int i = x + NUM_ORIGIN;
+      var freq = ++hist[i];
+      if (freq == 1) {
+        partition[d++] = x;
+      }
+    }
+
+    var n = nums.length;
+
+    // Partition histogram around a pivot value.
+    // Move *higher* frequency values to left of pivot, to simplify things.
+
+    double pivotValue = ((d - k) * n) / (d * (float) d);
+    db(VERT_SP, "partitioning; k:", k, "n:", n, "d:", d, "pivot:", pivotValue);
+
+    int low = 0;
+    int high = d - 1;
+    while (low < high) {
+      var fLow = hist[partition[low] + NUM_ORIGIN];
+      db("hist[low ", low, "]=", fLow);
+      if (fLow >= pivotValue) {
+        db("...incr low");
+        low++;
+      } else {
+        db("...swapping with high");
+        var tmp = partition[low];
+        partition[low] = partition[high];
+        partition[high] = tmp;
+        high--;
+      }
+    }
+    db("partition now:", toStr(partition, 0, low), toStr(partition, low, d));
+
+     
+    if (low == k)  
+      return Arrays.copyOfRange(partition,0,low) ;
+    if(low > k) {
+      
     var res = new int[1];
     res[0] = 3;
     return res;
