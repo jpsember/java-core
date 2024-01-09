@@ -12,6 +12,9 @@ public class MakeNumberDistinctCharactersEqual extends LeetCode {
   }
 
   public void run() {
+    x("az", "a", true);
+    x("aa", "bcd", false);
+
     x("aa", "bb", true);
 
     x("zzzzzyyyywvvwwwxxxy", "abbbbaaaacccceee", false);
@@ -59,48 +62,62 @@ public class MakeNumberDistinctCharactersEqual extends LeetCode {
       result = nonEmpty(left, right);
     }
       break;
+
     case 1: {
-      var left = match(a, b, 2, inf, 0, 0);
-      var right = match(a, b, 0, 0, 1, 1);
-      removeCommon(left, right);
-      result = nonEmpty(left, right);
-      if (!result) {
-        left = match(a, b, 2, inf, 1, inf);
-        right = match(a, b, 0, 0, 2, inf);
+      {
+        var left = match(a, b, 2, inf, 0, 0);
+        var right = match(a, b, 0, 0, 1, 1);
         removeCommon(left, right);
         result = nonEmpty(left, right);
       }
+      if (!result) {
+        var left = match(a, b, 2, inf, 1, inf);
+        var right = match(a, b, 0, 0, 2, inf);
+        removeCommon(left, right);
+        result = nonEmpty(left, right);
+      }
+      if (!result) {
+        var left = match(a, b, 1, 1, 1, inf);
+        var right = match(a, b, 0, 0, 1, 1);
+        removeCommon(left, right);
+        result = nonEmpty(left, right);
+
+      }
+
     }
       break;
     case 0: {
+      db("unique singles on each side?");
       var left = match(a, b, 1, 1, 0, 0);
       var right = match(a, b, 0, 0, 1, 1);
       removeCommon(left, right);
       result = nonEmpty(left, right);
     }
-    
-    if (!result) {
-      // Increment both?
-      var left = match(a, b, 2, inf, 0, 0);
-      var right = match(a, b, 0,0,2,inf);
-      removeCommon(left, right);
-      result = nonEmpty(left, right);
-    }
-    if (!result) {
-      // Decrement both?
-      var left = match(a, b, 1, 1, 1, inf);
-      var right = match(a, b, 1,inf,1,1);
-      removeCommon(left, right);
-      result = nonEmpty(left, right);
-    }
+
       if (!result) {
+        db("increment both?");
+        var left = match(a, b, 2, inf, 0, 0);
+        var right = match(a, b, 0, 0, 2, inf);
+        removeCommon(left, right);
+        result = nonEmpty(left, right);
+      }
+      if (!result) {
+        db("decrement both?");
+        var left = match(a, b, 1, 1, 1, inf);
+        var right = match(a, b, 1, inf, 1, 1);
+        removeCommon(left, right);
+        result = nonEmpty(left, right);
+      }
+      if (!result) {
+        db("swap same chars?");
         var left = match(a, b, 1, inf, 1, inf);
         var right = match(a, b, 1, inf, 1, inf);
         result = hasCommon(left, right);
       }
       if (!result) {
-        var left = match(a, b, 2, inf, 0, inf);
-        var right = match(a, b, 2, inf, 0, inf);
+        db("swap multiple with multiple?");
+        var left = match(a, b, 2, inf, 1, inf);
+        var right = match(a, b, 2, inf, 1, inf);
         removeCommon(left, right);
         result = nonEmpty(left, right);
       }
@@ -121,7 +138,8 @@ public class MakeNumberDistinctCharactersEqual extends LeetCode {
   private int count(int[] freq) {
     int a = 0;
     for (var c : freq) {
-      a += c;
+      if (c != 0)
+        a++;
     }
     return a;
   }
