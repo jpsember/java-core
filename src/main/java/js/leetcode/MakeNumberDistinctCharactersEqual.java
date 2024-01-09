@@ -17,6 +17,8 @@ public class MakeNumberDistinctCharactersEqual extends LeetCode {
   }
 
   public void run() {
+    x("aa", "ab", false);
+
     x("eeee", "eeee", true);
 
     x("az", "a", true);
@@ -46,27 +48,21 @@ public class MakeNumberDistinctCharactersEqual extends LeetCode {
     var ac = count(a);
     var bc = count(b);
 
-    db("a:", word1, "counts:", toStr(a), "sum:", ac);
-    db("b:", word2, "counts:", toStr(b), "sum:", bc);
-
     var aind = indices(a);
     var bind = indices(b);
 
     for (var ai : aind) {
       for (var bi : bind) {
-
-        int deltaA = 0;
-        int deltaB = 0;
-        if (a[ai] == 1)
-          deltaA--;
-        if (a[bi] == 0)
-          deltaA++;
-        if (b[bi] == 1)
-          deltaB--;
-        if (b[ai] == 0)
-          deltaB++;
-        if (ac + deltaA == bc + deltaB)
-          return true;
+        if (ai == bi) {
+          if (ac == bc)
+            return true;
+        } else {
+          int deltaA = (a[ai] == 1 ? -1 : 0) + (a[bi] == 0 ? 1 : 0);
+          int deltaB = (b[bi] == 1 ? -1 : 0) + (b[ai] == 0 ? 1 : 0);
+          if (ac + deltaA == bc + deltaB) {
+            return true;
+          }
+        }
       }
     }
 
