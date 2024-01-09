@@ -3,12 +3,13 @@ package js.leetcode;
 import static js.base.Tools.*;
 
 import java.util.Arrays;
+import java.util.PriorityQueue;
 
 /**
  * Works! Is very fast! Not quite as fast as some.
  * 
- * Now it is very fast. Doing a conventional sort of integers that are a
- * combination of (frequency | value).
+ * Using a MinHeap instead of sorting... doesn't seem to change the runtime
+ * though.
  */
 public class TopKFrequentElements extends LeetCode {
 
@@ -52,40 +53,6 @@ public class TopKFrequentElements extends LeetCode {
     final int MAX_NUM = 10000;
     final int NUM_ORIGIN = -MIN_NUM;
 
-    var hlen = MAX_NUM + 1 - MIN_NUM;
-    int hist[] = new int[hlen];
-    for (var x : nums) {
-      hist[x + NUM_ORIGIN]++;
-    }
-
-    // Modify array so upper n bits are the frequency, lower the actual value; omit elements with freq zero
-    int destCount = 0;
-    for (int i = 0; i < hlen; i++) {
-      var f = hist[i];
-      if (f == 0)
-        continue;
-      hist[destCount++] = (f << 15) | i;
-    }
-    pr("augmented hist:", Arrays.copyOfRange(hist, 0, destCount));
-
-    Arrays.sort(hist, 0, destCount);
-    pr("sorted        :", Arrays.copyOfRange(hist, 0, destCount));
-
-    int kEff = Math.min(destCount, k);
-    int[] out = new int[kEff];
-    int j = 0;
-    for (int i = destCount - kEff; i < destCount; i++) {
-      out[j++] = (hist[i] & 0x7fff) - NUM_ORIGIN;
-    }
-    pr("recovered values:", out);
-    return out;
-  }
-
-  public int[] topKFrequent(int[] nums, int k) {
-    final int MIN_NUM = -10000;
-    final int MAX_NUM = 10000;
-    final int NUM_ORIGIN = -MIN_NUM;
-
     // Construct a histogram as an array of frequencies for each possible value
     var histogramLength = MAX_NUM + 1 - MIN_NUM;
     int histogram[] = new int[histogramLength];
@@ -113,6 +80,34 @@ public class TopKFrequentElements extends LeetCode {
       for (var i = j - kEff; i < j; i++)
         result[v++] = (histogram[i] & 0x7fff) - NUM_ORIGIN;
     }
+    return result;
+  }
+
+  public int[] topKFrequent(int[] nums, int k) {
+    final int MIN_NUM = -10000;
+    final int MAX_NUM = 10000;
+    final int NUM_ORIGIN = -MIN_NUM;
+
+    // Construct a histogram as an array of frequencies for each possible value
+    var histogramLength = MAX_NUM + 1 - MIN_NUM;
+    int histogram[] = new int[histogramLength];
+    for (var x : nums)
+      histogram[x + NUM_ORIGIN]++;
+
+    var minHeap = new PriorityQueue<Integer>();
+
+    for (int i = 0; i < histogramLength; i++) {
+      var f = histogram[i];
+      if (f == 0)
+        continue;
+      minHeap.add((f << 15) | i);
+      if (minHeap.size() > k)
+        minHeap.remove();
+    }
+    int[] result = new int[minHeap.size()];
+    int j = 0;
+    for (var x : minHeap)
+      result[j++] = (x & 0x7fff) - NUM_ORIGIN;
     return result;
   }
 
