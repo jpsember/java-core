@@ -23,6 +23,7 @@ public class TopKFrequentElements extends LeetCode {
   }
 
   public void run() {
+    x("[3,0,1,0]", 1);
     x("[1]", 1);
     x("[5,6,6,7,7,7,7,8,8,8,8,9,9,9,9,9,9,9,9,9]", 2);
     x("[1,1,1,2,2,3]", 2);
@@ -67,72 +68,104 @@ public class TopKFrequentElements extends LeetCode {
 
     int[] hist = new int[MAX_NUM + 1 - MIN_NUM];
     int[] partition = new int[hist.length];
-    int d = 0;
+    int uniqueCount = 0;
     for (var x : nums) {
       int i = x + NUM_ORIGIN;
       var freq = ++hist[i];
       if (freq == 1) {
-        partition[d++] = x;
+        partition[uniqueCount++] = x;
       }
     }
 
     var n = nums.length;
-    return aux(hist, partition, 0, n, d, k);
+    return aux(k, n, hist, partition, 0, uniqueCount);
   }
 
-  private int[] aux(int[] hist, int[] partition, int pStart, int n, int d, int k) {
+  /**
+   * 
+   * @param k
+   *          number of most frequent values to extract
+   * @param n
+   *          sum of frequencies of values in partition subarray
+   * @param hist
+   *          frequency histogram; frequency of value (n-NUM_ORIGIN)
+   * @param partition
+   *          array of unique values appearing in nums
+   * @param pStart
+   *          start of partition subarray
+   * @param pEnd
+   *          end of partition subarray
+   * @return
+   */
+  private int[] aux(int k, int n, int[] hist, int[] partition, int pStart, int pEnd) {
+    if (db) {
+      int[] ff = new int[pEnd - pStart];
+      for (int i = pStart; i < pEnd; i++)
+        ff[i - pStart] = hist[partition[i] + NUM_ORIGIN];
+      db(VERT_SP, "partition, k:", k, "n:", n, "array:", toStr(partition, pStart, pEnd), "freq:", toStr(ff));
+    }
+    int[] res;
+
+    int pLen = pEnd - pStart;
 
     // Base case:
-    if (d == 1) {
+    if (pLen == 1) {
+      res = new int[1];
+      res[0] = partition[pStart];
+    } else {
 
-      return Arrays.copyOfRange(partition, pStart, pStart + d);
-    }
+      // Partition histogram around a pivot value.
+      // Move *higher* frequency values to left of pivot, to simplify things.
+      var pivotValue = ((pLen - k) * n) / (pLen * (float) pLen);
+      db("...pivot:", pivotValue);
 
-    // Partition histogram around a pivot value.
-    // Move *higher* frequency values to left of pivot, to simplify things.
-    double pivotValue = ((d - k) * n) / (d * (float) d);
-    db(VERT_SP, "partitioning; k:", k, "n:", n, "d:", d, "pivot:", pivotValue);
+      int leftCursor = pStart;
+      int rightCursor = pEnd;
+      int lowSum = 0;
 
-    int low = pStart;
-    int high = pStart + d - 1;
-    int lowSum = 0;
+      while (leftCursor < rightCursor) {
+        var fLow = hist[partition[leftCursor] + NUM_ORIGIN];
+        db("hist[low ", leftCursor, "]=", fLow);
+        if (fLow >= pivotValue) {
+          db("...advancing left");
+          leftCursor++;
+          lowSum += fLow;
+        } else {
+          db("...decrementing, then swapping right with left");
+          rightCursor--;
+          swapValues(partition, leftCursor, rightCursor);
+        }
+      }
+      db("partition now:", toStr(partition, pStart, leftCursor), toStr(partition, leftCursor, pStart + pEnd),
+          "low pop:", lowSum, "low:", leftCursor, "vs k:", k);
 
-    while (low < high) {
+      checkInf(20);
 
-      var fLow = hist[partition[low] + NUM_ORIGIN];
-      db("hist[low ", low, "]=", fLow);
-      if (fLow >= pivotValue) {
-        db("...incr low");
-        low++;
-        lowSum += fLow;
+      if (leftCursor == k) {
+        // The left side contains exactly k elements, so we're done; return that subarray
+        res = Arrays.copyOfRange(partition, pStart, leftCursor);
+      } else if (leftCursor > k) {
+        // The left side contains more then k elements, so recursively extract k from it
+        res = aux(k, lowSum, hist, partition, pStart, leftCursor);
       } else {
-        db("...swapping with high");
-        var tmp = partition[low];
-        partition[low] = partition[high];
-        partition[high] = tmp;
-        high--;
+        // The left side contains fewer than k elements.  Return those items PLUS the
+        // results of a recursive call on the right side
+        res = new int[k];
+
+        int k2 = k - leftCursor;
+        var remainder = aux(k2, n - lowSum, hist, partition, leftCursor, pEnd);
+        System.arraycopy(remainder, 0, res, 0, k2);
+        System.arraycopy(partition, pStart, res, k2, leftCursor);
       }
     }
-    db("partition now:", toStr(partition, pStart, low), toStr(partition, low, pStart + d), "low pop:", lowSum,
-        "low:", low, "vs k:", k);
+    db("...returning:", toStr(res));
+    return res;
+  }
 
-    checkInf(20);
-    if (low == k)
-      return Arrays.copyOfRange(partition, pStart, low);
-    else if (low > k)
-      return aux(hist, partition, pStart, lowSum, low - pStart, k);
-    else {
-      // We want to include the portion in the low side,
-      // and recursively include some items from the high side
-      var res = new int[k];
-
-      int k2 = k - low;
-      var remainder = aux(hist, partition, low, n - lowSum, d - (low - pStart), k2);
-      System.arraycopy(remainder, 0, res, 0, k2);
-      System.arraycopy(partition, pStart, res, k2, low);
-      return res;
-    }
-
+  private void swapValues(int[] a, int i, int j) {
+    int tmp = a[i];
+    a[i] = a[j];
+    a[j] = tmp;
   }
 
 }
