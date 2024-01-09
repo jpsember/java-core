@@ -4,17 +4,9 @@ import static js.base.Tools.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import js.data.DataUtil;
 
 /**
- * My approach is not satisfying and has a bunch of special cases.
- * 
- * Simplified the algorithm to do a double loop over all possible swaps (igoring
- * multiple copies)
+ * Works!  Is very fast!  Not quite as fast as some.
  */
 public class TopKFrequentElements extends LeetCode {
 
@@ -23,11 +15,11 @@ public class TopKFrequentElements extends LeetCode {
   }
 
   public void run() {
+    x("[5,6,6,7,7,7,7,8,8,8,8,9,9,9,9,9,9,9,9,9]", 2);
     rand(123);
     xr(20, 20);
     x("[3,0,1,0]", 1);
     x("[1]", 1);
-    x("[5,6,6,7,7,7,7,8,8,8,8,9,9,9,9,9,9,9,9,9]", 2);
     x("[1,1,1,2,2,3]", 2);
     xr(100000, 50000);
   }
@@ -48,33 +40,43 @@ public class TopKFrequentElements extends LeetCode {
     db(toStr(nums), INDENT, "k=", k);
     var res = topKFrequent(nums, k);
     var expected = SLOWTopKFrequent(nums, k);
+    Arrays.sort(res);
+    Arrays.sort(expected);
     verify(res, expected);
   }
 
   private int[] SLOWTopKFrequent(int[] nums, int k) {
-    Map<Integer, Integer> freq = new HashMap<>();
-    for (var x : nums) {
-      var count = freq.getOrDefault(x, 0);
-      freq.put(x, 1 + count);
-    }
-    pr("freq:", INDENT, freq);
-    List<Integer> vals = new ArrayList<>(freq.keySet());
-    pr("before sort:", vals);
-    vals.sort((a, b) -> -compareFreq(a, b, freq));
-    pr("after  sort:", vals);
-    var y = DataUtil.intArray(vals);
-    pr("result       :", y);
-    int kEff = Math.min(vals.size(), k);
-    var out = Arrays.copyOfRange(y, 0, kEff);
-    pr("copy of range:", out);
-    return out;
-  }
+    final int MIN_NUM = -10000;
+    final int MAX_NUM = 10000;
+    final int NUM_ORIGIN = -MIN_NUM;
 
-  private int compareFreq(int a, int b, Map<Integer, Integer> freq) {
-    var diff = freq.getOrDefault(a, 0) - freq.getOrDefault(b, 0);
-    if (diff == 0)
-      diff = a - b;
-    return diff;
+    var hlen = MAX_NUM + 1 - MIN_NUM;
+    int hist[] = new int[hlen];
+    for (var x : nums) {
+      hist[x + NUM_ORIGIN]++;
+    }
+
+    // Modify array so upper n bits are the frequency, lower the actual value; omit elements with freq zero
+    int destCount = 0;
+    for (int i = 0; i < hlen; i++) {
+      var f = hist[i];
+      if (f == 0)
+        continue;
+      hist[destCount++] = (f << 15) | i;
+    }
+    pr("augmented hist:", Arrays.copyOfRange(hist, 0, destCount));
+
+    Arrays.sort(hist, 0, destCount);
+    pr("sorted        :", Arrays.copyOfRange(hist, 0, destCount));
+
+    int kEff = Math.min(destCount, k);
+    int[] out = new int[kEff];
+    int j = 0;
+    for (int i = destCount - kEff; i < destCount; i++) {
+      out[j++] = (hist[i] & 0x7fff) - NUM_ORIGIN;
+    }
+    pr("recovered values:", out);
+    return out;
   }
 
   private static final int MIN_NUM = -10000;
