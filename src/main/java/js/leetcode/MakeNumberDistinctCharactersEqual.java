@@ -2,9 +2,14 @@ package js.leetcode;
 
 import static js.base.Tools.*;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Arrays;
 
+/**
+ * My approach is not satisfying and has a bunch of special cases.
+ * 
+ * Simplified the algorithm to do a double loop over all possible swaps (igoring
+ * multiple copies)
+ */
 public class MakeNumberDistinctCharactersEqual extends LeetCode {
 
   public static void main(String[] args) {
@@ -24,6 +29,7 @@ public class MakeNumberDistinctCharactersEqual extends LeetCode {
     x("ac", "b", false);
     x("abcc", "aab", true);
     x("abcde", "fghij", true);
+    x("fafdd", "fbdc", true);
   }
 
   private void x(String word1, String word2, boolean expected) {
@@ -42,90 +48,39 @@ public class MakeNumberDistinctCharactersEqual extends LeetCode {
 
     db("a:", word1, "counts:", toStr(a), "sum:", ac);
     db("b:", word2, "counts:", toStr(b), "sum:", bc);
-    var inf = Integer.MAX_VALUE;
-    int diff = bc - ac;
-    if (diff < 0) {
-      var tmp = b;
-      b = a;
-      a = tmp;
-      diff = -diff;
+
+    var aind = indices(a);
+    var bind = indices(b);
+
+    for (var ai : aind) {
+      for (var bi : bind) {
+
+        int deltaA = 0;
+        int deltaB = 0;
+        if (a[ai] == 1)
+          deltaA--;
+        if (a[bi] == 0)
+          deltaA++;
+        if (b[bi] == 1)
+          deltaB--;
+        if (b[ai] == 0)
+          deltaB++;
+        if (ac + deltaA == bc + deltaB)
+          return true;
+      }
     }
 
-    var result = false;
+    return false;
+  }
 
-    db("diff:", diff);
-
-    switch (diff) {
-
-    case 2: {
-      var left = match(a, b, 2, inf, 1, inf);
-      var right = match(a, b, 0, 0, 1, 1);
-      removeCommon(left, right);
-      result = nonEmpty(left, right);
-    }
-      break;
-
-    case 1: {
-      {
-        var left = match(a, b, 2, inf, 0, 0);
-        var right = match(a, b, 0, 0, 1, 1);
-        removeCommon(left, right);
-        result = nonEmpty(left, right);
+  private int[] indices(int[] freq) {
+    int[] res = new int[26];
+    int c = 0;
+    for (int i = 0; i < 26; i++)
+      if (freq[i] != 0) {
+        res[c++] = i;
       }
-      if (!result) {
-        var left = match(a, b, 2, inf, 1, inf);
-        var right = match(a, b, 0, 0, 2, inf);
-        removeCommon(left, right);
-        result = nonEmpty(left, right);
-      }
-      if (!result) {
-        var left = match(a, b, 1, 1, 1, inf);
-        var right = match(a, b, 0, 0, 1, 1);
-        removeCommon(left, right);
-        result = nonEmpty(left, right);
-      }
-
-    }
-      break;
-    case 0: {
-      db("unique singles on each side?");
-      var left = match(a, b, 1, 1, 0, 0);
-      var right = match(a, b, 0, 0, 1, 1);
-      removeCommon(left, right);
-      result = nonEmpty(left, right);
-    }
-
-      if (!result) {
-        db("increment both?");
-        var left = match(a, b, 2, inf, 0, 0);
-        var right = match(a, b, 0, 0, 2, inf);
-        removeCommon(left, right);
-        result = nonEmpty(left, right);
-      }
-      if (!result) {
-        db("decrement both?");
-        var left = match(a, b, 1, 1, 1, inf);
-        var right = match(a, b, 1, inf, 1, 1);
-        removeCommon(left, right);
-        result = nonEmpty(left, right);
-      }
-      if (!result) {
-        db("swap same chars?");
-        var left = match(a, b, 1, inf, 1, inf);
-        var right = match(a, b, 1, inf, 1, inf);
-        result = hasCommon(left, right);
-      }
-      if (!result) {
-        db("swap multiple with multiple?");
-        var left = match(a, b, 2, inf, 1, inf);
-        var right = match(a, b, 2, inf, 1, inf);
-        removeCommon(left, right);
-        result = nonEmpty(left, right);
-      }
-      break;
-    }
-
-    return result;
+    return Arrays.copyOf(res, c);
   }
 
   private int[] prep(String word) {
@@ -145,46 +100,4 @@ public class MakeNumberDistinctCharactersEqual extends LeetCode {
     return a;
   }
 
-  private Set<Integer> match(int[] a, int[] b, int aMin, int aMax, int bMin, int bMax) {
-    var result = set();
-    for (int i = 0; i < 26; i++) {
-      if (a[i] >= aMin && a[i] <= aMax && b[i] >= bMin && b[i] <= bMax) {
-        result.add(i);
-      }
-    }
-    return result;
-  }
-
-  private Set<Integer> setDiff(Set<Integer> a, Set<Integer> b) {
-    var diff = setCopy(a);
-    diff.removeAll(b);
-    return diff;
-  }
-
-  private void removeCommon(Set<Integer> a, Set<Integer> b) {
-    var diff1 = setDiff(a, b);
-    var diff2 = setDiff(b, a);
-    a.clear();
-    a.addAll(diff1);
-    b.clear();
-    b.addAll(diff2);
-  }
-
-  private boolean nonEmpty(Set<Integer> a, Set<Integer> b) {
-    return !a.isEmpty() && !b.isEmpty();
-  }
-
-  private Set<Integer> set() {
-    return new HashSet<Integer>();
-  }
-
-  private Set<Integer> setCopy(Set<Integer> a) {
-    return new HashSet<Integer>(a);
-  }
-
-  private boolean hasCommon(Set<Integer> a, Set<Integer> b) {
-    var w = setCopy(a);
-    w.retainAll(b);
-    return !w.isEmpty();
-  }
 }
