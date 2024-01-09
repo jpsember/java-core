@@ -23,14 +23,27 @@ public class TopKFrequentElements extends LeetCode {
   }
 
   public void run() {
+    rand(123);
+    xr(20, 20);
     x("[3,0,1,0]", 1);
     x("[1]", 1);
     x("[5,6,6,7,7,7,7,8,8,8,8,9,9,9,9,9,9,9,9,9]", 2);
     x("[1,1,1,2,2,3]", 2);
+    xr(100000, 50000);
+  }
+
+  private void xr(int n, int k) {
+    int[] num = new int[n];
+    for (int i = 0; i < n; i++)
+      num[i] = rand().nextInt(2000) - 1000;
+    x(num, k);
   }
 
   private void x(String numsStr, int k) {
-    var nums = extractNums(numsStr);
+    x(extractNums(numsStr), k);
+  }
+
+  private void x(int[] nums, int k) {
     db = nums.length < 30;
     db(toStr(nums), INDENT, "k=", k);
     var res = topKFrequent(nums, k);
@@ -44,10 +57,17 @@ public class TopKFrequentElements extends LeetCode {
       var count = freq.getOrDefault(x, 0);
       freq.put(x, 1 + count);
     }
+    pr("freq:", INDENT, freq);
     List<Integer> vals = new ArrayList<>(freq.keySet());
+    pr("before sort:", vals);
     vals.sort((a, b) -> -compareFreq(a, b, freq));
+    pr("after  sort:", vals);
     var y = DataUtil.intArray(vals);
-    return Arrays.copyOfRange(y, 0, k);
+    pr("result       :", y);
+    int kEff = Math.min(vals.size(), k);
+    var out = Arrays.copyOfRange(y, 0, kEff);
+    pr("copy of range:", out);
+    return out;
   }
 
   private int compareFreq(int a, int b, Map<Integer, Integer> freq) {
@@ -55,7 +75,6 @@ public class TopKFrequentElements extends LeetCode {
     if (diff == 0)
       diff = a - b;
     return diff;
-
   }
 
   private static final int MIN_NUM = -10000;
@@ -108,15 +127,28 @@ public class TopKFrequentElements extends LeetCode {
 
     int pLen = pEnd - pStart;
 
-    // Base case:
+    // Base cases:
     if (pLen == 1) {
-      res = new int[1];
-      res[0] = partition[pStart];
+      res = Arrays.copyOfRange(partition, pStart, pStart + 1);
+    } else if (pLen == k) {
+      res = Arrays.copyOfRange(partition, pStart, pEnd);
     } else {
 
       // Partition histogram around a pivot value.
       // Move *higher* frequency values to left of pivot, to simplify things.
-      var pivotValue = ((pLen - k) * n) / (pLen * (float) pLen);
+
+      var min = partition[pStart];
+      var max = partition[pStart];
+      for (int j = pStart + 1; j < pEnd; j++) {
+        var x = partition[j];
+        if (x < min)
+          min = x;
+        else if (x > max)
+          max = x;
+      }
+
+      float d = pLen;
+      var pivotValue = (n / d) * ((d - k) / d);
       db("...pivot:", pivotValue);
 
       int leftCursor = pStart;
@@ -141,17 +173,32 @@ public class TopKFrequentElements extends LeetCode {
 
       checkInf(20);
 
-      if (leftCursor == k) {
+      int leftCount = leftCursor - pStart;
+      db("leftCount:", leftCount, "rightCount:", pEnd - leftCursor);
+
+      // If we didn't make any progress, sort the remaining subarray by frequency and 
+      // return the appropriate slice of the sorted array.
+      if (leftCount == 0 || leftCount == pLen) {
+        db("...no progress! Sorting...");
+        var w = new ArrayList<Integer>();
+        for (int j = pStart; j < pEnd; j++)
+          w.add(partition[j]);
+        w.sort((a, b) -> -compareFrequ(a, b, hist));
+        // With some of my test inputs, it's possible(?) that there aren't exactly k most frequent elements
+        int kEff = Math.min(k, w.size());
+        res = new int[kEff];
+        for (int j = 0; j < kEff; j++)
+          res[j] = w.get(j);
+      } else if (leftCount == k) {
         // The left side contains exactly k elements, so we're done; return that subarray
         res = Arrays.copyOfRange(partition, pStart, leftCursor);
-      } else if (leftCursor > k) {
+      } else if (leftCount > k) {
         // The left side contains more then k elements, so recursively extract k from it
         res = aux(k, lowSum, hist, partition, pStart, leftCursor);
       } else {
         // The left side contains fewer than k elements.  Return those items PLUS the
         // results of a recursive call on the right side
         res = new int[k];
-
         int k2 = k - leftCursor;
         var remainder = aux(k2, n - lowSum, hist, partition, leftCursor, pEnd);
         System.arraycopy(remainder, 0, res, 0, k2);
@@ -160,6 +207,13 @@ public class TopKFrequentElements extends LeetCode {
     }
     db("...returning:", toStr(res));
     return res;
+  }
+
+  private int compareFrequ(int a, int b, int[] hist) {
+    var diff = hist[a + NUM_ORIGIN] - hist[b + NUM_ORIGIN];
+    if (diff == 0)
+      diff = a - b;
+    return diff;
   }
 
   private void swapValues(int[] a, int i, int j) {
