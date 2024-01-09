@@ -2,9 +2,8 @@ package js.leetcode;
 
 import static js.base.Tools.*;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 public class MakeNumberDistinctCharactersEqual extends LeetCode {
 
@@ -13,6 +12,8 @@ public class MakeNumberDistinctCharactersEqual extends LeetCode {
   }
 
   public void run() {
+    x("aa", "bb", true);
+
     x("zzzzzyyyywvvwwwxxxy", "abbbbaaaacccceee", false);
 
     x("ac", "b", false);
@@ -31,113 +32,131 @@ public class MakeNumberDistinctCharactersEqual extends LeetCode {
     var a = prep(word1);
     var b = prep(word2);
 
-    int af = 0;
-    int bf = 0;
-    int SINGLE = 1 << 0;
-    int DOUBLE = 1 << 1;
-    int SINGLE_MATCH = 1 << 2;
-    int DOUBLE_MATCH = 1 << 3;
-    int MULT_DIFFER = 1 << 4;
-    int ca = 0;
-    int cb = 0;
+    var ac = count(a);
+    var bc = count(b);
 
-    List<State> fa = new ArrayList<>();
-    List<State> fb = new ArrayList<>();
+    db("a:", word1, "counts:", toStr(a), "sum:", ac);
+    db("b:", word2, "counts:", toStr(b), "sum:", bc);
+    var inf = Integer.MAX_VALUE;
+    int diff = bc - ac;
+    if (diff < 0) {
+      var tmp = b;
+      b = a;
+      a = tmp;
+      diff = -diff;
+    }
 
-    while (true) {
-      State sa = null;
-      State sb = null;
-      if (ca < a.length)
-        sa = a[ca];
-      if (cb < b.length)
-        sb = b[cb];
+    var result = false;
 
-      if (sa == null && sb == null)
-        break;
+    db("diff:", diff);
 
-      if (sb == null || sa.letter < sb.letter) {
-        var flag = (sa.isDouble() ? DOUBLE : SINGLE);
-        if ((af & flag) == 0) {
-          af |= flag;
-          fa.add(sa);
-        }
-        ca++;
-      } else if (sa == null || sb.letter < sa.letter) {
-        int flag = (sb.isDouble() ? DOUBLE : SINGLE);
-        if ((bf & flag) == 0) {
-          bf |= flag;
-          fb.add(sb);
-        }
-        cb++;
-      } else {
-        var flag = sa.isDouble() == sb.isDouble() ? (sa.isDouble() ? DOUBLE_MATCH : SINGLE_MATCH)
-            : MULT_DIFFER;
-        if ((af & flag) == 0) {
-          af |= flag;
-          bf |= flag;
-          fa.add(sa);
-          fb.add(sb);
-        }
-        ca++;
-        cb++;
+    switch (diff) {
+
+    case 2: {
+      var left = match(a, b, 2, inf, 1, inf);
+      var right = match(a, b, 0, 0, 1, 1);
+      removeCommon(left, right);
+      result = nonEmpty(left, right);
+    }
+      break;
+    case 1: {
+      var left = match(a, b, 2, inf, 0, 0);
+      var right = match(a, b, 0, 0, 1, 1);
+      removeCommon(left, right);
+      result = nonEmpty(left, right);
+      if (!result) {
+        left = match(a, b, 2, inf, 1, inf);
+        right = match(a, b, 0, 0, 2, inf);
+        removeCommon(left, right);
+        result = nonEmpty(left, right);
       }
-
+    }
+      break;
+    case 0: {
+      var left = match(a, b, 1, 1, 0, 0);
+      var right = match(a, b, 0, 0, 1, 1);
+      removeCommon(left, right);
+      result = nonEmpty(left, right);
+    }
+    
+    if (!result) {
+      // Increment both?
+      var left = match(a, b, 2, inf, 0, 0);
+      var right = match(a, b, 0,0,2,inf);
+      removeCommon(left, right);
+      result = nonEmpty(left, right);
+    }
+    if (!result) {
+      // Decrement both?
+      var left = match(a, b, 1, 1, 1, inf);
+      var right = match(a, b, 1,inf,1,1);
+      removeCommon(left, right);
+      result = nonEmpty(left, right);
+    }
+      if (!result) {
+        var left = match(a, b, 1, inf, 1, inf);
+        var right = match(a, b, 1, inf, 1, inf);
+        result = hasCommon(left, right);
+      }
+      if (!result) {
+        var left = match(a, b, 2, inf, 0, inf);
+        var right = match(a, b, 2, inf, 0, inf);
+        removeCommon(left, right);
+        result = nonEmpty(left, right);
+      }
+      break;
     }
 
-    pr("fa states:", fa);
-    pr("fb states:", fb);
-
-    return false;
+    return result;
   }
 
-  private State[] prep(String word) {
-    var result = new State[word.length()];
-    var rc = 0;
-
-    var b = word.getBytes();
-    Arrays.sort(b);
-    int i = 0;
-
-    var s = new State(b[0], 0);
-    result[rc++] = s;
-    while (i < b.length) {
-      var x = b[i++];
-      if (x != s.letter) {
-        s = new State(x, 1);
-        result[rc++] = s;
-      } else
-        s.multiplicity++;
+  private int[] prep(String word) {
+    var result = new int[26];
+    for (int i = 0; i < word.length(); i++) {
+      result[word.charAt(i) - 'a']++;
     }
-
-    var ret = Arrays.copyOf(result, rc);
-
-    db("prepare", word, "=>", toStr(ret));
-    return ret;
+    return result;
   }
 
-  private static class State {
-    final int letter;
-    int multiplicity;
-
-    State(int letter, int multiplicity) {
-      this.letter = letter;
-      this.multiplicity = multiplicity;
+  private int count(int[] freq) {
+    int a = 0;
+    for (var c : freq) {
+      a += c;
     }
-
-    boolean isDouble() {
-      return multiplicity >= 2;
-    }
-
-    @Override
-    public String toString() {
-      var c = Character.toString(letter);
-      if (multiplicity == 1)
-        return c;
-      if (multiplicity == 0)
-        return "!" + c + "x0!";
-      return c + c;
-    }
-
+    return a;
   }
 
+  private Set<Integer> match(int[] a, int[] b, int aMin, int aMax, int bMin, int bMax) {
+    var result = new HashSet<Integer>();
+    for (int i = 0; i < 26; i++) {
+      if (a[i] >= aMin && a[i] <= aMax && b[i] >= bMin && b[i] <= bMax) {
+        result.add(i);
+      }
+    }
+    return result;
+  }
+
+  private Set<Integer> setDiff(Set<Integer> a, Set<Integer> b) {
+    Set<Integer> diff = new HashSet<Integer>();
+    diff.addAll(a);
+    diff.removeAll(b);
+    return diff;
+  }
+
+  private void removeCommon(Set<Integer> a, Set<Integer> b) {
+    Set<Integer> diff1 = setDiff(a, b);
+    Set<Integer> diff2 = setDiff(b, a);
+    a.clear();
+    a.addAll(diff1);
+    b.clear();
+    b.addAll(diff2);
+  }
+
+  private boolean nonEmpty(Set<Integer> a, Set<Integer> b) {
+    return !a.isEmpty() && !b.isEmpty();
+  }
+
+  private boolean hasCommon(Set<Integer> a, Set<Integer> b) {
+    return !setDiff(a, b).isEmpty() || !setDiff(b, a).isEmpty();
+  }
 }

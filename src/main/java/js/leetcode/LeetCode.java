@@ -329,6 +329,10 @@ public abstract class LeetCode {
     return js.toString();
   }
 
+  public String toStr(int[] array) {
+    return JSList.with(array).toString();
+  }
+
   private static List<Boolean> dbStack = arrayList();
   private static List<Integer> indStack = arrayList();
 
