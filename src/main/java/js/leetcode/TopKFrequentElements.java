@@ -23,10 +23,9 @@ public class TopKFrequentElements extends LeetCode {
   }
 
   public void run() {
-    x("[5,6,6,7,7,7,7,8,8,8,8,9,9,9,9,9,9,9,9,9]", 2);
-
-    x("[1,1,1,2,2,3]", 2);
     x("[1]", 1);
+    x("[5,6,6,7,7,7,7,8,8,8,8,9,9,9,9,9,9,9,9,9]", 2);
+    x("[1,1,1,2,2,3]", 2);
   }
 
   private void x(String numsStr, int k) {
@@ -58,13 +57,13 @@ public class TopKFrequentElements extends LeetCode {
 
   }
 
+  private static final int MIN_NUM = -10000;
+  private static final int MAX_NUM = 10000;
+  private static final int NUM_ORIGIN = -MIN_NUM;
+
   public int[] topKFrequent(int[] nums, int k) {
 
     // Build a histogram 
-
-    final int MIN_NUM = -10000;
-    final int MAX_NUM = 10000;
-    final int NUM_ORIGIN = -MIN_NUM;
 
     int[] hist = new int[MAX_NUM + 1 - MIN_NUM];
     int[] partition = new int[hist.length];
@@ -78,21 +77,34 @@ public class TopKFrequentElements extends LeetCode {
     }
 
     var n = nums.length;
+    return aux(hist, partition, 0, n, d, k);
+  }
+
+  private int[] aux(int[] hist, int[] partition, int pStart, int n, int d, int k) {
+
+    // Base case:
+    if (d == 1) {
+
+      return Arrays.copyOfRange(partition, pStart, pStart + d);
+    }
 
     // Partition histogram around a pivot value.
     // Move *higher* frequency values to left of pivot, to simplify things.
-
     double pivotValue = ((d - k) * n) / (d * (float) d);
     db(VERT_SP, "partitioning; k:", k, "n:", n, "d:", d, "pivot:", pivotValue);
 
-    int low = 0;
-    int high = d - 1;
+    int low = pStart;
+    int high = pStart + d - 1;
+    int lowSum = 0;
+
     while (low < high) {
+
       var fLow = hist[partition[low] + NUM_ORIGIN];
       db("hist[low ", low, "]=", fLow);
       if (fLow >= pivotValue) {
         db("...incr low");
         low++;
+        lowSum += fLow;
       } else {
         db("...swapping with high");
         var tmp = partition[low];
@@ -101,16 +113,26 @@ public class TopKFrequentElements extends LeetCode {
         high--;
       }
     }
-    db("partition now:", toStr(partition, 0, low), toStr(partition, low, d));
+    db("partition now:", toStr(partition, pStart, low), toStr(partition, low, pStart + d), "low pop:", lowSum,
+        "low:", low, "vs k:", k);
 
-     
-    if (low == k)  
-      return Arrays.copyOfRange(partition,0,low) ;
-    if(low > k) {
-      
-    var res = new int[1];
-    res[0] = 3;
-    return res;
+    checkInf(20);
+    if (low == k)
+      return Arrays.copyOfRange(partition, pStart, low);
+    else if (low > k)
+      return aux(hist, partition, pStart, lowSum, low - pStart, k);
+    else {
+      // We want to include the portion in the low side,
+      // and recursively include some items from the high side
+      var res = new int[k];
+
+      int k2 = k - low;
+      var remainder = aux(hist, partition, low, n - lowSum, d - (low - pStart), k2);
+      System.arraycopy(remainder, 0, res, 0, k2);
+      System.arraycopy(partition, pStart, res, k2, low);
+      return res;
+    }
+
   }
 
 }
