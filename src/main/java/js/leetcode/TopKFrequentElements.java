@@ -10,6 +10,10 @@ import java.util.PriorityQueue;
  * 
  * Using a MinHeap instead of sorting... doesn't seem to change the runtime
  * though.
+ * 
+ * Looking at some of the better solutions, it seems we can avoid sorting all the numbers, just
+ * representatives of the each subset of numbers that occurs x times.
+ * 
  */
 public class TopKFrequentElements extends LeetCode {
 
