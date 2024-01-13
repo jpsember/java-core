@@ -30,6 +30,9 @@ public class NumberOfClosedIslands extends LeetCode {
 
   static int uniqueId = 200;
 
+  /**
+   * This point class also acts as a queue.
+   */
   private class Pt {
     Pt(int x, int y) {
       this.x = x;
@@ -38,22 +41,23 @@ public class NumberOfClosedIslands extends LeetCode {
     }
 
     int read() {
-      pr("reading grid:", this);
-      return gr[y][x];
+      return mGrid[y][x];
     }
 
+    /**
+     * Push a point to the back of the queue; assumes 'this' is the current
+     * back. Returns the new back.
+     */
     Pt pushBack(int x, int y) {
-      return pushBack(new Pt(x, y));
-    }
-
-    Pt pushBack(Pt pt) {
-      pr("...pushing:", pt);
-      next = pt;
+      next = new Pt(x, y);
       return next;
     }
 
+    /**
+     * Pop point from the front of the queue. Returns the point as the new
+     * front.
+     */
     Pt popFront() {
-      checkState(next != null);
       return next;
     }
 
@@ -72,70 +76,12 @@ public class NumberOfClosedIslands extends LeetCode {
 
   }
 
-  private static final int WATER = 1;
-  private static final int LAND = 0;
-
-  private int[][] gr;
-  private int width, height;
-
-  public int closedIsland(int[][] grid) {
-    gr = grid;
-    width = grid[0].length;
-    height = grid.length;
-
-    var queueFront = new Pt(0, 0);
-    var queueBack = queueFront;
-
-    // 'fill in' any land that touches the grid boundary.
-
-    for (int y = 0; y < height; y++) {
-      queueBack = queueBack.pushBack(0, y);
-      queueBack = queueBack.pushBack(width - 1, y);
-    }
-    for (int x = 1; x < width - 1; x++) {
-      queueBack = queueBack.pushBack(x, 0);
-      queueBack = queueBack.pushBack(x, height - 1);
-    }
-
-    pr("queue:", INDENT, dumpQueue(queueFront, queueBack));
-
-    while (queueFront != queueBack) {
-      pr("queueBack:", queueBack);
-      pr("queueFront:", queueFront, "next:", queueFront.next);
-      pr("queue:", INDENT, dumpQueue(queueFront, queueBack));
-
-      queueFront = queueFront.popFront();
-      pr("popped queueFront:", queueFront);
-      var pt = queueFront;
-      if (pt.withinGrid() && pt.read() == LAND) {
-        paintLandAsWater(pt);
-      }
-    }
-
-    // Scan for any remaining land, fill in when found, and increment island count
-    var islandCount = 0;
-    for (int y = 0; y < height; y++) {
-      for (int x = 0; x < width; x++) {
-        if (gr[y][x] == LAND) {
-          var pt = new Pt(x, y);
-          islandCount++;
-          paintLandAsWater(pt);
-        }
-      }
-    }
-    return islandCount;
-  }
-
   private String dumpQueue(Pt front, Pt back) {
     checkArgument(front != null);
     checkArgument(back != null);
     var ls = list();
     while (front != back) {
       checkState(front.next != null);
-      //      if (front.next == null) {
-      //        ls.add("<< no next!!!!");
-      //        break;
-      //      }
       var next = front.popFront();
       checkState(next != null);
       checkState(next.id > front.id);
@@ -145,31 +91,87 @@ public class NumberOfClosedIslands extends LeetCode {
     return "Queue: " + ls.prettyPrint();
   }
 
+  // ------------------------------------------------------------------
+
+  private static final int WATER = 1;
+  private static final int LAND = 0;
+
+  public int closedIsland(int[][] grid) {
+    mGrid = grid;
+    width = grid[0].length;
+    height = grid.length;
+
+    // Our queue will have a sentinel 'handle' as the front node, which is assumed to not
+    // hold data.  So an empty queue is one with a non-null front which equals its back.
+
+    var front = new Pt(0, 0);
+    var back = front;
+
+    // 'fill in' any land that touches the grid boundary.
+
+    for (int y = 0; y < height; y++) {
+      back = back.pushBack(0, y);
+      back = back.pushBack(width - 1, y);
+    }
+    for (int x = 1; x < width - 1; x++) {
+      back = back.pushBack(x, 0);
+      back = back.pushBack(x, height - 1);
+    }
+
+    pr("queue:", INDENT, dumpQueue(front, back));
+
+    while (front != back) {
+      pr("queueBack:", back);
+      pr("queueFront:", front, "next:", front.next);
+      pr("queue:", INDENT, dumpQueue(front, back));
+
+      front = front.popFront();
+      pr("popped queueFront:", front);
+      var pt = front;
+      if (pt.withinGrid() && pt.read() == LAND) {
+        paintLandAsWater(pt);
+      }
+    }
+
+    // Scan for any remaining land, fill in when found, and increment island count
+    var islandCount = 0;
+    for (int y = 0; y < height; y++) {
+      for (int x = 0; x < width; x++) {
+        if (mGrid[y][x] == LAND) {
+          var pt = new Pt(x, y);
+          islandCount++;
+          paintLandAsWater(pt);
+        }
+      }
+    }
+    return islandCount;
+  }
+
   private void paintLandAsWater(Pt pt) {
     checkInf(100);
 
     // Construct a new queue from a copy of this point
-    var qf = new Pt(0, 0);
-    var qb = qf;
-    qb = qb.pushBack(pt.x, pt.y);
+    var front = new Pt(0, 0);
+    var back = front;
+    back = back.pushBack(pt.x, pt.y);
 
-    while (qf != qb) {
-      qf = qf.next;
-      var p = qf;
-      pr("painting, pt:", p);
-      if (!p.withinGrid())
+    while (front != back) {
+      front = front.next;
+      if (!front.withinGrid())
         continue;
-      var x = p.x;
-      var y = p.y;
-      if (p.read() != LAND)
+      var x = front.x;
+      var y = front.y;
+      if (front.read() != LAND)
         continue;
-      gr[y][x] = WATER;
-      pr("...painted as water:", p);
-      qb = qb.pushBack(x - 1, y);
-      qb = qb.pushBack(x + 1, y);
-      qb = qb.pushBack(x, y - 1);
-      qb = qb.pushBack(x, y + 1);
+      mGrid[y][x] = WATER;
+      back = back.pushBack(x - 1, y);
+      back = back.pushBack(x + 1, y);
+      back = back.pushBack(x, y - 1);
+      back = back.pushBack(x, y + 1);
     }
   }
+
+  private int[][] mGrid;
+  private int width, height;
 
 }
