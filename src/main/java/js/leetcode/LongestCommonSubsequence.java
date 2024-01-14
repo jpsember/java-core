@@ -40,6 +40,8 @@ public class LongestCommonSubsequence extends LeetCode {
     pr(INDENT, res);
     if (expected < 0) {
       expected = new Recursion2().longestCommonSubsequence(ca, cb);
+      //      var exp2 = new RecursionNaive().longestCommonSubsequence(ca, cb);
+      //      checkState(exp2 == expected);
     }
     verify(res, expected);
   }
@@ -125,8 +127,11 @@ public class LongestCommonSubsequence extends LeetCode {
         // Recursive case:
         //
         // If first chars are the same, answer is 1 plus the LCS of the suffixes.
+        // Otherwise, we either use the first character of A, 
+        // use the 
         // Otherwise, the answer is greater of LCS(a+1,b+1), LCS(a, b'), LCS(a',b),
         // where a' is the smallest value that satisfies   A[a'>a] == B[b] (or A.length if not found).
+        // In other words, look for the first appearance of A's character in B (and vice versa).
         //
         if (aCursor == a.length || bCursor == b.length) {
           result = 0;
