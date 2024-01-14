@@ -22,22 +22,19 @@ public class LongestCommonSubsequence extends LeetCode {
   }
 
   private void x(String a, String b, int expected) {
+
     var ca = a.toCharArray();
     var cb = b.toCharArray();
 
-    //    var res = longestCommonSubsequence(a, b);
-    //    pr(a, CR, b, INDENT, res);
-    //    
-    //   
+    db = Math.max(ca.length, cb.length) < 30;
+
     pr(a, CR, b);
-    //  if (db)
     checkpoint("Starting");
     var res = longestCommonSubsequence(a, b);
-    // if (db)
     checkpoint("Done");
     pr(INDENT, res);
     if (expected < 0) {
-      expected = new Recursion().longestCommonSubsequence(ca, cb);
+      expected = new RecursionWithMemo().longestCommonSubsequence(ca, cb);
       //      var exp2 = new RecursionNaive().longestCommonSubsequence(ca, cb);
       //      checkState(exp2 == expected);
     }
@@ -77,7 +74,7 @@ public class LongestCommonSubsequence extends LeetCode {
   public int longestCommonSubsequence(String text1, String text2) {
     var ca = text1.toCharArray();
     var cb = text2.toCharArray();
-    return new RecursionWithMemo().longestCommonSubsequence(ca, cb);
+    return new DynamicProgramming().longestCommonSubsequence(ca, cb);
   }
 
   private int find(char[] array, int cursor, char seekChar) {
@@ -213,6 +210,68 @@ public class LongestCommonSubsequence extends LeetCode {
         popIndent();
       }
       return result;
+    }
+  }
+
+  class DynamicProgramming implements Alg {
+
+    private String aStr, bStr;
+
+    @Override
+    public int longestCommonSubsequence(char[] a, char[] b) {
+      aStr = new String(a) + "$";
+      bStr = new String(b) + "$";
+
+      db(dbstr(a, 0), dbstr(b, 0));
+
+      // The DP grid includes an extra row and column so that every cursor position from 0 to n (inclusive) has a
+      // slot.
+
+      int bMax = b.length + 1;
+      int aMax = a.length + 1;
+      var cells = new int[bMax][aMax];
+
+      db("cells:", INDENT, strTable(cells, aStr, bStr));
+      int x = aMax + bMax - 1;
+
+      for (int i = 0; i < x; i++) {
+        var bi = i;
+        var ai = 0;
+        var excess = bi - (bMax - 1);
+        if (excess > 0) {
+          ai += excess;
+          bi -= excess;
+        }
+
+        db("ai:", ai, "bi:", bi, "excess:", excess, "cells:", INDENT, strTable(cells, aStr, bStr));
+
+        while (bi >= 0 && ai < aMax) {
+          db("...ai:", ai, "bi:", bi);
+          var currentLength = cells[bi][ai];
+
+          boolean af = ai < aMax - 1;
+          boolean bf = bi < bMax - 1;
+          if (af && bf) {
+            if (a[ai] == b[bi]) {
+              cells[bi + 1][ai + 1] = currentLength + 1;
+            }
+          }
+          if (af)
+            extend(cells, ai + 1, bi, currentLength);
+          if (bf)
+            extend(cells, ai, bi + 1, currentLength);
+
+          ai++;
+          bi--;
+        }
+      }
+      db("final cells:", INDENT, strTable(cells, aStr, bStr));
+      return cells[bMax - 1][aMax - 1];
+    }
+
+    private void extend(int[][] cells, int a, int b, int value) {
+      if (cells[b][a] < value)
+        cells[b][a] = value;
     }
 
   }
