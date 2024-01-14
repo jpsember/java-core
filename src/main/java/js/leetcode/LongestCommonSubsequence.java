@@ -13,6 +13,8 @@ public class LongestCommonSubsequence extends LeetCode {
 
   public void run() {
     loadTools();
+    x("a", "a");
+    x("a", "b");
     x("abcde", "ace");
     x(1966, 1000, 316);
   }
@@ -227,51 +229,50 @@ public class LongestCommonSubsequence extends LeetCode {
       // The DP grid includes an extra row and column so that every cursor position from 0 to n (inclusive) has a
       // slot.
 
-      int bMax = b.length + 1;
-      int aMax = a.length + 1;
-      var cells = new int[bMax][aMax];
+      int height = b.length + 1;
+      int width = a.length + 1;
+      var cells = new int[height][width];
 
       db("cells:", INDENT, strTable(cells, aStr, bStr));
-      int x = aMax + bMax - 1;
 
-      for (int i = 0; i < x; i++) {
-        var bi = i;
-        var ai = 0;
-        var excess = bi - (bMax - 1);
-        if (excess > 0) {
-          ai += excess;
-          bi -= excess;
+      // On each iteration, we scan a diagonal line at increasing distance from the origin (0,0).
+      // We don't need to scan the line that consists of the top right point (width-1,height-1).
+      int diagonals = width + height - 2;
+
+      for (int i = 0; i < diagonals; i++) {
+        // Determine the left endpoint of the diagonal
+        var x = 0;
+        var y = i;
+        var extra = y - (height - 1);
+        if (extra > 0) {
+          x += extra;
+          y -= extra;
         }
 
-        db("ai:", ai, "bi:", bi, "excess:", excess, "cells:", INDENT, strTable(cells, aStr, bStr));
+        db("ai:", x, "bi:", y, "cells:", INDENT, strTable(cells, aStr, bStr));
 
-        while (bi >= 0 && ai < aMax) {
-          db("...ai:", ai, "bi:", bi);
-          var currentLength = cells[bi][ai];
+        while (y >= 0 && x < width) {
+          var currentLength = cells[y][x];
 
-          boolean af = ai < aMax - 1;
-          boolean bf = bi < bMax - 1;
-          if (af && bf) {
-            if (a[ai] == b[bi]) {
-              cells[bi + 1][ai + 1] = currentLength + 1;
-            }
-          }
-          if (af)
-            extend(cells, ai + 1, bi, currentLength);
-          if (bf)
-            extend(cells, ai, bi + 1, currentLength);
+          boolean af = x < width - 1;
+          boolean bf = y < height - 1;
 
-          ai++;
-          bi--;
+          // Propagate length to neighboring cells as appropriate
+          if (af && bf && a[x] == b[y]) // characters match, propagate up and to the right
+            cells[y + 1][x + 1] = currentLength + 1;
+          if (af && cells[y][x + 1] < currentLength) // propagate current length to right
+            cells[y][x + 1] = currentLength;
+          if (bf && cells[y + 1][x] < currentLength) // propagate current length upward
+            cells[y + 1][x] = currentLength;
+
+          // Advance to next point on diagonal
+          x++;
+          y--;
         }
       }
-      db("final cells:", INDENT, strTable(cells, aStr, bStr));
-      return cells[bMax - 1][aMax - 1];
-    }
 
-    private void extend(int[][] cells, int a, int b, int value) {
-      if (cells[b][a] < value)
-        cells[b][a] = value;
+      db("final cells:", INDENT, strTable(cells, aStr, bStr));
+      return cells[height - 1][width - 1];
     }
 
   }
