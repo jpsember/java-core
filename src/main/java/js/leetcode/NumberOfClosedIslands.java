@@ -53,11 +53,9 @@ public class NumberOfClosedIslands extends LeetCode {
       back = back.pushBack(x, height - 1);
     }
 
-    //    db("queue:", INDENT, dumpQueue(front, back));
-
+    //
     while (front != back) {
-      //      db("queue:", INDENT, dumpQueue(front, back));
-
+      //
       front = front.popFront();
       var pt = front;
       if (pt.withinGrid() && pt.read() == LAND) {
