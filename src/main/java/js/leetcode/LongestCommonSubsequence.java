@@ -332,8 +332,6 @@ public class LongestCommonSubsequence extends LeetCode {
     @Override
     public int longestCommonSubsequence(char[] a, char[] b) {
 
-      // No need for tricky diagonal scan! Just process grid from left to right, bottom to top.
-
       // The DP grid includes an extra row and column so that every cursor position from 0 to n (inclusive) has a
       // slot.
 
@@ -343,32 +341,40 @@ public class LongestCommonSubsequence extends LeetCode {
 
       var ci = 0;
 
-      for (int y = 0; y < height; y++) {
+      for (int y = 0; y < height - 1; y++) {
         var ciNext = ci + width;
-        boolean bf = y < height - 1;
 
         // Determine the left endpoint of the diagonal
 
         var ciStart = ci;
         while (ci < ciNext) {
-
-          short currentLength = cells[ci];
-
-          boolean af = ci + 1 < ciNext;
-
-          // Propagate length to neighboring cells as appropriate
-          if (af && bf && a[ci - ciStart] == b[y]) // characters match, propagate up and to the right
-            cells[ci + width + 1] = (short) (currentLength + 1);
-          if (af && cells[ci + 1] < currentLength) // propagate current length to right
-            cells[ci + 1] = currentLength;
-          if (bf && cells[ci + width] < currentLength) // propagate current length upward
-            cells[ci + width] = currentLength;
-
+          short curr = cells[ci];
+          var ci1 = ci + 1;
+          var ciw = ci + width;
+          if (ci1 < ciNext) {
+            // Propagate length to neighboring cells as appropriate
+            if (a[ci - ciStart] == b[y]) // characters match, propagate up and to the right
+            {
+              cells[ci1 + width] = (short) (curr + 1);
+              // No need to propagate in other directions, as this will dominate
+              ci++;
+              continue;
+            } else if (cells[ci1] < curr) // propagate current length to right
+              cells[ci1] = curr;
+          }
+          if (cells[ciw] < curr) // propagate current length upward
+            cells[ciw] = curr;
           ci++;
         }
       }
 
-      return cells[cells.length - 1];
+      // Choose maximum value in last row
+      var r = cells[ci];
+      while (++ci < cells.length) {
+        if (cells[ci] > r)
+          r = cells[ci];
+      }
+      return r;
     }
 
   }
