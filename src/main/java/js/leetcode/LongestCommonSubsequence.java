@@ -12,11 +12,11 @@ public class LongestCommonSubsequence extends LeetCode {
   }
 
   public void run() {
-    loadTools();
-    x("a", "a");
-    x("a", "b");
-    x("abcde", "ace");
+      // x("abcde", "ace");
     x(1966, 1000, 316);
+    //    x("a", "a");
+    //    x("a", "b");
+   
   }
 
   private void x(String a, String b) {
@@ -25,20 +25,26 @@ public class LongestCommonSubsequence extends LeetCode {
 
   private void x(String a, String b, int expected) {
 
-    var ca = a.toCharArray();
-    var cb = b.toCharArray();
+    //    var ca = a.toCharArray();
+    //    var cb = b.toCharArray();
 
-    db = Math.max(ca.length, cb.length) < 30;
+    db = Math.max(a.length(), b.length()) < 30;
+
+    Alg alg1 = new DynamicProgramming();
+    Alg alg2 = new DynamicProgrammingLinear();
 
     pr(a, CR, b);
-    checkpoint("Starting");
-    var res = longestCommonSubsequence(a, b);
-    checkpoint("Done");
+    checkpoint("DynamicProgramming");
+    var res = alg1.longestCommonSubsequence(a, b);
+    checkpoint("Done", res);
+
+    checkpoint("DP Linear");
+    res = alg2.longestCommonSubsequence(a, b);
+    checkpoint("Done", res);
+
     pr(INDENT, res);
     if (expected < 0) {
-      expected = new RecursionWithMemo().longestCommonSubsequence(ca, cb);
-      //      var exp2 = new RecursionNaive().longestCommonSubsequence(ca, cb);
-      //      checkState(exp2 == expected);
+      expected = new RecursionWithMemo().longestCommonSubsequence(a, b);
     }
     verify(res, expected);
   }
@@ -61,8 +67,15 @@ public class LongestCommonSubsequence extends LeetCode {
     return sb.toString();
   }
 
-  interface Alg {
-    int longestCommonSubsequence(char[] a, char[] b);
+  abstract class Alg {
+
+    public final int longestCommonSubsequence(String text1, String text2) {
+      var a = text1.toCharArray();
+      var b = text2.toCharArray();
+      return longestCommonSubsequence(a, b);
+    }
+
+    abstract int longestCommonSubsequence(char[] a, char[] b);
   }
 
   private String dbstr(char[] b, int bCursor) {
@@ -73,19 +86,13 @@ public class LongestCommonSubsequence extends LeetCode {
 
   // ------------------------------------------------------------------
 
-  public int longestCommonSubsequence(String text1, String text2) {
-    var ca = text1.toCharArray();
-    var cb = text2.toCharArray();
-    return new DynamicProgramming().longestCommonSubsequence(ca, cb);
-  }
-
   private int find(char[] array, int cursor, char seekChar) {
     while (cursor < array.length && array[cursor] != seekChar)
       cursor++;
     return cursor;
   }
 
-  class RecursionNaive implements Alg {
+  class RecursionNaive extends Alg {
     @Override
     public int longestCommonSubsequence(char[] a, char[] b) {
 
@@ -110,7 +117,7 @@ public class LongestCommonSubsequence extends LeetCode {
     }
   }
 
-  class Recursion implements Alg {
+  class Recursion extends Alg {
     @Override
     public int longestCommonSubsequence(char[] a, char[] b) {
       return aux(a, 0, b, 0);
@@ -156,7 +163,7 @@ public class LongestCommonSubsequence extends LeetCode {
 
   }
 
-  class RecursionWithMemo implements Alg {
+  class RecursionWithMemo extends Alg {
 
     @Override
     public int longestCommonSubsequence(char[] a, char[] b) {
@@ -215,25 +222,17 @@ public class LongestCommonSubsequence extends LeetCode {
     }
   }
 
-  class DynamicProgramming implements Alg {
-
-    private String aStr, bStr;
+  class DynamicProgramming extends Alg {
 
     @Override
     public int longestCommonSubsequence(char[] a, char[] b) {
-      aStr = new String(a) + "$";
-      bStr = new String(b) + "$";
-
-      db(dbstr(a, 0), dbstr(b, 0));
 
       // The DP grid includes an extra row and column so that every cursor position from 0 to n (inclusive) has a
       // slot.
 
       int height = b.length + 1;
       int width = a.length + 1;
-      var cells = new int[height][width];
-
-      db("cells:", INDENT, strTable(cells, aStr, bStr));
+      var cells = new short[height][width];
 
       // On each iteration, we scan a diagonal line at increasing distance from the origin (0,0).
       // We don't need to scan the line that consists of the top right point (width-1,height-1).
@@ -249,17 +248,15 @@ public class LongestCommonSubsequence extends LeetCode {
           y -= extra;
         }
 
-        db("ai:", x, "bi:", y, "cells:", INDENT, strTable(cells, aStr, bStr));
-
         while (y >= 0 && x < width) {
-          var currentLength = cells[y][x];
+          short currentLength = cells[y][x];
 
           boolean af = x < width - 1;
           boolean bf = y < height - 1;
 
           // Propagate length to neighboring cells as appropriate
           if (af && bf && a[x] == b[y]) // characters match, propagate up and to the right
-            cells[y + 1][x + 1] = currentLength + 1;
+            cells[y + 1][x + 1] = (short) (currentLength + 1);
           if (af && cells[y][x + 1] < currentLength) // propagate current length to right
             cells[y][x + 1] = currentLength;
           if (bf && cells[y + 1][x] < currentLength) // propagate current length upward
@@ -271,8 +268,59 @@ public class LongestCommonSubsequence extends LeetCode {
         }
       }
 
-      db("final cells:", INDENT, strTable(cells, aStr, bStr));
       return cells[height - 1][width - 1];
+    }
+
+  }
+
+  class DynamicProgrammingLinear extends Alg {
+
+    @Override
+    public int longestCommonSubsequence(char[] a, char[] b) {
+
+      // The DP grid includes an extra row and column so that every cursor position from 0 to n (inclusive) has a
+      // slot.
+
+      int height = b.length + 1;
+      int width = a.length + 1;
+      var cells = new short[height * width];
+
+      // On each iteration, we scan a diagonal line at increasing distance from the origin (0,0).
+      // We don't need to scan the line that consists of the top right point (width-1,height-1).
+      int diagonals = width + height - 2;
+
+      for (int i = 0; i < diagonals; i++) {
+        // Determine the left endpoint of the diagonal
+        var x = 0;
+        var y = i;
+        var extra = y - (height - 1);
+        if (extra > 0) {
+          x += extra;
+          y -= extra;
+        }
+        int ci = y * width + x;
+        while (ci >= 0) {
+          short currentLength = cells[ci];
+
+          boolean af = x < width - 1;
+          boolean bf = y < height - 1;
+
+          // Propagate length to neighboring cells as appropriate
+          if (af && bf && a[x] == b[y]) // characters match, propagate up and to the right
+            cells[ci + width + 1] = (short) (currentLength + 1);
+          if (af && cells[ci + 1] < currentLength) // propagate current length to right
+            cells[ci + 1] = currentLength;
+          if (bf && cells[ci + width] < currentLength) // propagate current length upward
+            cells[ci + width] = currentLength;
+
+          // Advance to next point on diagonal
+          ci -= width - 1;
+          x++;
+          y--;
+        }
+      }
+
+      return cells[cells.length - 1];
     }
 
   }
