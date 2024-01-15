@@ -2,6 +2,9 @@ package js.leetcode;
 
 import static js.base.Tools.*;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class LongestCommonSubstring extends LeetCode {
 
   public static void main(String[] args) {
@@ -20,15 +23,17 @@ public class LongestCommonSubstring extends LeetCode {
   private void x(String a, String b, int expected) {
     db = Math.max(a.length(), b.length()) < 30;
 
-    Alg alg1 = new RecursionNaive();
+    Alg alg1 = new Recursion();
 
     pr(a, CR, b);
     checkpoint(alg1.getClass().getSimpleName());
     var res = alg1.lengthOfLCS(a, b);
     checkpoint("Done");
     pr(INDENT, res);
+
     if (expected < 0) {
-      Alg alg2 = new RecursionNaive();
+      db = false;
+      Alg alg2 = new Recursion();
       checkpoint(alg2.getClass().getSimpleName());
       expected = alg2.lengthOfLCS(a, b);
       checkpoint("Done");
@@ -82,15 +87,6 @@ public class LongestCommonSubstring extends LeetCode {
       int result = prefixLength;
       pushIndent();
       db(dbstr(a, aCursor), dbstr(b, bCursor), prefixLength);
-      // Base cases:
-      //
-      // If length of either string is zero, answer is zero
-      // 
-      // Recursive case:
-      //
-      // If first chars are the same, answer is 1 plus the LCS of the suffixes.
-      // Otherwise, the answer is greater of LCS(a+1,b+1), LCS(a, b+1), LCS(a+1,b).
-      //
 
       // Base case: if either string has length zero
       if (aCursor == a.length || bCursor == b.length)
@@ -105,6 +101,43 @@ public class LongestCommonSubstring extends LeetCode {
       popIndent();
       return result;
     }
+  }
+
+  class Recursion extends Alg {
+
+    @Override
+    public int longestCommonSubstring(byte[] a, byte[] b) {
+      mMemo.clear();
+      return recursionAux(a, 0, b, 0, 0);
+    }
+
+    private int recursionAux(byte[] a, int aCursor, byte[] b, int bCursor, int prefixLength) {
+      if (aCursor == a.length || bCursor == b.length)
+        return prefixLength;
+
+      var key = (aCursor << 20) | (bCursor << 10) | prefixLength;
+      var result = mMemo.getOrDefault(key, -1).intValue();
+      if (result >= 0)
+        return result;
+
+      result = prefixLength;
+
+      // Base case: if either string has length zero
+      if (aCursor == a.length || bCursor == b.length)
+        ;
+      else if (a[aCursor] == b[bCursor])
+        result = recursionAux(a, aCursor + 1, b, bCursor + 1, prefixLength + 1);
+      else {
+        result = Math.max(result, recursionAux(a, aCursor + 1, b, bCursor, 0));
+        result = Math.max(result, recursionAux(a, aCursor, b, bCursor + 1, 0));
+      }
+
+      mMemo.put(key, result);
+
+      return result;
+    }
+
+    private Map<Integer, Integer> mMemo = new HashMap<>();
   }
 
 }
