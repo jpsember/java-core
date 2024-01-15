@@ -31,7 +31,7 @@ public class LongestCommonSubsequence extends LeetCode {
     db = Math.max(a.length(), b.length()) < 30;
 
     Alg alg1 = new DynamicProgrammingLinear();
-    Alg alg2 = new DynamicProgrammingLinearHorzScan();
+    Alg alg2 = new DynamicProgrammingPush();
 
     pr(a, CR, b);
     checkpoint("DynamicProgramming");
@@ -193,8 +193,13 @@ public class LongestCommonSubsequence extends LeetCode {
         //
         // If first chars are the same, answer is 1 plus the LCS of the suffixes.
         // Otherwise, we either use the first character of A, 
-        // use the 
-        // Otherwise, the answer is greater of LCS(a+1,b+1), LCS(a, b'), LCS(a',b),
+        // the first character of B, or omit both.
+        //
+        // Hence, we want the greater of:
+        //    LCS(a, b')  
+        //    LCS(a',b) 
+        //    LCS(a+1,b+1)  
+        //
         // where a' is the smallest value that satisfies   A[a'>a] == B[b] (or A.length if not found).
         // In other words, look for the first appearance of A's character in B (and vice versa).
         //
@@ -327,10 +332,15 @@ public class LongestCommonSubsequence extends LeetCode {
 
   }
 
-  class DynamicProgrammingLinearHorzScan extends Alg {
+  class DynamicProgrammingPush extends Alg {
 
     @Override
-    public int longestCommonSubsequence(char[] a, char[] b) {
+    public int longestCommonSubsequence(char[] ac, char[] bc) {
+      var text1 = new String(ac);
+      var text2 = new String(bc);
+
+      var a = text1.getBytes();
+      var b = text2.getBytes();
 
       // The DP grid includes an extra row and column so that every cursor position from 0 to n (inclusive) has a
       // slot.
@@ -347,7 +357,7 @@ public class LongestCommonSubsequence extends LeetCode {
         // Determine the left endpoint of the diagonal
 
         var ciStart = ci;
-        while (ci < ciNext) {
+        for (; ci < ciNext; ci++) {
           short curr = cells[ci];
           var ci1 = ci + 1;
           var ciw = ci + width;
@@ -357,14 +367,65 @@ public class LongestCommonSubsequence extends LeetCode {
             {
               cells[ci1 + width] = (short) (curr + 1);
               // No need to propagate in other directions, as this will dominate
-              ci++;
               continue;
             } else if (cells[ci1] < curr) // propagate current length to right
               cells[ci1] = curr;
           }
           if (cells[ciw] < curr) // propagate current length upward
             cells[ciw] = curr;
-          ci++;
+        }
+      }
+
+      // Choose maximum value in last row
+      var r = cells[ci];
+      while (++ci < cells.length) {
+        if (cells[ci] > r)
+          r = cells[ci];
+      }
+      return r;
+    }
+
+  }
+
+  class DynamicProgrammingPull extends Alg {
+
+    @Override
+    public int longestCommonSubsequence(char[] ac, char[] bc) {
+      var text1 = new String(ac);
+      var text2 = new String(bc);
+
+      var a = text1.getBytes();
+      var b = text2.getBytes();
+
+      // The DP grid includes an extra row and column so that every cursor position from 0 to n (inclusive) has a
+      // slot.
+
+      int height = b.length + 1;
+      int width = a.length + 1;
+      var cells = new short[height * width];
+
+      // We 'pull' the current cell's value from preceding cells, instead of pushing 
+      var ci = 0;
+
+      for (int y = 0; y < height; y++) {
+        var ciNext = ci + width;
+
+        var ciStart = ci;
+        for (; ci < ciNext; ci++) {
+          int currValue = 0;
+          if (a[ci - ciStart] == b[y]) // characters match
+            currValue = 1;
+
+          if (ci != ciStart && y > 0)
+            currValue += cells[ci - width - 1];
+
+          if (ci > ciStart) {
+            currValue = Math.max(currValue, cells[ci - 1]);
+          }
+          if (y > 0)
+            currValue = Math.max(currValue, cells[ci - width]);
+
+          cells[ci] = (short) currValue;
         }
       }
 
