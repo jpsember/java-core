@@ -30,8 +30,8 @@ public class LongestCommonSubsequence extends LeetCode {
 
     db = Math.max(a.length(), b.length()) < 30;
 
-    Alg alg1 = new DynamicProgramming();
-    Alg alg2 = new DynamicProgrammingLinear();
+    Alg alg1 = new DynamicProgrammingLinear();
+    Alg alg2 = new DynamicProgrammingLinearHorzScan();
 
     pr(a, CR, b);
     checkpoint("DynamicProgramming");
@@ -319,6 +319,52 @@ public class LongestCommonSubsequence extends LeetCode {
           ci -= width - 1;
           x++;
           y--;
+        }
+      }
+
+      return cells[cells.length - 1];
+    }
+
+  }
+
+  class DynamicProgrammingLinearHorzScan extends Alg {
+
+    @Override
+    public int longestCommonSubsequence(char[] a, char[] b) {
+
+      // No need for tricky diagonal scan! Just process grid from left to right, bottom to top.
+
+      // The DP grid includes an extra row and column so that every cursor position from 0 to n (inclusive) has a
+      // slot.
+
+      int height = b.length + 1;
+      int width = a.length + 1;
+      var cells = new short[height * width];
+
+      var ci = 0;
+
+      for (int y = 0; y < height; y++) {
+        var ciNext = ci + width;
+        boolean bf = y < height - 1;
+
+        // Determine the left endpoint of the diagonal
+
+        var ciStart = ci;
+        while (ci < ciNext) {
+
+          short currentLength = cells[ci];
+
+          boolean af = ci + 1 < ciNext;
+
+          // Propagate length to neighboring cells as appropriate
+          if (af && bf && a[ci - ciStart] == b[y]) // characters match, propagate up and to the right
+            cells[ci + width + 1] = (short) (currentLength + 1);
+          if (af && cells[ci + 1] < currentLength) // propagate current length to right
+            cells[ci + 1] = currentLength;
+          if (bf && cells[ci + width] < currentLength) // propagate current length upward
+            cells[ci + width] = currentLength;
+
+          ci++;
         }
       }
 
