@@ -13,7 +13,7 @@ public class LongestCommonSubstring extends LeetCode {
 
   public void run() {
     x("abcde", "bxbcdj");
-    // x(1966, 1000, 316);
+    x(1966, 1000, -1);
   }
 
   private void x(String a, String b) {
@@ -121,34 +121,26 @@ public class LongestCommonSubstring extends LeetCode {
 
     @Override
     public int longestCommonSubstring(byte[] a, byte[] b) {
+      int result = 0;
 
       int width = a.length + 1;
       int height = b.length + 1;
       var rowPrev = new int[width];
       var rowCurr = new int[width];
 
-      var mat = new int[height][width];
-
       for (int y = 1; y < height; y++) {
-        db(strTable(mat, dbstr(a), dbstr(b)));
-        rowPrev = mat[y - 1];
-        rowCurr = mat[y];
-
         for (int x = 1; x < width; x++) {
-          if (a[x - 1] == b[y - 1])
-            rowCurr[x] = rowPrev[x - 1] + 1;
-          else
-            rowCurr[x] = 0;
+          var v = 0;
+          if (a[x - 1] == b[y - 1]) {
+            v = 1 + rowPrev[x - 1];
+            result = result < v ? v : result;
+          }
+          rowCurr[x] = v;
         }
         var tmp = rowPrev;
         rowPrev = rowCurr;
         rowCurr = tmp;
       }
-      var result = 0;
-      for (var row : mat)
-        for (var x : row)
-          result = Math.max(result, x);
-
       return result;
     }
 
