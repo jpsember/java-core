@@ -49,10 +49,6 @@ public class LongestCommonSubsequence extends LeetCode {
     verify(res, expected);
   }
 
-  private void x(int seed, int length) {
-    x(seed, length, -1);
-  }
-
   private void x(int seed, int length, int expected) {
     rand(seed);
     var a = randString(length);
@@ -452,7 +448,6 @@ public class LongestCommonSubsequence extends LeetCode {
 
     @Override
     public int longestCommonSubsequence(char[] ac, char[] bc) {
-      int result = 0;
 
       var text1 = new String(ac);
       var text2 = new String(bc);
