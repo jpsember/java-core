@@ -23,7 +23,7 @@ public class LongestCommonSubstring extends LeetCode {
   private void x(String a, String b, int expected) {
     db = Math.max(a.length(), b.length()) < 30;
 
-    Alg alg1 = new Recursion();
+    Alg alg1 = new DP();
 
     pr(a, CR, b);
     checkpoint(alg1.getClass().getSimpleName());
@@ -66,6 +66,10 @@ public class LongestCommonSubstring extends LeetCode {
 
     abstract int longestCommonSubstring(byte[] a, byte[] b);
 
+    protected String dbstr(byte[] b) {
+      return dbstr(b, 0);
+    }
+
     protected String dbstr(byte[] b, int bCursor) {
       if (!db)
         return null;
@@ -75,33 +79,6 @@ public class LongestCommonSubstring extends LeetCode {
   }
 
   // ------------------------------------------------------------------
-
-  class RecursionNaive extends Alg {
-
-    @Override
-    public int longestCommonSubstring(byte[] a, byte[] b) {
-      return recursionAux(a, 0, b, 0, 0);
-    }
-
-    private int recursionAux(byte[] a, int aCursor, byte[] b, int bCursor, int prefixLength) {
-      int result = prefixLength;
-      pushIndent();
-      db(dbstr(a, aCursor), dbstr(b, bCursor), prefixLength);
-
-      // Base case: if either string has length zero
-      if (aCursor == a.length || bCursor == b.length)
-        ;
-      else if (a[aCursor] == b[bCursor])
-        result = recursionAux(a, aCursor + 1, b, bCursor + 1, prefixLength + 1);
-      else {
-        result = Math.max(result, recursionAux(a, aCursor + 1, b, bCursor, 0));
-        result = Math.max(result, recursionAux(a, aCursor, b, bCursor + 1, 0));
-      }
-
-      popIndent();
-      return result;
-    }
-  }
 
   class Recursion extends Alg {
 
@@ -138,6 +115,43 @@ public class LongestCommonSubstring extends LeetCode {
     }
 
     private Map<Integer, Integer> mMemo = new HashMap<>();
+  }
+
+  class DP extends Alg {
+
+    @Override
+    public int longestCommonSubstring(byte[] a, byte[] b) {
+
+      int width = a.length + 1;
+      int height = b.length + 1;
+      var rowPrev = new int[width];
+      var rowCurr = new int[width];
+
+      var mat = new int[height][width];
+
+      for (int y = 1; y < height; y++) {
+        db(strTable(mat, dbstr(a), dbstr(b)));
+        rowPrev = mat[y - 1];
+        rowCurr = mat[y];
+
+        for (int x = 1; x < width; x++) {
+          if (a[x - 1] == b[y - 1])
+            rowCurr[x] = rowPrev[x - 1] + 1;
+          else
+            rowCurr[x] = 0;
+        }
+        var tmp = rowPrev;
+        rowPrev = rowCurr;
+        rowCurr = tmp;
+      }
+      var result = 0;
+      for (var row : mat)
+        for (var x : row)
+          result = Math.max(result, x);
+
+      return result;
+    }
+
   }
 
 }
