@@ -30,8 +30,8 @@ public class LongestCommonSubsequence extends LeetCode {
 
     db = Math.max(a.length(), b.length()) < 30;
 
-    Alg alg1 = new DynamicProgrammingLinear();
-    Alg alg2 = new DynamicProgrammingPush();
+    Alg alg1 = new DynamicProgrammingPush();
+    Alg alg2 = new DynamicProgrammingPushReducedMemory();
 
     pr(a, CR, b);
     checkpoint("DynamicProgramming");
@@ -405,37 +405,93 @@ public class LongestCommonSubsequence extends LeetCode {
       var cells = new short[height * width];
 
       // We 'pull' the current cell's value from preceding cells, instead of pushing 
+
       var ci = 0;
 
       for (int y = 0; y < height; y++) {
-        var ciNext = ci + width;
+        var x = 0;
+        for (x = 0; x < width; x++, ci++) {
+          // Determine value to pull into this cell
+          int v = 0;
+          // If characters of each string match, length is one...
+          if (x > 0 && y > 0 && a[x - 1] == b[y - 1]) // characters match
+            v = 1;
+          // ...plus the value from the cell below and to the left, if it exists
+          if (x != 0 && y > 0)
+            v += cells[ci - width - 1];
 
-        var ciStart = ci;
-        for (; ci < ciNext; ci++) {
-          int currValue = 0;
-          if (a[ci - ciStart] == b[y]) // characters match
-            currValue = 1;
-
-          if (ci != ciStart && y > 0)
-            currValue += cells[ci - width - 1];
-
-          if (ci > ciStart) {
-            currValue = Math.max(currValue, cells[ci - 1]);
+          // Pull another candidate from the cell to the left (if it exists)
+          if (x != 0) {
+            var c = cells[ci - 1];
+            if (v < c)
+              v = c;
           }
-          if (y > 0)
-            currValue = Math.max(currValue, cells[ci - width]);
-
-          cells[ci] = (short) currValue;
+          // Pull another candidate from the cell to below (if it exists)
+          if (y > 0) {
+            var c = cells[ci - width];
+            if (v < c)
+              v = c;
+          }
+          cells[ci] = (short) v;
         }
       }
 
       // Choose maximum value in last row
+      ci -= width;
       var r = cells[ci];
       while (++ci < cells.length) {
         if (cells[ci] > r)
           r = cells[ci];
       }
       return r;
+    }
+
+  }
+
+  class DynamicProgrammingPushReducedMemory extends Alg {
+
+    @Override
+    public int longestCommonSubsequence(char[] ac, char[] bc) {
+      int result = 0;
+
+      var text1 = new String(ac);
+      var text2 = new String(bc);
+
+      var a = text1.getBytes();
+      var b = text2.getBytes();
+
+      // The DP grid includes an extra row and column so that every cursor position from 0 to n (inclusive) has a
+      // slot.
+
+      int height = b.length + 1;
+      int width = a.length + 1;
+
+      // Prepare buffers for current and previous rows of grid
+      var cellsU = new short[width + 1];
+      var cellsV = new short[width + 1];
+
+      for (int y = 1; y <   height ; y++) {
+        for (var x = 1; x < width; x++) {
+          short curr = cellsU[x];
+          var xPlus1 = x + 1;
+          {
+            // Propagate length to neighboring cells as appropriate
+            if (  a[x-1] == b[y-1]) // characters match, propagate up and to the right
+            {
+              cellsV[xPlus1] = (short) (curr + 1);
+              // No need to propagate in other directions, as this will dominate
+              continue;
+            } else if (cellsU[xPlus1] < curr) // propagate current length to right
+              cellsU[xPlus1] = curr;
+          }
+          if (cellsV[x] < curr) // propagate current length upward
+            cellsV[x] = curr;
+        }
+        var tmp = cellsU;
+        cellsU = cellsV;
+        cellsV = tmp;
+      }
+      return cellsU[width];
     }
 
   }
