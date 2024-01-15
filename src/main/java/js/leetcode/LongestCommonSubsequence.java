@@ -12,11 +12,11 @@ public class LongestCommonSubsequence extends LeetCode {
   }
 
   public void run() {
-      // x("abcde", "ace");
+    x("abcde", "ace");
     x(1966, 1000, 316);
     //    x("a", "a");
     //    x("a", "b");
-   
+
   }
 
   private void x(String a, String b) {
@@ -290,6 +290,7 @@ public class LongestCommonSubsequence extends LeetCode {
       int diagonals = width + height - 2;
 
       for (int i = 0; i < diagonals; i++) {
+
         // Determine the left endpoint of the diagonal
         var x = 0;
         var y = i;
@@ -298,7 +299,8 @@ public class LongestCommonSubsequence extends LeetCode {
           x += extra;
           y -= extra;
         }
-        int ci = y * width + x;
+        var ci = y * width + x;
+
         while (ci >= 0) {
           short currentLength = cells[ci];
 
