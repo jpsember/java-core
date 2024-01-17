@@ -45,44 +45,30 @@ public class MaximumProductSubarray extends LeetCode {
     @Override
     public int maxProduct(int[] nums) {
 
-      var len = nums.length;
-      var max = new int[len + 1][len + 1];
-      var min = new int[len + 1][len + 1];
+      // There isn't really any decision being made... we are using the table
+      // to extend every sequence to its maximum length, then looking through the
+      // table at the end to get the maximum value prefix
 
-//      for (int y = 0; y < len; y++) {
-//        for (int x = 0; x < len; x++) {
-//          min[y][x] = Integer.MAX_VALUE;
-//          max[y][x] = Integer.MIN_VALUE;
-//        }
-//      }
-//
-//      for (int x = 0; x < len; x++) {
-//        min[0][x] = 1;
-//        max[0][x] = 1;
-//      }
-      for (int y = 1; y <= len; y++) {
-        for (int x = y; x <= len; x++) {
+      var len = nums.length;
+      var cells = new int[len][len];
+
+      for (int y = 0; y < len; y++) {
+        for (int x = y; x < len; x++) {
           var prev = 1;
-          if (y > 1)
-            prev = max[y-1][x-1];
-          max[y][x] = prev * nums[x-1];
-//          var p1 = min[y - 1][x - 1] * nums[x - 1];
-//          var p2 = max[y - 1][x - 1] * nums[x - 1];
-//          min[y][x] = Math.min(min[y][x], p1);
-//          max[y][x] = Math.max(max[y][x], p2);
+          if (y > 0)
+            prev = cells[y - 1][x - 1];
+          cells[y][x] = prev * nums[x];
         }
       }
 
-      db("min:");
-      db(strTable(min));
       db("max:");
-      db(strTable(max));
+      db(strTable(cells));
 
       var result = Integer.MIN_VALUE;
-      for (int y = 1; y <= len; y++) {
-        var row = max[y];
-        for (int x = y; x <= len; x++)
-          result = Math.max(result, row[x]);
+      for (int y = 0; y < len; y++) {
+        var row = cells[y];
+        for (int x = y; x < len; x++)
+          result = result < row[x] ? row[x] : result;
       }
       return result;
     }
