@@ -12,13 +12,18 @@ public class MaximumProductSubarray extends LeetCode {
   }
 
   public void run() {
+    x("[-2,1,1,1,0,2,2,-2,0]");
     x("[1,1,1,1,1,0,2,2,2,2,0,3,3,0,4]", 16);
     x("[2,3,-2,4]", 6);
     x("[-2,0,-1]", 0);
     x("[-5]", -5);
   }
 
-  private void x(String a, int expected) {
+  private void x(String a) {
+    x(a, null);
+  }
+
+  private void x(String a, Integer expected) {
     var nums = extractNums(a);
 
     db = nums.length < 20;
@@ -28,6 +33,9 @@ public class MaximumProductSubarray extends LeetCode {
     pr(toStr(nums));
     var res = alg1.maxProduct(nums);
     pr(INDENT, res);
+
+    if (expected == null)
+      expected = new Recursion().maxProduct(nums);
 
     verify(res, expected);
   }
@@ -39,6 +47,54 @@ public class MaximumProductSubarray extends LeetCode {
   }
 
   // ------------------------------------------------------------------
+
+  class Recursion extends Alg {
+
+    @Override
+    public int maxProduct(int[] nums) {
+      mMemo.clear();
+      int val = aux(nums, 0, true);
+      for (int c = 1; c < nums.length; c++)
+        val = Math.max(val, aux(nums, c, true));
+      return val;
+    }
+
+    /**
+     * Determine maximal subarray product that starts at cursor position
+     * 
+     * @param nums
+     * @param cursor
+     * @param max
+     *          true to return maximum value, false for minimum
+     */
+    private int aux(int[] nums, int cursor, boolean max) {
+      var firstValue = nums[cursor];
+      if (cursor == nums.length - 1)
+        return firstValue;
+
+      // Use a string key for debug purposes (it is quite slow)
+      var key = "" + cursor + " " + (max ? "+++" : "---");
+      var resultObj = mMemo.get(key);
+      if (resultObj != null)
+        return resultObj;
+
+      pushIndent();
+      db("aux", toStr(nums, cursor, nums.length));
+
+      // We want to flip the 'max' flag for recursive calls if the first value is negative
+
+      var combined = firstValue * aux(nums, cursor + 1, max ^ (firstValue <= 0));
+      var result = max ? Math.max(firstValue, combined) : Math.min(firstValue, combined);
+
+      popIndent();
+      mMemo.put(key, result);
+      db("...", key, "=>", result);
+
+      return result;
+    }
+
+    private Map<String, Integer> mMemo = new HashMap<>();
+  }
 
   class DP extends Alg {
 
