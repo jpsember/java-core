@@ -13,11 +13,12 @@ public class MaximumProductSubarray extends LeetCode {
   }
 
   public void run() {
+    x("[-5]", -5);
     x("[-2,1,1,1,0,2,2,-2,0]");
     x("[1,1,1,1,1,0,2,2,2,2,0,3,3,0,4]", 16);
     x("[2,3,-2,4]", 6);
     x("[-2,0,-1]", 0);
-    x("[-5]", -5);
+
   }
 
   private void x(String a) {
@@ -29,14 +30,16 @@ public class MaximumProductSubarray extends LeetCode {
 
     db = nums.length < 20;
 
-    Alg alg1 = new DP();
+    Alg alg1 = new Linear();
 
     pr(toStr(nums));
     var res = alg1.maxProduct(nums);
     pr(INDENT, res);
 
-    if (expected == null)
+    if (expected == null) {
+      db = false;
       expected = new Recursion().maxProduct(nums);
+    }
 
     verify(res, expected);
   }
@@ -132,4 +135,68 @@ public class MaximumProductSubarray extends LeetCode {
 
   }
 
+  class Linear extends Alg {
+
+    @Override
+    public int maxProduct(int[] nums) {
+
+      int bestNonZeroSubarrayProduct = Integer.MIN_VALUE;
+      int prevZeroPos = -1;
+      for (int i = 0; i <= nums.length; i++) {
+        var x = 0;
+        if (i < nums.length) {
+          x = nums[i];
+          if (x == 0 && bestNonZeroSubarrayProduct < 0)
+            bestNonZeroSubarrayProduct = 0;
+        }
+        if (x == 0) {
+          if (i - prevZeroPos > 1) {
+            var product = auxMaxOfNonZeroSubArray(nums, prevZeroPos + 1, i);
+            bestNonZeroSubarrayProduct = Math.max(bestNonZeroSubarrayProduct, product);
+          }
+          prevZeroPos = i;
+        }
+      }
+      return bestNonZeroSubarrayProduct;
+    }
+
+    private int product(int[] nums, int start, int end) {
+      int p = 1;
+      for (int i = start; i < end; i++)
+        p *= nums[i];
+      return p;
+    }
+
+    private int auxMaxOfNonZeroSubArray(int[] nums, int start, int end) {
+      // If single value, no splitting possible
+      if (end - start == 1)
+        return product(nums, start, end);
+
+      int negCount = 0;
+      int firstNeg = -1;
+      int lastNeg = -1;
+
+      for (int i = start; i < end; i++) {
+        if (nums[i] < 0) {
+          negCount++;
+          if (firstNeg < 0)
+            firstNeg = i;
+          lastNeg = i;
+        }
+      }
+
+      if (negCount % 2 == 0) {
+        return product(nums, start, end);
+      } else {
+        // Choose maximum of values to right of first negative, or left of last negative
+        var left = Integer.MIN_VALUE;
+        if (firstNeg + 1 != end)
+          left = product(nums, firstNeg + 1, end);
+        var right = Integer.MIN_VALUE;
+        if (lastNeg != start)
+          right = product(nums, start, lastNeg);
+        return Math.max(left, right);
+      }
+    }
+  }
 }
