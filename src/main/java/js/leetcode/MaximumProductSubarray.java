@@ -75,8 +75,10 @@ public class MaximumProductSubarray extends LeetCode {
       // Use a string key for debug purposes (it is quite slow)
       var key = "" + cursor + " " + (max ? "+++" : "---");
       var resultObj = mMemo.get(key);
-      if (resultObj != null)
+      if (resultObj != null) {
+        db("...found value in memo");
         return resultObj;
+      }
 
       pushIndent();
       db("aux", toStr(nums, cursor, nums.length));
