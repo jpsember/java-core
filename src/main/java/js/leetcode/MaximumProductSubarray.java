@@ -2,6 +2,7 @@ package js.leetcode;
 
 import static js.base.Tools.*;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -108,26 +109,24 @@ public class MaximumProductSubarray extends LeetCode {
       // table at the end to get the maximum value prefix
 
       var len = nums.length;
-      var cells = new int[len][len];
 
-      for (int y = 0; y < len; y++) {
-        for (int x = y; x < len; x++) {
-          var prev = 1;
-          if (y > 0)
-            prev = cells[y - 1][x - 1];
-          cells[y][x] = prev * nums[x];
-        }
-      }
-
-      db("max:");
-      db(strTable(cells));
+      var rowU = new int[len + 1];
+      var rowV = new int[len + 1];
+      Arrays.fill(rowV, 1);
 
       var result = Integer.MIN_VALUE;
       for (int y = 0; y < len; y++) {
-        var row = cells[y];
-        for (int x = y; x < len; x++)
-          result = result < row[x] ? row[x] : result;
+        for (int x = y; x < len; x++) {
+          var prev = rowV[x];
+          var nv = prev * nums[x];
+          rowU[x + 1] = nv;
+          result = result < nv ? nv : result;
+        }
+        var tmp = rowU;
+        rowU = rowV;
+        rowV = tmp;
       }
+
       return result;
     }
 
