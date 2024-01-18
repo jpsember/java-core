@@ -41,7 +41,7 @@ public class LongestIncreasingSubsequenceAgain extends LeetCode {
   private void x(int[] nums, Integer expected) {
     db = nums.length < 12;
 
-    Alg alg1 = new DP();
+    Alg alg1 = new DP2();
 
     pr(toStr(nums));
     var res = alg1.lengthOfLIS(nums);
@@ -49,7 +49,7 @@ public class LongestIncreasingSubsequenceAgain extends LeetCode {
 
     if (expected == null) {
       db = false;
-      expected = new Recursion().lengthOfLIS(nums);
+      expected = new DP().lengthOfLIS(nums);
     }
 
     verify(res, expected);
@@ -155,4 +155,54 @@ public class LongestIncreasingSubsequenceAgain extends LeetCode {
     }
   }
 
+  class DP2 extends Alg {
+
+    public int lengthOfLIS(int[] nums) {
+
+      // The grid has columns = position of cursor within nums array;
+      //                 rows = length of subsequence
+      //
+      // and its cell value represents the minimum value of subsequence element[row_num] 
+      //
+      var rowLength = nums.length + 1;
+
+      var rowU = new int[rowLength];
+      var rowV = new int[rowLength];
+      Arrays.fill(rowU, Integer.MAX_VALUE);
+
+      // The initial state is an empty subsequence, with the cursor at zero
+      rowU[0] = Integer.MIN_VALUE;
+
+      var result = 0;
+
+      var firstActiveColumn = 1;
+      for (int y = 1; y < rowLength; y++) {
+        Arrays.fill(rowV, Integer.MAX_VALUE);
+
+        // We could keep track of the leftmost 'active' state
+
+        for (int x = firstActiveColumn; x < rowLength; x++) {
+          var cursorNum = nums[x - 1];
+          var prev = rowU[x - 1];
+
+          // Is cursor number greater than previous value added? If so, we can 
+          // append this character; expand up and to the right
+          if (cursorNum > prev) {
+            result = y;
+            rowV[x] = cursorNum;
+          }
+
+          // Take branch for *not* using the cursor number.
+          if (prev < rowU[x])
+            rowU[x] = prev;
+        }
+        var tmp = rowU;
+        rowU = rowV;
+        rowV = tmp;
+      }
+
+      return result;
+    }
+
+  }
 }
