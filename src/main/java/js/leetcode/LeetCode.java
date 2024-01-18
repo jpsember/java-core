@@ -219,6 +219,14 @@ public abstract class LeetCode {
     return strTable(m, null, null);
   }
 
+  public static String dv(int val) {
+    if (val == Integer.MAX_VALUE)
+      return "++";
+    else if (val == Integer.MIN_VALUE)
+      return "--";
+    return "" + val;
+  }
+
   public static String strTable(int[][] m, String columnLabels, String rowLabels) {
 
     if (!db)
@@ -252,7 +260,7 @@ public abstract class LeetCode {
         if (val == 0)
           sb.append("_");
         else
-          sb.append(val);
+          sb.append(dv(val));
       }
       sb.append('\n');
     }
