@@ -110,9 +110,9 @@ public class LongestIncreasingSubsequenceAgain extends LeetCode {
 
       var minVal = Integer.MIN_VALUE;
       var maxVal = Integer.MAX_VALUE;
-      var len = nums.length;
+      var glen = nums.length + 1;
 
-      var g = new int[len + 1][len + 1];
+      var g = new int[glen][glen];
 
       for (var row : g)
         Arrays.fill(row, maxVal);
@@ -120,10 +120,10 @@ public class LongestIncreasingSubsequenceAgain extends LeetCode {
 
       var result = 0;
 
-      for (int y = 1; y < len + 1; y++) {
-        for (int x = y; x < len + 1; x++) {
+      for (int y = 1; y < glen; y++) {
+        for (int x = y; x < glen; x++) {
           var cursorNum = nums[x - 1];
-          var prev = g[y - 1][x - 1];
+          var prev = y == 0 ? Integer.MIN_VALUE : g[y - 1][x - 1];
 
           // Is cursor number greater than previous value added? If so, we can 
           // append this character; expand up and to the right
