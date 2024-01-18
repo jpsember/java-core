@@ -140,29 +140,34 @@ public class MaximumProductSubarray extends LeetCode {
     @Override
     public int maxProduct(int[] nums) {
 
-      int bestNonZeroSubarrayProduct = Integer.MIN_VALUE;
+      int result = Integer.MIN_VALUE;
+      boolean hasZero = false;
+
+      // Look for maximal subarrays that don't contain a zero
       int prevZeroPos = -1;
       for (int i = 0; i <= nums.length; i++) {
         var x = 0;
         if (i < nums.length) {
           x = nums[i];
-          if (x == 0 && bestNonZeroSubarrayProduct < 0)
-            bestNonZeroSubarrayProduct = 0;
+          if (x == 0)
+            hasZero = true;
         }
         if (x == 0) {
           if (i - prevZeroPos > 1) {
             var product = auxMaxOfNonZeroSubArray(nums, prevZeroPos + 1, i);
-            bestNonZeroSubarrayProduct = Math.max(bestNonZeroSubarrayProduct, product);
+            result = result > product ? result : product;
           }
           prevZeroPos = i;
         }
       }
-      return bestNonZeroSubarrayProduct;
+      if (hasZero && result < 0)
+        return 0;
+      return result;
     }
 
     private int product(int[] nums, int start, int end) {
-      int p = 1;
-      for (int i = start; i < end; i++)
+      int p = nums[start];
+      for (int i = start + 1; i < end; i++)
         p *= nums[i];
       return p;
     }
@@ -185,7 +190,7 @@ public class MaximumProductSubarray extends LeetCode {
         }
       }
 
-      if (negCount % 2 == 0) {
+      if ((negCount & 1) == 0) {
         return product(nums, start, end);
       } else {
         // Choose maximum of values to right of first negative, or left of last negative
@@ -195,7 +200,7 @@ public class MaximumProductSubarray extends LeetCode {
         var right = Integer.MIN_VALUE;
         if (lastNeg != start)
           right = product(nums, start, lastNeg);
-        return Math.max(left, right);
+        return left > right ? left : right;
       }
     }
   }
