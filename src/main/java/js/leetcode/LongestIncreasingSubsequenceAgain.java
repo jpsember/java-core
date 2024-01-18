@@ -108,6 +108,11 @@ public class LongestIncreasingSubsequenceAgain extends LeetCode {
 
     public int lengthOfLIS(int[] nums) {
 
+      // The grid has columns = position of cursor within nums array;
+      //                 rows = length of subsequence
+      //
+      // and its cell value represents the minimum value of subsequence element[row_num] 
+      //
       var minVal = Integer.MIN_VALUE;
       var maxVal = Integer.MAX_VALUE;
       var glen = nums.length + 1;
@@ -116,6 +121,8 @@ public class LongestIncreasingSubsequenceAgain extends LeetCode {
 
       for (var row : g)
         Arrays.fill(row, maxVal);
+
+      // The initial state is an empty subsequence, with the cursor at zero
       g[0][0] = minVal;
 
       var result = 0;
@@ -123,21 +130,17 @@ public class LongestIncreasingSubsequenceAgain extends LeetCode {
       for (int y = 1; y < glen; y++) {
         for (int x = y; x < glen; x++) {
           var cursorNum = nums[x - 1];
-          var prev = y == 0 ? Integer.MIN_VALUE : g[y - 1][x - 1];
+          var prev = g[y - 1][x - 1];
 
           // Is cursor number greater than previous value added? If so, we can 
           // append this character; expand up and to the right
           if (cursorNum > prev) {
-            if (cursorNum < g[y][x]) {
-              g[y][x] = cursorNum;
-              result = Math.max(result, y);
-            }
+            result = y;
+            update(g, x, y, cursorNum);
           }
 
           // Take branch for *not* using the cursor number.
-          if (prev < g[y - 1][x]) {
-            g[y - 1][x] = prev;
-          }
+          update(g, x, y - 1, prev);
         }
         if (db)
           db("y:", y, INDENT, strTable(g));
@@ -146,6 +149,10 @@ public class LongestIncreasingSubsequenceAgain extends LeetCode {
       return result;
     }
 
+    private void update(int[][] grid, int x, int y, int value) {
+      if (value < grid[y][x])
+        grid[y][x] = value;
+    }
   }
 
 }
