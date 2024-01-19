@@ -13,6 +13,7 @@ public class LongestIncreasingSubsequenceAgain extends LeetCode {
   }
 
   public void run() {
+    x("[1,2,5,7]", 4);
     x("[5,6,1,7]", 3);
     x("[-5]", 1);
     x("[-2,1,1,1,0,2,2,-2,0]", 3);
@@ -41,7 +42,7 @@ public class LongestIncreasingSubsequenceAgain extends LeetCode {
   private void x(int[] nums, Integer expected) {
     db = nums.length < 12;
 
-    Alg alg1 = new DP2();
+    Alg alg1 = new DP3();
 
     pr(toStr(nums));
     var res = alg1.lengthOfLIS(nums);
@@ -173,36 +174,92 @@ public class LongestIncreasingSubsequenceAgain extends LeetCode {
       // The initial state is an empty subsequence, with the cursor at zero
       rowU[0] = Integer.MIN_VALUE;
 
-      var result = 0;
-
       var firstActiveColumn = 1;
       for (int y = 1; y < rowLength; y++) {
         Arrays.fill(rowV, Integer.MAX_VALUE);
 
-        // We could keep track of the leftmost 'active' state
-
+        int nextFirstActive = rowLength;
         for (int x = firstActiveColumn; x < rowLength; x++) {
-          var cursorNum = nums[x - 1];
-          var prev = rowU[x - 1];
 
-          // Is cursor number greater than previous value added? If so, we can 
+          var previousValue = rowU[x - 1];
+
+          // Is num[cursor] greater than previous value added? If so, we can 
           // append this character; expand up and to the right
-          if (cursorNum > prev) {
-            result = y;
-            rowV[x] = cursorNum;
+          {
+            var cursorValue = nums[x - 1];
+            if (cursorValue > previousValue) {
+              if (nextFirstActive > x)
+                nextFirstActive = x;
+              rowV[x] = cursorValue;
+            }
           }
 
           // Take branch for *not* using the cursor number.
-          if (prev < rowU[x])
-            rowU[x] = prev;
+          if (previousValue < rowU[x])
+            rowU[x] = previousValue;
         }
+        if (nextFirstActive == rowLength)
+          return y - 1;
+        firstActiveColumn = nextFirstActive;
         var tmp = rowU;
         rowU = rowV;
         rowV = tmp;
       }
-
-      return result;
+      return rowLength - 1;
     }
 
   }
+
+  class DP3 extends Alg {
+
+    public int lengthOfLIS(int[] nums) {
+
+      // The grid has columns = position of cursor within nums array;
+      //                 rows = length of subsequence
+      //
+      // and its cell value represents the minimum value of subsequence element[row_num] 
+      //
+      var rowLength = nums.length + 1;
+
+      var g = new int[rowLength][rowLength];
+      for (var row : g)
+        Arrays.fill(row, Integer.MAX_VALUE);
+
+      // The initial state is an empty subsequence, with the cursor at zero
+      var rowU = g[0];
+      rowU[0] = Integer.MIN_VALUE;
+
+      var firstActiveColumn = 1;
+      for (int y = 1; y < rowLength; y++) {
+        var rowV = g[y];
+
+        int nextFirstActive = rowLength;
+        for (int x = firstActiveColumn; x < rowLength; x++) {
+
+          var previousValue = rowU[x - 1];
+
+          // Is num[cursor] greater than previous value added? If so, we can 
+          // append this character; expand up and to the right
+          {
+            var cursorValue = nums[x - 1];
+            if (cursorValue > previousValue) {
+              if (nextFirstActive > x)
+                nextFirstActive = x;
+              rowV[x] = cursorValue;
+            }
+          }
+
+          // Take branch for *not* using the cursor number.
+          if (previousValue < rowU[x])
+            rowU[x] = previousValue;
+        }
+        if (nextFirstActive == rowLength)
+          return y - 1;
+        firstActiveColumn = nextFirstActive;
+      }
+      return rowLength - 1;
+    }
+
+  }
+
 }
