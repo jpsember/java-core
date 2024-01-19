@@ -256,6 +256,7 @@ public class LongestIncreasingSubsequenceAgain extends LeetCode {
         if (nextFirstActive == rowLength)
           return y - 1;
         firstActiveColumn = nextFirstActive;
+        rowU = rowV;
       }
       return rowLength - 1;
     }
