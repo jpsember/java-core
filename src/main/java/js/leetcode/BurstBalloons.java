@@ -12,9 +12,11 @@ public class BurstBalloons extends LeetCode {
   }
 
   public void run() {
+    x("[8,3,4,3,5,0,5,6,6,2,8,5,6,2,3,8,3,5,1,0,2]",    3394);
     x("[1,5]", 10);
     x("[3,1,5,8]", 167);
     x("[5,6,7,1,2,3,0,6,12,20]");
+
   }
 
   private void x(String a) {
@@ -129,16 +131,12 @@ public class BurstBalloons extends LeetCode {
         int bestAmt = -1;
         for (int i = start; i < stop; i++) {
           var amt = nums[i];
-          db("candidate", i, amt);
           if (i > start) {
-            db("mult left:", nums[i - 1], "*", amt);
             amt *= nums[i - 1];
           }
           if (i + 1 < stop) {
-            db("mult right: * ", nums[i + 1]);
             amt *= nums[i + 1];
           }
-          db("...pop amount", amt);
 
           var work = new int[stop - start - 1];
           int w = 0;
