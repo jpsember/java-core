@@ -2,6 +2,8 @@ package js.leetcode;
 
 import static js.base.Tools.*;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -12,9 +14,9 @@ public class BurstBalloons extends LeetCode {
   }
 
   public void run() {
-    x("[8,3,4,3,5,0,5,6,6,2,8,5,6,2,3,8,3,5,1,0,2]",    3394);
-    x("[1,5]", 10);
     x("[3,1,5,8]", 167);
+    x("[8,3,4,3,5,0,5,6,6,2,8,5,6,2,3,8,3,5,1,0,2]", 3394);
+    x("[1,5]", 10);
     x("[5,6,7,1,2,3,0,6,12,20]");
 
   }
@@ -31,7 +33,7 @@ public class BurstBalloons extends LeetCode {
   private void x(int[] nums, Integer expected) {
     db = nums.length < 12;
 
-    Alg alg1 = new RecursionMemo();
+    Alg alg1 = new SmallestFirst();
 
     pr(toStr(nums));
     var res = alg1.maxCoins(nums);
@@ -39,7 +41,7 @@ public class BurstBalloons extends LeetCode {
 
     if (expected == null) {
       db = false;
-      expected = new Recursion().maxCoins(nums);
+      expected = new RecursionMemo().maxCoins(nums);
     }
 
     verify(res, expected);
@@ -160,4 +162,60 @@ public class BurstBalloons extends LeetCode {
 
   }
 
+  class Node implements Comparator<Node> {
+    int id;
+    int value;
+    Node prev;
+    Node next;
+
+    Node(int value, int id) {
+      this.value = value;
+      this.id = id;
+    }
+
+    public void join(Node next) {
+      this.next = next;
+      next.prev = this;
+    }
+
+    @Override
+    public int compare(Node o1, Node o2) {
+      var result = Integer.compare(o1.value, o2.value);
+      if (result == 0)
+        result = Integer.compare(o1.id, o2.id);
+      return result;
+    }
+  }
+
+  class SmallestFirst extends Alg {
+
+    @Override
+    public int maxCoins(int[] nums) {
+
+      var list = new ArrayList<Node>();
+
+      //      Node first = new Node(1, -1);
+      Node last = new Node(1, -1);
+      int id = 0;
+      for (var x : nums) {
+        var n = new Node(x, id++);
+        last.join(n);
+        last = n;
+        list.add(n);
+      }
+      last.join(new Node(1, -1));
+
+      list.sort(last);
+
+      var result = 0;
+      for (var n : list) {
+        var popVal = n.prev.value * n.value * n.next.value;
+        db("popping:", n.prev.value," * [", n.value,  "] *",n.next.value," = ",popVal," result now:",result + popVal);
+        result += n.prev.value * n.value * n.next.value;
+        n.prev.join(n.next);
+      }
+      return result;
+    }
+
+  }
 }
