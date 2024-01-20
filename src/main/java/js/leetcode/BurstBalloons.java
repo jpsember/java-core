@@ -14,15 +14,44 @@ public class BurstBalloons extends LeetCode {
   }
 
   public void run() {
+    x("[11,5,4,8]");
+    int s = 126;
+    for (int y = 3; y < 20; y++) {
+      pr(VERT_SP, "y:", y);
+      x(y * s + 17, y, null);
+    }
+    x("[1,1,1,10,2,0,1,1,1]");
+
+    x("[10,2,0]");
     x("[1,3,7,7,1,7]");
 
     x("[3,1,5,8]", 167);
     x("[2,5,10,20,10,5,2]");
     x("[1,5]", 10);
 
+    x(1965, 300, 78683782);
+
+    //    x(1965, 300, null);
     //    x("[3,7,11,7,3,7,11,7,3]");
     //    x("[5,6,7,1,2,3,0,6,12,20]");
     //    x("[8,3,4,3,5,0,5,6,6,2,8,5,6,2,3,8,3,5,1,0,2]", 3394);
+
+  }
+
+  private void x(int seed, int count, Integer expected) {
+    var nums = new int[count];
+    rand(seed);
+    for (int i = 0; i < count; i++) {
+      nums[i] = rand().nextInt(20);
+    }
+    if (false && count > 3) {
+      nums[0] = 1;
+      nums[1] = 1;
+      nums[count - 1] = 1;
+      nums[count - 2] = 1;
+    }
+
+    x(nums, expected);
   }
 
   private void x(String a) {
@@ -59,7 +88,10 @@ public class BurstBalloons extends LeetCode {
 
   // ------------------------------------------------------------------
 
-  class Node {
+  /**
+   * A node in a linked list of balloons
+   */
+  private class Node {
     int slot;
     int value;
     Node prev;
@@ -89,10 +121,6 @@ public class BurstBalloons extends LeetCode {
     }
 
     public int popVal() {
-      //      var left = 1;
-      //      var right = 1;
-      //      if (prev != null) left = prev.value;
-      //      if (next != null) right = next.value;
       return prev.value * value * next.value;
     }
 
@@ -112,9 +140,17 @@ public class BurstBalloons extends LeetCode {
       newNext.join(oldNext);
       return newNext;
     }
+
+    public boolean isLeft() {
+      return prev == null;
+    }
+
+    public boolean isRight() {
+      return next == null;
+    }
   }
 
-  class Game {
+  private class Game {
     Game(int[] nums) {
       first = constructNodes(nums);
       pr("constructed nodes with slot count:", nums.length);
@@ -152,18 +188,20 @@ public class BurstBalloons extends LeetCode {
     }
   }
 
-  class Entry {
-    Node node;
-    int value;
-    Entry nextMove2;
+  /**
+   * A linked sequence of moves
+   */
+  private class Move {
+    int slot; // balloon to be popped
+    int value; // value of all moves in this list
+    Move nextMove; // next move in list
 
-    public void setNextMove(Entry entry) {
-      checkState(entry.node.slot != node.slot, "duplicate slot!");
-      nextMove2 = entry;
+    public void setNextMove(Move entry) {
+      nextMove = entry;
     }
 
-    public Entry getNextMove() {
-      return nextMove2;
+    public Move getNextMove() {
+      return nextMove;
     }
 
     public String popSequence(int[] nums) {
@@ -171,27 +209,23 @@ public class BurstBalloons extends LeetCode {
       var ent = this;
 
       var game = new Game(nums);
-      pr("building pop sequence for Entry");
 
       while (ent != null) {
-        pr("...current entry value:", ent.value, "node slot, val:", ent.node.slot, ent.node.value);
         var cursor = sb.length();
 
         // Iterate over all nodes in the current game state
         var n = game.first.next;
         while (n.next != null) {
           tab(sb, cursor + n.slot * 4);
-          sb.append(ent.node.slot == n.slot ? '*' : ' ');
+          sb.append(ent.slot == n.slot ? '*' : ' ');
           sb.append(n.value);
           n = n.next;
         }
 
         // Make move
-        pr("...attempting to make move with slot:", ent.node.slot);
-        game.makeMove(game.nodeForSlot(ent.node.slot));
+        game.makeMove(game.nodeForSlot(ent.slot));
         sb.append('\n');
         ent = ent.getNextMove();
-        pr("...moved to next move in list");
       }
 
       while (game.moveCount() != 0)
@@ -201,18 +235,30 @@ public class BurstBalloons extends LeetCode {
     }
   }
 
-  class RecursionMemo extends Alg {
+  private class RecursionMemo extends Alg {
 
     @Override
     public int maxCoins(int[] nums) {
       var first = constructNodes(nums);
-      var entry = aux(first);
-      db(entry.popSequence(nums));
-      return entry.value;
+      var value = aux(first);
+      //      var entry = aux(first);
+
+      //      {
+      //        pr("popSequence for:", toStr(nums));
+      //        var en = entry;
+      //        while (en != null) {
+      //          pr("...", en.node.slot);
+      //          en = en.getNextMove();
+      //        }
+      //      }
+
+      //      db(entry.popSequence(nums));
+      return value.value;
     }
 
-    private Entry aux(Node node) {
-      if (node.next.next == null)
+    private Move aux(Node node) {
+      var cursor = node.next;
+      if (cursor.isRight())
         return null;
 
       var key = node.toString();
@@ -221,22 +267,20 @@ public class BurstBalloons extends LeetCode {
         pushIndent();
         db("aux", node, "{");
 
-        output = new Entry();
+        output = new Move();
 
         // Try popping each possible balloon
 
-        var cursor = node.next;
-        while (cursor.next != null) {
+        while (!cursor.isRight()) {
           var amt = cursor.popVal();
           var save = cursor.delete();
           var recAnswer = aux(node);
-          if (recAnswer != null)
+          if (recAnswer != null) {
             amt += recAnswer.value;
+          }
           if (output.value < amt) {
             output.value = amt;
-            output.node = cursor;
-            if (recAnswer != null)
-              output.setNextMove(recAnswer);
+            output.slot = cursor.slot;
           }
           // Reinsert the deleted node
           save.insert(cursor);
@@ -249,8 +293,7 @@ public class BurstBalloons extends LeetCode {
       return output;
     }
 
-    private Map<String, Entry> mMemo = new HashMap<>();
-
+    private Map<String, Move> mMemo = new HashMap<>();
   }
 
   private Node constructNodes(int[] nums) {
@@ -265,7 +308,10 @@ public class BurstBalloons extends LeetCode {
     return first;
   }
 
-  class BestTriple extends Alg {
+  /**
+   * Fails with [11,5,4,8]
+   */
+  private class BestProfit extends Alg {
 
     @Override
     public int maxCoins(int[] nums) {
@@ -274,82 +320,24 @@ public class BurstBalloons extends LeetCode {
 
       var result = 0;
 
-      Entry movesHead = null;
-      Entry movesTail = null;
+      Move movesHead = null;
+      Move movesTail = null;
 
       while (first.next.next != null) {
-        db(first);
         Node best = null;
         int bestScore = 0;
-        for (var n = first.next; n.next != null; n = n.next) {
-          var score = n.popVal();
-          //  var score = n.prev.value * n.prev.value * n.value * n.next.value * n.next.value;
-          db("...pop score", n.value, score);
-          if (best == null || bestScore < score) {
-            best = n;
-            bestScore = score;
-          }
-        }
-
-        var n = best;
-        var popVal = n.popVal();
-        db("popping:", n.prev.value, " * [", n.value, "] *", n.next.value, " = ", popVal, " result now:",
-            result + popVal);
-        result += popVal;
-
-        var ent = new Entry();
-        ent.node = best;
-        ent.value = result;
-        if (movesTail == null) {
-          movesHead = ent;
-          movesTail = ent;
-        } else {
-          movesTail.setNextMove(ent);
-          movesTail = movesTail.getNextMove();
-        }
-        n.delete();
-      }
-      pr(movesHead.popSequence(nums));
-      return result;
-    }
-
-  }
-
-  class BestProfit extends Alg {
-
-    @Override
-    public int maxCoins(int[] nums) {
-
-      var first = constructNodes(nums);
-
-      var result = 0;
-
-      Entry movesHead = null;
-      Entry movesTail = null;
-
-      while (first.next.next != null) {
-        db(first);
-        Node best = null;
-        int bestScore = 0;
-        for (var n = first.next; n.next != null; n = n.next) {
-
+        for (var n = first.next; !n.isRight(); n = n.next) {
           int a, b, c, d, e;
           {
             var prev = n.prev;
             var next = n.next;
-            a = 0;
-            if (prev.prev != null)
-              a = prev.prev.value;
+            a = prev.isLeft() ? 0 : prev.prev.value;
             b = prev.value;
             c = n.value;
             d = next.value;
-            e = 0;
-            if (next.next != null)
-              e = next.next.value;
+            e = next.isRight() ? 0 : next.next.value;
           }
-
           var score = b * c * d + a * b * (d - c) + d * e * (b - c);
-          db("...pop score", n.value, score);
           if (best == null || bestScore < score) {
             best = n;
             bestScore = score;
@@ -358,12 +346,12 @@ public class BurstBalloons extends LeetCode {
 
         var n = best;
         var popVal = n.popVal();
-        db("popping:", n.prev.value, " * [", n.value, "] *", n.next.value, " = ", popVal, " result now:",
-            result + popVal);
+        db(first, INDENT, "popping:", n.prev.value, " * [", n.value, "] *", n.next.value, " = ", popVal,
+            " result now:", result + popVal);
         result += popVal;
 
-        var ent = new Entry();
-        ent.node = best;
+        var ent = new Move();
+        ent.slot = best.slot;
         ent.value = result;
         if (movesTail == null) {
           movesHead = ent;
@@ -374,7 +362,9 @@ public class BurstBalloons extends LeetCode {
         }
         n.delete();
       }
-      pr(movesHead.popSequence(nums));
+      if (db) {
+        db(movesHead.popSequence(nums));
+      }
       return result;
     }
 
