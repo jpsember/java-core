@@ -16,13 +16,24 @@ public class BurstBalloons extends LeetCode {
   }
 
   public void run() {
-//    x(5,8,10,8,5,8,10,8,5);
-//    halt();
-    x(1,1,1,2,3,4,5,6,17,6);
+
+    //    {
+    //      int[] nums = { 3, 1, 5, 8 };
+    //      var g = new Bgame(nums);
+    //      g.moveSlot(2);
+    //      g.moveSlot(1);
+    //      pr(g);
+    //      halt();
+    //
+    //    }
+    xo("[2,8,9,7,3]", 9, 7, 8, 2, 3);
+
+    //    x(5,8,10,8,5,8,10,8,5);
+    //    halt();
+    x(1, 1, 1, 2, 3, 4, 5, 6, 17, 6);
     halt();
-    x(5,6,7,8,9,10,11,12,11,10,8,6,4);
+    x(5, 6, 7, 8, 9, 10, 11, 12, 11, 10, 8, 6, 4);
     halt();
-    xo("[2,8,9,7,3]",9,7,8,2,3);
     halt();
     x(1, 8, 9, 7, 2);
     halt();
@@ -91,32 +102,32 @@ public class BurstBalloons extends LeetCode {
   private void xo(String a, int... sequence) {
     var nums = extractNums(a);
 
-    var game = new Game(nums);
+    var game = new Bgame(nums);
 
-    var sb = sb();
+    //    var sb = sb();
     var total = 0;
     for (var n : sequence) {
-
-      var cursor = sb.length();
-
-      var node = game.nodeForValue(n);
-
-      // Iterate over all nodes in the current game state
-      var nz = game.first.next;
-      while (nz.next != null) {
-        tab(sb, cursor + nz.slot * 4);
-        sb.append(nz.slot == node.slot ? '*' : ' ');
-        sb.append(nz.value);
-        nz = nz.next;
-      }
-
-      total += node.popVal();
-      game.makeMove(node);
-
-      sb.append('\n');
+      game.moveNumber(n);
+      //      var cursor = sb.length();
+      //
+      //      var node = game.nodeForValue(n);
+      //
+      //      // Iterate over all nodes in the current game state
+      //      var nz = game.first.next;
+      //      while (nz.next != null) {
+      //        tab(sb, cursor + nz.slot * 4);
+      //        sb.append(nz.slot == node.slot ? '*' : ' ');
+      //        sb.append(nz.value);
+      //        nz = nz.next;
+      //      }
+      //
+      //      total += node.popVal();
+      //      game.makeMove(node);
+      //
+      //      sb.append('\n');
     }
-    sb.append("total: ").append(total);
-    pr(sb);
+    //    sb.append("total: ").append(total);
+    pr(game);
 
     db = false;
     var alg2 = new RecursionMemo();
@@ -306,53 +317,6 @@ public class BurstBalloons extends LeetCode {
     }
   }
 
-  private class Game {
-    Game(int[] nums) {
-      first = constructNodes(nums);
-    }
-
-    void makeMove(Node popNode) {
-      moves.add(popNode);
-      moves.add(popNode.delete());
-    }
-
-    void unmove() {
-      int i = moves.size() - 2;
-      var restored = moves.get(i);
-      var prev = moves.get(i + 1);
-      prev.insert(restored);
-      moves.remove(i + 1);
-      moves.remove(i);
-    }
-
-    int moveCount() {
-      return moves.size() / 2;
-    }
-
-    private Node first;
-    private List<Node> moves = new ArrayList<Node>();
-
-    public Node nodeForSlot(int slot) {
-      var x = first;
-      while (x != null) {
-        if (x.slot == slot)
-          return x;
-        x = x.next;
-      }
-      throw badState("no node found for slot:", slot);
-    }
-
-    public Node nodeForValue(int value) {
-      var x = first;
-      while (x != null) {
-        if (x.value == value)
-          return x;
-        x = x.next;
-      }
-      throw badState("no node found with value:", value);
-    }
-  }
-
   /**
    * A linked sequence of moves
    */
@@ -362,33 +326,13 @@ public class BurstBalloons extends LeetCode {
     Move nextMove; // next move in list
 
     public String popSequence(int[] nums) {
-      var sb = sb();
       var ent = this;
-
-      var game = new Game(nums);
-
+      var game = new Bgame(nums);
       while (ent != null) {
-        var cursor = sb.length();
-
-        // Iterate over all nodes in the current game state
-        var n = game.first.next;
-        while (n.next != null) {
-          tab(sb, cursor + n.slot * 4);
-          sb.append(ent.slot == n.slot ? '*' : ' ');
-          sb.append(n.value);
-          n = n.next;
-        }
-
-        // Make move
-        game.makeMove(game.nodeForSlot(ent.slot));
-        sb.append('\n');
+        game.moveSlot(ent.slot);
         ent = ent.nextMove;
       }
-
-      while (game.moveCount() != 0)
-        game.unmove();
-
-      return sb.toString();
+      return game.toString();
     }
 
     @Override
@@ -479,4 +423,108 @@ public class BurstBalloons extends LeetCode {
     }
 
   }
+
+  private class Bgame {
+    Bgame(int[] nums) {
+      first = constructNodes(nums);
+      mNums = nums;
+    }
+
+    void moveSlot(int slot) {
+      makeMove(nodeForSlot(slot));
+    }
+
+    void moveNumber(int value) {
+      makeMove(nodeForValue(value));
+    }
+
+    void makeMove(Node popNode) {
+      var v = popNode.popVal();
+      moveValues.add(v);
+      gameValue += v;
+      moves.add(popNode);
+      movesAux.add(popNode.delete());
+      if (false)
+        unmove();
+    }
+
+    void unmove() {
+      int i = moves.size() - 1;
+      var restored = moves.get(i);
+      var prev = movesAux.get(i);
+      prev.insert(restored);
+      gameValue -= moveValues.get(i);
+      moves.remove(i);
+      movesAux.remove(i);
+      moveValues.remove(i);
+    }
+
+    int moveCount() {
+      return moves.size();
+    }
+
+    private int[] mNums;
+    private Node first;
+    private int gameValue;
+    private List<Node> moves = new ArrayList<>();
+    private List<Node> movesAux = new ArrayList<>();
+    private List<Integer> moveValues = new ArrayList<>();
+
+    public int value() {
+      return gameValue;
+    }
+
+    public Node nodeForSlot(int slot) {
+      var x = first;
+      while (x != null) {
+        if (x.slot == slot)
+          return x;
+        x = x.next;
+      }
+      throw badState("no node found for slot:", slot);
+    }
+
+    public Node nodeForValue(int value) {
+      var x = first;
+      while (x != null) {
+        if (x.value == value)
+          return x;
+        x = x.next;
+      }
+      throw badState("no node found with value:", value);
+    }
+
+    @Override
+    public String toString() {
+      var sb = sb();
+      var gm = new Bgame(mNums);
+      for (int moveNum = 0; moveNum < moveCount(); moveNum++) {
+        var currMove = moves.get(moveNum);
+        sb.append("[ ");
+        var cursor = sb.length();
+
+        // Iterate over all nodes in the current game state
+        var n = gm.first.next;
+        while (n.next != null) {
+          tab(sb, cursor + n.slot * 4);
+          sb.append(n.slot == currMove.slot ? '*' : ' ');
+          sb.append(n.value);
+          n = n.next;
+        }
+        // Make move
+        var nd = gm.nodeForSlot(currMove.slot);
+        var val = nd.popVal();
+        gm.makeMove(nd);
+        var c2 = cursor + mNums.length * 4 + 3;
+        tab(sb, c2);
+        sb.append("] + " + val);
+        tab(sb, c2 + 8);
+        sb.append("= " + gm.value());
+        sb.append('\n');
+      }
+      return sb.toString();
+    }
+
+  }
+
 }
