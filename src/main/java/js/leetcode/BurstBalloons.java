@@ -12,11 +12,11 @@ public class BurstBalloons extends LeetCode {
   }
 
   public void run() {
-    x("[1,2,3,4,5,4,3,2,1]");
-    x("[1,5]", 10);
-    x("[3,1,5,8]", 167);
-    x("[5,6,7,1,2,3,0,6,12,20]");
-    x("[8,3,4,3,5,0,5,6,6,2,8,5,6,2,3,8,3,5,1,0,2]", 3394);
+    x("[2,5,10,20,10,5,2]");
+//    x("[1,5]", 10);
+//    x("[3,1,5,8]", 167);
+//    x("[5,6,7,1,2,3,0,6,12,20]");
+//    x("[8,3,4,3,5,0,5,6,6,2,8,5,6,2,3,8,3,5,1,0,2]", 3394);
   }
 
   private void x(String a) {
@@ -112,6 +112,16 @@ public class BurstBalloons extends LeetCode {
     Node node;
     int value;
     Entry nextMove;
+
+    public String popSequence() {
+      var sb = sb();
+      var ent = this;
+      while (ent != null) {
+        sb.append(ent.node.slot).append(".").append(ent.node.value).append("  ");
+        ent = ent.nextMove;
+      }
+      return sb.toString();
+    }
   }
 
   class RecursionMemo extends Alg {
@@ -120,11 +130,11 @@ public class BurstBalloons extends LeetCode {
     public int maxCoins(int[] nums) {
       var nodes = constructNodes(nums);
       var entry = aux(nodes[0]);
+      db(entry.popSequence());
       return entry.value;
     }
 
     private Entry aux(Node node) {
-      // checkInf(80);
       if (node.next.next == null)
         return null;
 
@@ -148,6 +158,7 @@ public class BurstBalloons extends LeetCode {
           if (output.value < amt) {
             output.value = amt;
             output.node = cursor;
+            output.nextMove = recAnswer;
           }
           // Reinsert the deleted node
           save.insert(cursor);
