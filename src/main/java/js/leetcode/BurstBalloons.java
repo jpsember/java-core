@@ -2,8 +2,6 @@ package js.leetcode;
 
 import static js.base.Tools.*;
 
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,7 +31,7 @@ public class BurstBalloons extends LeetCode {
   private void x(int[] nums, Integer expected) {
     db = nums.length < 12;
 
-    Alg alg1 = new SmallestFirst();
+    Alg alg1 = new BestTriple();
 
     pr(toStr(nums));
     var res = alg1.maxCoins(nums);
@@ -54,6 +52,69 @@ public class BurstBalloons extends LeetCode {
   }
 
   // ------------------------------------------------------------------
+
+  class Node {
+    int slot;
+    int value;
+    Node prev;
+    Node next;
+
+    Node(int value, int slot) {
+      this.value = value;
+      this.slot = slot;
+    }
+
+    public Node join(Node next) {
+      this.next = next;
+      next.prev = this;
+      return next;
+    }
+
+    public String toString() {
+      var ls = list();
+      var c = this;
+      if (c.prev == null)
+        c = c.next;
+      while (c.next != null) {
+        ls.add(c.value);
+        c = c.next;
+      }
+      return ls.toString();
+    }
+
+    public int popVal() {
+      //      var left = 1;
+      //      var right = 1;
+      //      if (prev != null) left = prev.value;
+      //      if (next != null) right = next.value;
+      return prev.value * value * next.value;
+    }
+
+    public Node delete() {
+      var ret = prev;
+      prev.join(next);
+      prev = null;
+      next = null;
+      return ret;
+    }
+
+    public Node insert(Node newNext) {
+      var oldNext = next;
+      join(newNext);
+      newNext.join(oldNext);
+      return newNext;
+    }
+
+    //    public String toString(Node stop) {
+    //      var ls = list();
+    //      var c = this;
+    //      while (c != stop) {
+    //        ls.add(c.value);
+    //        c = c.next;
+    //      }
+    //      return ls.toString();
+    //    }
+  }
 
   class Recursion extends Alg {
 
@@ -100,120 +161,134 @@ public class BurstBalloons extends LeetCode {
 
   }
 
+  class Entry {
+    Node node;
+    int value;
+    // Entry nextMove;
+  }
+
   class RecursionMemo extends Alg {
 
     @Override
     public int maxCoins(int[] nums) {
-      var result = aux(nums, 0, nums.length);
-      db("calls:", calls, "miss %:", (misses * 100.0) / calls);
-      return result;
+      var nodes = constructNodes(nums);
+      var entry = aux(nodes[0]);
+      return entry.value;
     }
 
     private StringBuilder sb = new StringBuilder();
-    private int calls;
-    private int misses;
 
-    private int aux(int[] nums, int start, int stop) {
-      if (start == stop)
-        return 0;
+    private Entry aux(Node node) {
+      if (node.next.next == null)
+        return null;
 
       sb.setLength(0);
-      for (int j = start; j < stop; j++) {
-        sb.append(nums[j]);
+      var c = node.next;
+      while (c.next != null) {
+        sb.append(c.value);
         sb.append(' ');
+        c = c.next;
       }
       var key = sb.toString();
-      var result = mMemo.getOrDefault(key, -1);
-      calls++;
-      if (result < 0) {
-        misses++;
+      var output = mMemo.get(key);
+      if (output == null) {
         pushIndent();
-        db("aux", toStr(nums, start, stop));
+        db("aux", node);
 
-        int bestAmt = -1;
-        for (int i = start; i < stop; i++) {
-          var amt = nums[i];
-          if (i > start) {
-            amt *= nums[i - 1];
+        output = new Entry();
+
+        // Try popping each possible balloon
+
+        var cursor = node.next;
+        while (cursor.next != null) {
+          var amt = cursor.popVal();
+
+          var save = cursor.delete();
+          //          //          
+          //          //        for (int i = start; i < stop; i++) {
+          //          //          var amt = nums[i];
+          //          //          if (i > start) {
+          //          //            amt *= nums[i - 1];
+          //          //          }
+          //          //          if (i + 1 < stop) {
+          //          //            amt *= nums[i + 1];
+          //          //          }
+          //
+          //          var work = new int[stop - start - 1];
+          //          int w = 0;
+          //          for (int j = start; j < i; j++)
+          //            work[w++] = nums[j];
+          //          for (int j = i + 1; j < stop; j++)
+          //            work[w++] = nums[j];
+
+          var recAnswer = aux(node);
+          amt += recAnswer.value;
+          if (output.value < amt) {
+            output.value = amt;
+            output.node = cursor;
           }
-          if (i + 1 < stop) {
-            amt *= nums[i + 1];
-          }
 
-          var work = new int[stop - start - 1];
-          int w = 0;
-          for (int j = start; j < i; j++)
-            work[w++] = nums[j];
-          for (int j = i + 1; j < stop; j++)
-            work[w++] = nums[j];
-
-          amt += aux(work, 0, work.length);
-          bestAmt = Math.max(amt, bestAmt);
+          // Reinsert the deleted node
+          save.insert(cursor);
         }
-        db(INDENT, bestAmt);
+        db(INDENT, output.value);
         popIndent();
-        result = bestAmt;
-        mMemo.put(key, result);
+        mMemo.put(key, output);
       }
-      return result;
+      return output;
     }
 
-    private Map<String, Integer> mMemo = new HashMap<>();
+    private Map<String, Entry> mMemo = new HashMap<>();
 
   }
 
-  class Node implements Comparator<Node> {
-    int id;
-    int value;
-    Node prev;
-    Node next;
-
-    Node(int value, int id) {
-      this.value = value;
-      this.id = id;
+  private Node[] constructNodes(int[] nums) {
+    Node last = new Node(1, -1);
+    Node first = last;
+    for (int slot = 0; slot < nums.length; slot++) {
+      var n = new Node(nums[slot], slot);
+      last.join(n);
+      last = n;
     }
-
-    public void join(Node next) {
-      this.next = next;
-      next.prev = this;
-    }
-
-    @Override
-    public int compare(Node o1, Node o2) {
-      var result = Integer.compare(o1.value, o2.value);
-      if (result == 0)
-        result = Integer.compare(o1.id, o2.id);
-      return result;
-    }
+    last = last.join(new Node(1, -1));
+    var result = new Node[2];
+    result[0] = first;
+    result[1] = last;
+    return result;
   }
 
-  class SmallestFirst extends Alg {
+  class BestTriple extends Alg {
 
     @Override
     public int maxCoins(int[] nums) {
 
-      var list = new ArrayList<Node>();
-
-      //      Node first = new Node(1, -1);
-      Node last = new Node(1, -1);
-      int id = 0;
-      for (var x : nums) {
-        var n = new Node(x, id++);
-        last.join(n);
-        last = n;
-        list.add(n);
-      }
-      last.join(new Node(1, -1));
-
-      list.sort(last);
+      var nodes = constructNodes(nums);
+      var first = nodes[0];
+      var last = nodes[1];
 
       var result = 0;
-      for (var n : list) {
+
+      while (first.next != last) {
+        db(first);
+        Node best = null;
+        int bestScore = 0;
+        for (var n = first.next; n != last; n = n.next) {
+          var score = n.prev.value * n.prev.value * n.value * n.next.value * n.next.value;
+          db("...pop score", n.value, score);
+          if (best == null || bestScore < score) {
+            best = n;
+            bestScore = score;
+          }
+        }
+
+        var n = best;
         var popVal = n.prev.value * n.value * n.next.value;
-        db("popping:", n.prev.value," * [", n.value,  "] *",n.next.value," = ",popVal," result now:",result + popVal);
-        result += n.prev.value * n.value * n.next.value;
+        db("popping:", n.prev.value, " * [", n.value, "] *", n.next.value, " = ", popVal, " result now:",
+            result + popVal);
+        result += popVal;
         n.prev.join(n.next);
       }
+
       return result;
     }
 
