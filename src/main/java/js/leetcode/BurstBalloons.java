@@ -14,9 +14,9 @@ public class BurstBalloons extends LeetCode {
   }
 
   public void run() {
+    x("[3,1,5,8]", 167);
     x("[2,5,10,20,10,5,2]");
-    //    x("[1,5]", 10);
-    //    x("[3,1,5,8]", 167);
+    x("[1,5]", 10);
     //    x("[5,6,7,1,2,3,0,6,12,20]");
     //    x("[8,3,4,3,5,0,5,6,6,2,8,5,6,2,3,8,3,5,1,0,2]", 3394);
   }
@@ -33,7 +33,7 @@ public class BurstBalloons extends LeetCode {
   private void x(int[] nums, Integer expected) {
     db = nums.length < 12;
 
-    Alg alg1 = new RecursionMemo();
+    Alg alg1 = new BestTriple();
 
     pr(toStr(nums));
     var res = alg1.maxCoins(nums);
@@ -115,8 +115,36 @@ public class BurstBalloons extends LeetCode {
       first = constructNodes(nums);
     }
 
+    void makeMove(Node popNode) {
+      moves.add(popNode);
+      moves.add(popNode.delete());
+    }
+
+    void unmove() {
+      int i = moves.size() - 2;
+      var restored = moves.get(i);
+      var prev = moves.get(i + 1);
+      prev.insert(restored);
+      moves.remove(i + 1);
+      moves.remove(i);
+    }
+
+    int moveCount() {
+      return moves.size() / 2;
+    }
+
     private Node first;
     private List<Node> moves = new ArrayList<Node>();
+
+    public Node nodeForSlot(int slot) {
+      var x = first;
+      while (x != null) {
+        if (x.slot == slot)
+          return x;
+        x = x.next;
+      }
+      throw badState("no node found for slot:", slot);
+    }
   }
 
   class Entry {
@@ -127,38 +155,29 @@ public class BurstBalloons extends LeetCode {
     public String popSequence(int[] nums) {
       var sb = sb();
       var ent = this;
-      var first = constructNodes(nums);
 
-      var moves = new ArrayList<Node>();
+      var game = new Game(nums);
+
       while (ent != null) {
-        // sb.append("...ent slot:"+ ent.node.slot + "...");
-
-        var iter = first.next;
-
-        // var iter = first.next;
         var cursor = sb.length();
-        while (iter.next != null) {
-          //sb.append("iter.slot:"+iter.slot+")");
-          tab(sb, cursor + iter.slot * 5);
-          if (ent.node.slot == iter.slot)
-            sb.append('*');
-          sb.append(iter.value);
-          iter = iter.next;
+
+        // Iterate over all nodes in the current game state
+        var n = game.first.next;
+        while (n.next != null) {
+          tab(sb, cursor + n.slot * 4);
+          sb.append(ent.node.slot == n.slot ? '*' : ' ');
+          sb.append(n.value);
+          n = n.next;
         }
+
         // Make move
-
-        moves.add(ent.node);
-        moves.add(ent.node.delete());
-
+        game.makeMove(game.nodeForSlot(ent.node.slot));
         sb.append('\n');
         ent = ent.nextMove;
       }
 
-      for (int i = moves.size() - 2; i >= 0; i -= 2) {
-        var del = moves.get(i);
-        var prev = moves.get(i + 1);
-        prev.insert(del);
-      }
+      while (game.moveCount() != 0)
+        game.unmove();
 
       return sb.toString();
     }
@@ -236,12 +255,16 @@ public class BurstBalloons extends LeetCode {
 
       var result = 0;
 
+      Entry movesHead = null;
+      Entry movesTail = null;
+
       while (first.next.next != null) {
         db(first);
         Node best = null;
         int bestScore = 0;
         for (var n = first.next; n.next != null; n = n.next) {
-          var score = n.prev.value * n.prev.value * n.value * n.next.value * n.next.value;
+          var score = n.popVal();
+          //  var score = n.prev.value * n.prev.value * n.value * n.next.value * n.next.value;
           db("...pop score", n.value, score);
           if (best == null || bestScore < score) {
             best = n;
@@ -250,13 +273,24 @@ public class BurstBalloons extends LeetCode {
         }
 
         var n = best;
-        var popVal = n.prev.value * n.value * n.next.value;
+        var popVal = n.popVal();
         db("popping:", n.prev.value, " * [", n.value, "] *", n.next.value, " = ", popVal, " result now:",
             result + popVal);
         result += popVal;
-        n.prev.join(n.next);
-      }
 
+        var ent = new Entry();
+        ent.node = best;
+        ent.value = result;
+        if (movesTail == null) {
+          movesHead = ent;
+          movesTail = ent;
+        } else {
+          movesTail.nextMove = ent;
+          movesTail = movesTail.nextMove;
+        }
+        n.delete();
+      }
+      pr(movesHead.popSequence(nums));
       return result;
     }
 
