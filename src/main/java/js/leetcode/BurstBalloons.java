@@ -12,11 +12,11 @@ public class BurstBalloons extends LeetCode {
   }
 
   public void run() {
-    x("[3,1,5,8]", 167);
-    x("[8,3,4,3,5,0,5,6,6,2,8,5,6,2,3,8,3,5,1,0,2]", 3394);
+    x("[1,2,3,4,5,4,3,2,1]");
     x("[1,5]", 10);
+    x("[3,1,5,8]", 167);
     x("[5,6,7,1,2,3,0,6,12,20]");
-
+    x("[8,3,4,3,5,0,5,6,6,2,8,5,6,2,3,8,3,5,1,0,2]", 3394);
   }
 
   private void x(String a) {
@@ -31,7 +31,7 @@ public class BurstBalloons extends LeetCode {
   private void x(int[] nums, Integer expected) {
     db = nums.length < 12;
 
-    Alg alg1 = new BestTriple();
+    Alg alg1 = new RecursionMemo();
 
     pr(toStr(nums));
     var res = alg1.maxCoins(nums);
@@ -91,6 +91,7 @@ public class BurstBalloons extends LeetCode {
     }
 
     public Node delete() {
+      // pr("...deleting node", slot, "(prev:", prev.slot, ")");
       var ret = prev;
       prev.join(next);
       prev = null;
@@ -99,72 +100,18 @@ public class BurstBalloons extends LeetCode {
     }
 
     public Node insert(Node newNext) {
+      // pr("...inserting node", newNext.slot, "after", slot, "...");
       var oldNext = next;
       join(newNext);
       newNext.join(oldNext);
       return newNext;
     }
-
-    //    public String toString(Node stop) {
-    //      var ls = list();
-    //      var c = this;
-    //      while (c != stop) {
-    //        ls.add(c.value);
-    //        c = c.next;
-    //      }
-    //      return ls.toString();
-    //    }
-  }
-
-  class Recursion extends Alg {
-
-    @Override
-    public int maxCoins(int[] nums) {
-      return aux(nums, 0, nums.length);
-    }
-
-    private int aux(int[] nums, int start, int stop) {
-      if (start == stop)
-        return 0;
-
-      pushIndent();
-      db("aux", toStr(nums, start, stop));
-
-      int bestAmt = -1;
-      for (int i = start; i < stop; i++) {
-        var amt = nums[i];
-        db("candidate", i, amt);
-        if (i > start) {
-          db("mult left:", nums[i - 1], "*", amt);
-          amt *= nums[i - 1];
-        }
-        if (i + 1 < stop) {
-          db("mult right: * ", nums[i + 1]);
-          amt *= nums[i + 1];
-        }
-        db("...pop amount", amt);
-
-        var work = new int[stop - start - 1];
-        int w = 0;
-        for (int j = start; j < i; j++)
-          work[w++] = nums[j];
-        for (int j = i + 1; j < stop; j++)
-          work[w++] = nums[j];
-
-        amt += aux(work, 0, work.length);
-        bestAmt = Math.max(amt, bestAmt);
-      }
-      db(INDENT, bestAmt);
-      popIndent();
-      return bestAmt;
-    }
-
   }
 
   class Entry {
     Node node;
     int value;
-    // Entry nextMove;
+    Entry nextMove;
   }
 
   class RecursionMemo extends Alg {
@@ -176,24 +123,16 @@ public class BurstBalloons extends LeetCode {
       return entry.value;
     }
 
-    private StringBuilder sb = new StringBuilder();
-
     private Entry aux(Node node) {
+      // checkInf(80);
       if (node.next.next == null)
         return null;
 
-      sb.setLength(0);
-      var c = node.next;
-      while (c.next != null) {
-        sb.append(c.value);
-        sb.append(' ');
-        c = c.next;
-      }
-      var key = sb.toString();
+      var key = node.toString();
       var output = mMemo.get(key);
       if (output == null) {
         pushIndent();
-        db("aux", node);
+        db("aux", node, "{");
 
         output = new Entry();
 
@@ -202,36 +141,19 @@ public class BurstBalloons extends LeetCode {
         var cursor = node.next;
         while (cursor.next != null) {
           var amt = cursor.popVal();
-
           var save = cursor.delete();
-          //          //          
-          //          //        for (int i = start; i < stop; i++) {
-          //          //          var amt = nums[i];
-          //          //          if (i > start) {
-          //          //            amt *= nums[i - 1];
-          //          //          }
-          //          //          if (i + 1 < stop) {
-          //          //            amt *= nums[i + 1];
-          //          //          }
-          //
-          //          var work = new int[stop - start - 1];
-          //          int w = 0;
-          //          for (int j = start; j < i; j++)
-          //            work[w++] = nums[j];
-          //          for (int j = i + 1; j < stop; j++)
-          //            work[w++] = nums[j];
-
           var recAnswer = aux(node);
-          amt += recAnswer.value;
+          if (recAnswer != null)
+            amt += recAnswer.value;
           if (output.value < amt) {
             output.value = amt;
             output.node = cursor;
           }
-
           // Reinsert the deleted node
           save.insert(cursor);
+          cursor = cursor.next;
         }
-        db(INDENT, output.value);
+        db(output.value, "}");
         popIndent();
         mMemo.put(key, output);
       }
