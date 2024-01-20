@@ -14,9 +14,13 @@ public class BurstBalloons extends LeetCode {
   }
 
   public void run() {
+    x("[1,3,7,7,1,7]");
+
     x("[3,1,5,8]", 167);
     x("[2,5,10,20,10,5,2]");
     x("[1,5]", 10);
+
+    //    x("[3,7,11,7,3,7,11,7,3]");
     //    x("[5,6,7,1,2,3,0,6,12,20]");
     //    x("[8,3,4,3,5,0,5,6,6,2,8,5,6,2,3,8,3,5,1,0,2]", 3394);
   }
@@ -33,7 +37,7 @@ public class BurstBalloons extends LeetCode {
   private void x(int[] nums, Integer expected) {
     db = nums.length < 12;
 
-    Alg alg1 = new BestTriple();
+    Alg alg1 = new BestProfit();
 
     pr(toStr(nums));
     var res = alg1.maxCoins(nums);
@@ -113,6 +117,7 @@ public class BurstBalloons extends LeetCode {
   class Game {
     Game(int[] nums) {
       first = constructNodes(nums);
+      pr("constructed nodes with slot count:", nums.length);
     }
 
     void makeMove(Node popNode) {
@@ -150,15 +155,26 @@ public class BurstBalloons extends LeetCode {
   class Entry {
     Node node;
     int value;
-    Entry nextMove;
+    Entry nextMove2;
+
+    public void setNextMove(Entry entry) {
+      checkState(entry.node.slot != node.slot, "duplicate slot!");
+      nextMove2 = entry;
+    }
+
+    public Entry getNextMove() {
+      return nextMove2;
+    }
 
     public String popSequence(int[] nums) {
       var sb = sb();
       var ent = this;
 
       var game = new Game(nums);
+      pr("building pop sequence for Entry");
 
       while (ent != null) {
+        pr("...current entry value:", ent.value, "node slot, val:", ent.node.slot, ent.node.value);
         var cursor = sb.length();
 
         // Iterate over all nodes in the current game state
@@ -171,9 +187,11 @@ public class BurstBalloons extends LeetCode {
         }
 
         // Make move
+        pr("...attempting to make move with slot:", ent.node.slot);
         game.makeMove(game.nodeForSlot(ent.node.slot));
         sb.append('\n');
-        ent = ent.nextMove;
+        ent = ent.getNextMove();
+        pr("...moved to next move in list");
       }
 
       while (game.moveCount() != 0)
@@ -217,7 +235,8 @@ public class BurstBalloons extends LeetCode {
           if (output.value < amt) {
             output.value = amt;
             output.node = cursor;
-            output.nextMove = recAnswer;
+            if (recAnswer != null)
+              output.setNextMove(recAnswer);
           }
           // Reinsert the deleted node
           save.insert(cursor);
@@ -285,8 +304,73 @@ public class BurstBalloons extends LeetCode {
           movesHead = ent;
           movesTail = ent;
         } else {
-          movesTail.nextMove = ent;
-          movesTail = movesTail.nextMove;
+          movesTail.setNextMove(ent);
+          movesTail = movesTail.getNextMove();
+        }
+        n.delete();
+      }
+      pr(movesHead.popSequence(nums));
+      return result;
+    }
+
+  }
+
+  class BestProfit extends Alg {
+
+    @Override
+    public int maxCoins(int[] nums) {
+
+      var first = constructNodes(nums);
+
+      var result = 0;
+
+      Entry movesHead = null;
+      Entry movesTail = null;
+
+      while (first.next.next != null) {
+        db(first);
+        Node best = null;
+        int bestScore = 0;
+        for (var n = first.next; n.next != null; n = n.next) {
+
+          int a, b, c, d, e;
+          {
+            var prev = n.prev;
+            var next = n.next;
+            a = 0;
+            if (prev.prev != null)
+              a = prev.prev.value;
+            b = prev.value;
+            c = n.value;
+            d = next.value;
+            e = 0;
+            if (next.next != null)
+              e = next.next.value;
+          }
+
+          var score = b * c * d + a * b * (d - c) + d * e * (b - c);
+          db("...pop score", n.value, score);
+          if (best == null || bestScore < score) {
+            best = n;
+            bestScore = score;
+          }
+        }
+
+        var n = best;
+        var popVal = n.popVal();
+        db("popping:", n.prev.value, " * [", n.value, "] *", n.next.value, " = ", popVal, " result now:",
+            result + popVal);
+        result += popVal;
+
+        var ent = new Entry();
+        ent.node = best;
+        ent.value = result;
+        if (movesTail == null) {
+          movesHead = ent;
+          movesTail = ent;
+        } else {
+          movesTail.setNextMove(ent);
+          movesTail = movesTail.getNextMove();
         }
         n.delete();
       }
