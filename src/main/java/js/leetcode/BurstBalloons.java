@@ -16,10 +16,18 @@ public class BurstBalloons extends LeetCode {
 
   public void run() {
 
-    x("[2,5,3]");
+    x("51  23  10  41  45 *47      95      78");
+   halt();
+    x(" 51  23  10  41  45  47  35  95                 *97                      78");
+  //  x("[2,5,3]");
 
+//    if (true) {
+//    xSeed(1000, 100, null);
+//    return;
+//    }
+    
     if (true) {
-      int s = 126;
+      int s = 128;
       for (int y = 3; y < 20; y++) {
         pr(VERT_SP, "y:", y);
         xSeed(y * s + 17, y, null);
@@ -100,7 +108,7 @@ public class BurstBalloons extends LeetCode {
 
     pr(str(nums));
     var res = alg1.maxCoins(nums);
-    pr(gameResults(nums, alg1.getSlots()));
+    pr(alg1);
 
     if (expected == null) {
       var alg2 = new Basic();
@@ -162,6 +170,7 @@ public class BurstBalloons extends LeetCode {
     sb.append(spaces(numsColumn));
     sb.append(fmt(totalPopValue));
     sb.append('\n');
+
     sb.append(dash);
 
     return sb.toString();
@@ -278,9 +287,9 @@ public class BurstBalloons extends LeetCode {
   private class RecursionLast extends Alg {
 
     public int maxCoins(int[] nums) {
+      checkState(mNums == null);
       mNums = nums;
       mMemo.clear();
-      mSlots = null;
       var result = aux(0, nums.length, 1, 1);
       return result;
     }
@@ -295,6 +304,17 @@ public class BurstBalloons extends LeetCode {
           mSlots[i] = sl.get(x - 1 - i);
       }
       return mSlots;
+    }
+
+    @Override
+    public String toString() {
+      var sb = new StringBuilder();
+      sb.append("RecursionLast:\n");
+      sb.append(gameResults(mNums, getSlots()));
+      sb.append('\n');
+      sb.append("Calls:").append(mCallCount);
+      sb.append(" Cache miss %:").append((int)((mCacheMisses * 100.0) / mCallCount));
+      return sb.toString();
     }
 
     private void auxFillSlots(List<Integer> dest, int start, int stop, int leftValue, int rightValue) {
@@ -317,9 +337,11 @@ public class BurstBalloons extends LeetCode {
 
       if (stop <= start)
         return 0;
+
       var nums = mNums;
       if (stop == start + 1)
         return leftValue * nums[start] * rightValue;
+      mCallCount++;
 
       // We store a key that embeds the left and right values (log 100 = 7 bits), and the
       // start and stop indices (log 300 = 9 bits)
@@ -327,6 +349,7 @@ public class BurstBalloons extends LeetCode {
       long memoValue = mMemo.getOrDefault(key, -1L);
       if (memoValue >= 0)
         return (int) memoValue;
+      mCacheMisses++;
 
       if (dbx) {
         pushIndent();
@@ -344,22 +367,48 @@ public class BurstBalloons extends LeetCode {
       // The values of the left and right sides are nonstrictly increasing as the number of values
       // increases.
 
-      for (int pivot = start; pivot < stop; pivot++) {
-        var pivotValue = nums[pivot];
-        if (dbx)
-          db("candidate pivot[", pivot, "]", pivotValue);
+//      if (false) {
+//        for (int j = start + 1; j < stop - 1; j++) {
+//          var x = nums[j];
+//          if (x < nums[j - 1] && x < nums[j + 1]) {
+//            int pivot = j;
+//            int pivotValue = x;
+//            var leftSum = aux(start, pivot, leftValue, pivotValue);
+//            var rightSum = aux(pivot + 1, stop, pivotValue, rightValue);
+//            var c = leftSum + (leftValue * pivotValue * rightValue) + rightSum;
+//
+//            bestResult = c;
+//            bestSlot = pivot;
+//
+//          }
+//        }
+//      }
 
-        // We never want a zero to be the *last* balloon popped in a set.
-        // This is true, but I don't think it helps.
-        if (pivotValue == 0)
-          continue;
+      if (bestSlot < 0) {
+        for (int pivot = start; pivot < stop; pivot++) {
+          var pivotValue = nums[pivot];
 
-        var leftSum = aux(start, pivot, leftValue, pivotValue);
-        var rightSum = aux(pivot + 1, stop, pivotValue, rightValue);
-        var c = leftSum + (leftValue * pivotValue * rightValue) + rightSum;
-        if (c > bestResult) {
-          bestResult = c;
-          bestSlot = pivot;
+          // Heuristic: don't choose as last pivot if neighbors to each side are higher
+          // This saves only about 25%
+          if (true && pivot > start && pivot + 1 < stop && nums[pivot - 1] > pivotValue
+              && nums[pivot + 1] > pivotValue)
+            continue;
+
+          if (dbx)
+            db("candidate pivot[", pivot, "]", pivotValue);
+
+          // We never want a zero to be the *last* balloon popped in a set.
+          // This is true, but I don't think it helps.
+          if (pivotValue == 0)
+            continue;
+
+          var leftSum = aux(start, pivot, leftValue, pivotValue);
+          var rightSum = aux(pivot + 1, stop, pivotValue, rightValue);
+          var c = leftSum + (leftValue * pivotValue * rightValue) + rightSum;
+          if (c > bestResult) {
+            bestResult = c;
+            bestSlot = pivot;
+          }
         }
       }
       if (dbx)
@@ -373,6 +422,8 @@ public class BurstBalloons extends LeetCode {
     private Map<Integer, Long> mMemo = new HashMap<>();
     private int[] mNums;
     private int[] mSlots;
+    private int mCallCount;
+    private int mCacheMisses;
   }
 
 }

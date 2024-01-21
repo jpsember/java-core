@@ -70,7 +70,7 @@ public abstract class LeetCode {
   }
 
   public static int[] extractNums(String s) {
-    var cs = "[],\"\'\n";
+    var cs = "[],\"\'\n*";
     for (int i = 0; i < cs.length(); i++) {
       s = s.replace(cs.charAt(i), ' ');
     }
