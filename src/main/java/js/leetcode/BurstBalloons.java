@@ -16,7 +16,13 @@ public class BurstBalloons extends LeetCode {
   }
 
   public void run() {
-
+    
+    
+    x("[8,2,6,8,9,8,1,4,1,5,3,0,7,7,0,4,2]");
+halt();
+    
+    x(3, 5, 10, 11, 9, 5, 3);
+    if (true) return;
     x(1, 8, 9, 7, 2);
 
     if (false)
@@ -79,7 +85,7 @@ public class BurstBalloons extends LeetCode {
   private void x(int[] nums, Integer expected) {
     db = nums.length < 12;
 
-    Alg alg1 = new Recursion2();
+    Alg alg1 = new RecursionLast();
 
     pr(toStr(nums));
     var res = alg1.maxCoins(nums);
@@ -96,48 +102,7 @@ public class BurstBalloons extends LeetCode {
   }
 
   private abstract class Alg {
-
     public abstract int maxCoins(int[] nums);
-
-  }
-
-  private class Slow extends Alg {
-
-    public int maxCoins(int[] nums) {
-      mMemo.clear();
-      return aux(nums, 0, nums.length, 1, 1);
-    }
-
-    private int aux(int[] nums, int start, int stop, int leftValue, int rightValue) {
-      if (stop <= start)
-        return 0;
-      if (stop == start + 1)
-        return leftValue * nums[start] * rightValue;
-
-      // We store a key that embeds the left and right values (log 100 = 7 bits), and the
-      // start and stop indices (log 300 = 9 bits)
-      var key = leftValue | (rightValue << 7) | (start << (7 + 7)) | (stop << (7 + 7 + 9));
-      var output = mMemo.get(key);
-      if (output != null)
-        return output;
-
-      // Consider each balloon as the *last* one to pop
-
-      var bestResult = -1;
-      for (int pivot = start; pivot < stop; pivot++) {
-        var pivotValue = nums[pivot];
-        var leftSum = aux(nums, start, pivot, leftValue, pivotValue);
-        var rightSum = aux(nums, pivot + 1, stop, pivotValue, rightValue);
-        var c = leftSum + (leftValue * pivotValue * rightValue) + rightSum;
-        if (c > bestResult)
-          bestResult = c;
-      }
-
-      mMemo.put(key, bestResult);
-      return bestResult;
-    }
-
-    private Map<Integer, Integer> mMemo = new HashMap<>();
   }
 
   // ------------------------------------------------------------------
@@ -192,7 +157,7 @@ public class BurstBalloons extends LeetCode {
           if (recAnswer != null) {
             amt += recAnswer.value;
           }
-          if (output.value < amt) {
+          if (output.value <= amt) {
             output.value = amt;
             output.slot = cursor.slot;
             output.nextMove = recAnswer;
@@ -424,7 +389,7 @@ public class BurstBalloons extends LeetCode {
    * be popped, and supply the external left and right balloon values to each
    * subarray
    */
-  private class Recursion2 extends Alg {
+  private class RecursionLast extends Alg {
 
     public int maxCoins(int[] nums) {
       mMemo.clear();
@@ -474,4 +439,5 @@ public class BurstBalloons extends LeetCode {
 
     private Map<Integer, Integer> mMemo = new HashMap<>();
   }
+
 }
