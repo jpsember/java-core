@@ -16,40 +16,13 @@ public class BurstBalloons extends LeetCode {
   }
 
   public void run() {
-
-    //    {
-    //      int[] nums = { 3, 1, 5, 8 };
-    //      var g = new Bgame(nums);
-    //      g.moveSlot(2);
-    //      g.moveSlot(1);
-    //      pr(g);
-    //      halt();
-    //
-    //    }
-    // xo("[2,8,9,7,3]", 9, 7, 8, 2, 3);
-
-    //    x(5,8,10,8,5,8,10,8,5);
-    //    halt();
-    //    x(1, 1, 1, 2, 3, 4, 5, 6, 17, 6);
-    //    halt();
-    //    x(5, 6, 7, 8, 9, 10, 11, 12, 11, 10, 8, 6, 4);
-    //    halt();
-    //    halt();
     x(1, 8, 9, 7, 2);
-    halt();
-    //    x(4, 3, 4, 2);
-
     x(1, 2, 3, 4, 2, 1);
-    halt();
     x(2, 3, 4, 5, 7, 6, 2, 1);
-    //x(1, 2, 1, 4);
     x(3, 5, 10, 11, 9, 5, 3);
-    halt();
     x(3, 5, 9, 4, 11, 13, 7, 10, 4, 2);
-    halt();
     x(4, 3, 4, 5, 6, 5);
     x(11, 5, 4);
-
     x("[11,5,4,8]");
 
     int s = 126;
@@ -66,28 +39,19 @@ public class BurstBalloons extends LeetCode {
     x("[2,5,10,20,10,5,2]");
     x("[1,5]", 10);
 
-    xSeed(1965, 300, 78683782);
+    xSeed(1965, 300, 105676120);
 
-    //    x(1965, 300, null);
-    //    x("[3,7,11,7,3,7,11,7,3]");
-    //    x("[5,6,7,1,2,3,0,6,12,20]");
-    //    x("[8,3,4,3,5,0,5,6,6,2,8,5,6,2,3,8,3,5,1,0,2]", 3394);
-
+    x("[3,7,11,7,3,7,11,7,3]");
+    x("[5,6,7,1,2,3,0,6,12,20]");
+    x("[8,3,4,3,5,0,5,6,6,2,8,5,6,2,3,8,3,5,1,0,2]", 3394);
   }
 
   private void xSeed(int seed, int count, Integer expected) {
     var nums = new int[count];
     rand(seed);
     for (int i = 0; i < count; i++) {
-      nums[i] = rand().nextInt(20);
+      nums[i] = rand().nextInt(101);
     }
-    if (false && count > 3) {
-      nums[0] = 1;
-      nums[1] = 1;
-      nums[count - 1] = 1;
-      nums[count - 2] = 1;
-    }
-
     x(nums, expected);
   }
 
@@ -276,10 +240,6 @@ public class BurstBalloons extends LeetCode {
       return newNext;
     }
 
-    public boolean isLeft() {
-      return prev == null;
-    }
-
     public boolean isRight() {
       return next == null;
     }
@@ -340,10 +300,6 @@ public class BurstBalloons extends LeetCode {
       makeMove(nodeForSlot(slot));
     }
 
-    void moveNumber(int value) {
-      makeMove(nodeForValue(value));
-    }
-
     void makeMove(Node popNode) {
       var v = popNode.popVal();
       moveValues.add(v);
@@ -390,16 +346,6 @@ public class BurstBalloons extends LeetCode {
       throw badState("no node found for slot:", slot);
     }
 
-    public Node nodeForValue(int value) {
-      var x = first;
-      while (x != null) {
-        if (x.value == value)
-          return x;
-        x = x.next;
-      }
-      throw badState("no node found with value:", value);
-    }
-
     @Override
     public String toString() {
       var sb = sb();
@@ -440,9 +386,7 @@ public class BurstBalloons extends LeetCode {
    */
   private class Recursion2 extends Alg {
 
-    @Override
     public int maxCoins(int[] nums) {
-      db = true;
       mMemo.clear();
       return aux(nums, 0, nums.length, 1, 1);
     }
