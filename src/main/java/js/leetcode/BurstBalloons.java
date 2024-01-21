@@ -8,8 +8,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import js.base.BasePrinter;
-
 public class BurstBalloons extends LeetCode {
 
   public static void main(String[] args) {
@@ -18,7 +16,9 @@ public class BurstBalloons extends LeetCode {
 
   public void run() {
 
-    x("[3,1,5,8]", 167);
+    if (false)
+      xSeed(123, 5, 722946);
+    x("[3,1,5,8]");
     if (true)
       return;
 
@@ -96,10 +96,10 @@ public class BurstBalloons extends LeetCode {
     pr(gameResults(nums, alg1.getSlots()));
 
     if (expected == null) {
-      var alg2 = new RecursionMemo();
-      //      db = true;
+      var alg2 = new Basic();
       expected = alg2.maxCoins(nums);
-      pr(alg2);
+      if (expected != res)
+        pr(VERT_SP, "*** Unexpected results!  Expected:", INDENT, alg2);
     }
 
     verify(res, expected);
@@ -171,289 +171,7 @@ public class BurstBalloons extends LeetCode {
 
   // ------------------------------------------------------------------
 
-  private class RecursionMemo extends Alg {
-
-    @Override
-    public int maxCoins(int[] nums) {
-      var first = constructNodes(nums);
-      var value = aux(first);
-      var entry = aux(first);
-      mFirstMove = entry;
-      mNums = nums;
-      return value.value;
-    }
-
-    @Override
-    public String toString() {
-      if (mFirstMove != null) {
-        return BasePrinter.toString("recursion:", DASHES, INDENT, mFirstMove.popSequence(mNums), CR, DASHES);
-      }
-      return "RecursionMemo";
-    }
-
-    private Move mFirstMove;
-    private int[] mNums;
-
-    private Move aux(Node node) {
-      var cursor = node.next;
-      if (cursor.isRight())
-        return null;
-      if (cursor.next.isRight()) {
-        var output = new Move();
-        output.slot = cursor.slot;
-        output.value = cursor.value;
-        return output;
-      }
-      var key = node.memoKey();
-      var output = mMemo.get(key);
-      if (output == null) {
-        pushIndent();
-        db("aux", node, "{");
-
-        output = new Move();
-
-        // Try popping each possible balloon
-
-        while (!cursor.isRight()) {
-          var amt = cursor.popVal();
-          var save = cursor.delete();
-          var recAnswer = aux(node);
-          if (recAnswer != null) {
-            amt += recAnswer.value;
-          }
-          if (output.value <= amt) {
-            output.value = amt;
-            output.slot = cursor.slot;
-            output.nextMove = recAnswer;
-          }
-          // Reinsert the deleted node
-          save.insert(cursor);
-          cursor = cursor.next;
-        }
-        db(output.value, "}");
-        popIndent();
-        db("storing key:", key, "=>", output);
-        mMemo.put(key, output);
-      }
-      return output;
-    }
-
-    private Map<Object, Move> mMemo = new HashMap<>();
-  }
-
-  /**
-   * A node in a linked list of balloons
-   */
-  private class Node {
-    int slot;
-    int value;
-    Node prev;
-    Node next;
-
-    Node(int value, int slot) {
-      this.value = value;
-      this.slot = slot;
-    }
-
-    public Node join(Node next) {
-      this.next = next;
-      next.prev = this;
-      return next;
-    }
-
-    public String toString() {
-      var ls = list();
-      var c = this;
-      if (c.prev == null)
-        c = c.next;
-      while (c.next != null) {
-        ls.add(c.value);
-        c = c.next;
-      }
-      return ls.toString();
-    }
-
-    public Object memoKey() {
-      var sb = new StringBuilder();
-      //   var ls = list();
-      var c = this;
-      if (c.prev == null)
-        c = c.next;
-      while (c.next != null) {
-        sb.append(c.slot);
-        sb.append(' ');
-        //        ls.add(c.slot);
-        c = c.next;
-      }
-      return sb.toString();
-    }
-
-    public int popVal() {
-      return prev.value * value * next.value;
-    }
-
-    public Node delete() {
-      // pr("...deleting node", slot, "(prev:", prev.slot, ")");
-      var ret = prev;
-      prev.join(next);
-      prev = null;
-      next = null;
-      return ret;
-    }
-
-    public Node insert(Node newNext) {
-      // pr("...inserting node", newNext.slot, "after", slot, "...");
-      var oldNext = next;
-      join(newNext);
-      newNext.join(oldNext);
-      return newNext;
-    }
-
-    public boolean isRight() {
-      return next == null;
-    }
-  }
-
-  /**
-   * A linked sequence of moves
-   */
-  private class Move {
-    int slot; // balloon to be popped
-    int value; // value of all moves in this list
-    Move nextMove; // next move in list
-
-    public String popSequence(int[] nums) {
-      var ent = this;
-      var game = new Bgame(nums);
-      while (ent != null) {
-        game.moveSlot(ent.slot);
-        ent = ent.nextMove;
-      }
-      return game.toString();
-    }
-
-    @Override
-    public String toString() {
-      var sb = sb();
-      var x = this;
-      while (x != null) {
-        sb.append("<#").append(x.slot).append(": ");
-        sb.append(x.value);
-        sb.append("> ");
-        x = x.nextMove;
-      }
-      return sb.toString();
-    }
-
-  }
-
-  private Node constructNodes(int[] nums) {
-    Node last = new Node(1, -1);
-    Node first = last;
-    for (int slot = 0; slot < nums.length; slot++) {
-      var n = new Node(nums[slot], slot);
-      last.join(n);
-      last = n;
-    }
-    last = last.join(new Node(1, -1));
-    return first;
-  }
-
-  private class Bgame {
-    Bgame(int[] nums) {
-      first = constructNodes(nums);
-      mNums = nums;
-    }
-
-    void moveSlot(int slot) {
-      makeMove(nodeForSlot(slot));
-    }
-
-    void makeMove(Node popNode) {
-      var v = popNode.popVal();
-      moveValues.add(v);
-      gameValue += v;
-      moves.add(popNode);
-      movesAux.add(popNode.delete());
-      if (false)
-        unmove();
-    }
-
-    void unmove() {
-      int i = moves.size() - 1;
-      var restored = moves.get(i);
-      var prev = movesAux.get(i);
-      prev.insert(restored);
-      gameValue -= moveValues.get(i);
-      moves.remove(i);
-      movesAux.remove(i);
-      moveValues.remove(i);
-    }
-
-    int moveCount() {
-      return moves.size();
-    }
-
-    private int[] mNums;
-    private Node first;
-    private int gameValue;
-    private List<Node> moves = new ArrayList<>();
-    private List<Node> movesAux = new ArrayList<>();
-    private List<Integer> moveValues = new ArrayList<>();
-
-    public int value() {
-      return gameValue;
-    }
-
-    public Node nodeForSlot(int slot) {
-      var x = first;
-      while (x != null) {
-        if (x.slot == slot)
-          return x;
-        x = x.next;
-      }
-      throw badState("no node found for slot:", slot);
-    }
-
-    @Override
-    public String toString() {
-      var sb = sb();
-      var gm = new Bgame(mNums);
-      for (int moveNum = 0; moveNum < moveCount(); moveNum++) {
-        var currMove = moves.get(moveNum);
-        sb.append("[ ");
-        var cursor = sb.length();
-
-        // Iterate over all nodes in the current game state
-        var n = gm.first.next;
-        while (n.next != null) {
-          tab(sb, cursor + n.slot * 4);
-          sb.append(n.slot == currMove.slot ? '*' : ' ');
-          sb.append(n.value);
-          n = n.next;
-        }
-        // Make move
-        var nd = gm.nodeForSlot(currMove.slot);
-        var val = nd.popVal();
-        gm.makeMove(nd);
-        var c2 = cursor + mNums.length * 4 + 3;
-        tab(sb, c2);
-        sb.append("] + " + val);
-        tab(sb, c2 + 8);
-        sb.append("= " + gm.value());
-        sb.append('\n');
-      }
-      return sb.toString();
-    }
-
-  }
-
-  /**
-   * A new recursive method in which we partition based on the *last* balloon to
-   * be popped, and supply the external left and right balloon values to each
-   * subarray
-   */
-  private class RecursionLast extends Alg {
+  private class Basic extends Alg {
 
     public int maxCoins(int[] nums) {
       mNums = nums;
@@ -476,21 +194,16 @@ public class BurstBalloons extends LeetCode {
     }
 
     private void auxFillSlots(List<Integer> dest, int start, int stop, int leftValue, int rightValue) {
-      pr("auxFill, dest:", dest, "start:", start, "stop:", stop, leftValue, rightValue);
       if (stop <= start)
         return;
       int slot = start;
       if (stop > start + 1) {
         var key = leftValue | (rightValue << 7) | (start << (7 + 7)) | (stop << (7 + 7 + 9));
         var memoValue = mMemo.get(key);
-        pr("key:", key, "memoValue:", memoValue);
         checkState(memoValue != null);
         slot = (int) (memoValue >> 32);
-
-        pr("slot:", slot, "value:", memoValue.intValue());
       }
       dest.add(slot);
-      pr("...added:", slot);
       auxFillSlots(dest, start, slot, leftValue, mNums[slot]);
       auxFillSlots(dest, slot + 1, stop, mNums[slot], rightValue);
     }
@@ -508,10 +221,6 @@ public class BurstBalloons extends LeetCode {
       long memoValue = mMemo.getOrDefault(key, -1L);
       if (memoValue >= 0)
         return (int) memoValue;
-
-      //      var output = mMemo.get(key);
-      //      if (output != null)
-      //        return output;
 
       // Consider each balloon as the *last* one to pop
 
@@ -543,6 +252,104 @@ public class BurstBalloons extends LeetCode {
       return bestResult;
     }
 
+    @Override
+    public String toString() {
+      return "(Basic Algorithm:)\n" + gameResults(mNums, getSlots());
+    }
+
+    // The values are the score in the lower 32 bits, the last move in the upper 32 bits
+    private Map<Integer, Long> mMemo = new HashMap<>();
+    private int[] mNums;
+    private int[] mSlots;
+  }
+
+  /**
+   * A new recursive method in which we partition based on the *last* balloon to
+   * be popped, and supply the external left and right balloon values to each
+   * subarray
+   */
+  private class RecursionLast extends Alg {
+
+    public int maxCoins(int[] nums) {
+      mNums = nums;
+      mMemo.clear();
+      mSlots = null;
+      var result = aux(0, nums.length, 1, 1);
+      return result;
+    }
+
+    public int[] getSlots() {
+      if (mSlots == null) {
+        var x = mNums.length;
+        var sl = new ArrayList<Integer>(x);
+        auxFillSlots(sl, 0, x, 1, 1);
+        mSlots = new int[x];
+        for (int i = 0; i < x; i++)
+          mSlots[i] = sl.get(x - 1 - i);
+      }
+      return mSlots;
+    }
+
+    private void auxFillSlots(List<Integer> dest, int start, int stop, int leftValue, int rightValue) {
+      if (stop <= start)
+        return;
+      int slot = start;
+      if (stop > start + 1) {
+        var key = leftValue | (rightValue << 7) | (start << (7 + 7)) | (stop << (7 + 7 + 9));
+        var memoValue = mMemo.get(key);
+        checkState(memoValue != null);
+        slot = (int) (memoValue >> 32);
+      }
+      dest.add(slot);
+      auxFillSlots(dest, start, slot, leftValue, mNums[slot]);
+      auxFillSlots(dest, slot + 1, stop, mNums[slot], rightValue);
+    }
+
+    private int aux(int start, int stop, int leftValue, int rightValue) {
+      if (stop <= start)
+        return 0;
+      var nums = mNums;
+      if (stop == start + 1)
+        return leftValue * nums[start] * rightValue;
+
+      // We store a key that embeds the left and right values (log 100 = 7 bits), and the
+      // start and stop indices (log 300 = 9 bits)
+      var key = leftValue | (rightValue << 7) | (start << (7 + 7)) | (stop << (7 + 7 + 9));
+      long memoValue = mMemo.getOrDefault(key, -1L);
+      if (memoValue >= 0)
+        return (int) memoValue;
+
+      // Consider each balloon as the *last* one to pop
+
+      // Is there a heuristic we can employ to speed things up?
+      // Skip certain values?
+
+      var bestResult = 0;
+      var bestSlot = -1;
+
+      // The values of the left and right sides are nonstrictly increasing as the number of values
+      // increases.
+
+      for (int pivot = start; pivot < stop; pivot++) {
+        var pivotValue = nums[pivot];
+        // We never want a zero to be the *last* balloon popped in a set
+        if (pivotValue == 0)
+          continue;
+
+        var leftSum = aux(start, pivot, leftValue, pivotValue);
+        var rightSum = aux(pivot + 1, stop, pivotValue, rightValue);
+        var c = leftSum + (leftValue * pivotValue * rightValue) + rightSum;
+        if (c > bestResult) {
+          bestResult = c;
+          bestSlot = pivot;
+        }
+      }
+
+      mMemo.put(key, bestResult | (((long) bestSlot) << 32));
+      return bestResult;
+    }
+
+    // The values are the score in the lower 32 bits, the last move in the upper 32 bits
     private Map<Integer, Long> mMemo = new HashMap<>();
     private int[] mNums;
     private int[] mSlots;
