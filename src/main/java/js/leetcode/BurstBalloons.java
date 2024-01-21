@@ -12,34 +12,39 @@ public class BurstBalloons extends LeetCode {
   }
 
   public void run() {
-    x(1, 8, 9, 7, 2);
-    x(1, 2, 3, 4, 2, 1);
-    x(2, 3, 4, 5, 7, 6, 2, 1);
-    x(3, 5, 10, 11, 9, 5, 3);
-    x(3, 5, 9, 4, 11, 13, 7, 10, 4, 2);
-    x(4, 3, 4, 5, 6, 5);
-    x(11, 5, 4);
-    x("[11,5,4,8]");
+    x("[54,88,26,48,9,32,0,66,4,82,66,7,28,23,73,99,44,27,16,29,52,66,30,97,41,33,60,62,45,40,19,35,97,69,19,60,2,48,81,66,45,86,51,51,47,97,5,59,54,98,79,90,70,70,62,16,96,95,97,77,21,35,10,90,14,31,21,29,40,81,33,64,91,44,81,85,77,9,67,58,77,88,69,76,89,33,36,87,85,77,94,96,37,61,23,75,15,29,21,88,91]",
+        39731870);
 
-    int s = 126;
-    for (int y = 3; y < 20; y++) {
-      pr(VERT_SP, "y:", y);
-      xSeed(y * s + 17, y, null);
-    }
-    x("[1,1,1,10,2,0,1,1,1]");
+    x("[8,2,6,8,9,8,1,4,1,5,3,0,7,7,0,4,2]");
 
-    x("[10,2,0]");
-    x("[1,3,7,7,1,7]");
-
-    x("[3,1,5,8]", 167);
-    x("[2,5,10,20,10,5,2]");
-    x("[1,5]", 10);
-
-    xSeed(1965, 300, 105676120);
-
-    x("[3,7,11,7,3,7,11,7,3]");
-    x("[5,6,7,1,2,3,0,6,12,20]");
-    x("[8,3,4,3,5,0,5,6,6,2,8,5,6,2,3,8,3,5,1,0,2]", 3394);
+    //    x(1, 8, 9, 7, 2);
+    //    x(1, 2, 3, 4, 2, 1);
+    //    x(2, 3, 4, 5, 7, 6, 2, 1);
+    //    x(3, 5, 10, 11, 9, 5, 3);
+    //    x(3, 5, 9, 4, 11, 13, 7, 10, 4, 2);
+    //    x(4, 3, 4, 5, 6, 5);
+    //    x(11, 5, 4);
+    //    x("[11,5,4,8]");
+    //
+    //    int s = 126;
+    //    for (int y = 3; y < 20; y++) {
+    //      pr(VERT_SP, "y:", y);
+    //      xSeed(y * s + 17, y, null);
+    //    }
+    //    x("[1,1,1,10,2,0,1,1,1]");
+    //
+    //    x("[10,2,0]");
+    //    x("[1,3,7,7,1,7]");
+    //
+    //    x("[3,1,5,8]", 167);
+    //    x("[2,5,10,20,10,5,2]");
+    //    x("[1,5]", 10);
+    //
+    //    xSeed(1965, 300, 105676120);
+    //
+    //    x("[3,7,11,7,3,7,11,7,3]");
+    //    x("[5,6,7,1,2,3,0,6,12,20]");
+    //    x("[8,3,4,3,5,0,5,6,6,2,8,5,6,2,3,8,3,5,1,0,2]", 3394);
   }
 
   private void xSeed(int seed, int count, Integer expected) {
@@ -171,14 +176,60 @@ public class BurstBalloons extends LeetCode {
 
       // Consider each balloon as the *last* one to pop
 
+      // Is there a heuristic we can employ to speed things up?
+      // Skip certain values?
+
       var bestResult = -1;
-      for (int pivot = start; pivot < stop; pivot++) {
-        var pivotValue = nums[pivot];
-        var leftSum = aux(nums, start, pivot, leftValue, pivotValue);
-        var rightSum = aux(nums, pivot + 1, stop, pivotValue, rightValue);
-        var c = leftSum + (leftValue * pivotValue * rightValue) + rightSum;
-        if (c > bestResult)
-          bestResult = c;
+
+      // The values of the left and right sides are nostrictly increasing as the number of values
+      // increases.
+
+      if (true) {
+
+        int mid = (stop + start) / 2;
+
+        int bestRight = -1;
+        for (int pivot = mid + 1; pivot < stop; pivot++) {
+          var pivotValue = nums[pivot];
+          var pivotSum = (leftValue * pivotValue * rightValue);
+          var leftSum = aux(nums, start, pivot, leftValue, pivotValue);
+          // Don't bother calculating the (decreasing) right sum, if it can't possibly lead to a better solution
+          if (false && bestRight >= 0 && pivotSum + leftSum + bestRight < bestResult) {
+            continue;
+          }
+          var rightSum = aux(nums, pivot + 1, stop, pivotValue, rightValue);
+          if (bestRight < 0)
+            bestRight = rightSum;
+          var c = leftSum + pivotSum + rightSum;
+          if (c > bestResult)
+            bestResult = c;
+        }
+
+        int bestLeft = -1;
+        for (int pivot = mid; pivot >= start; pivot--) {
+          var pivotValue = nums[pivot];
+          var pivotSum = (leftValue * pivotValue * rightValue);
+          var rightSum = aux(nums, pivot + 1, stop, pivotValue, rightValue);
+          // Don't bother calculating the (decreasing) left sum, if it can't possibly lead to a better solution
+          if (bestLeft >= 0 && pivotSum + rightSum + bestLeft < bestResult)
+            continue;
+          var leftSum = aux(nums, start, pivot, leftValue, pivotValue);
+          if (bestLeft < 0)
+            bestLeft = leftSum;
+          var c = leftSum + pivotSum + rightSum;
+          if (c > bestResult)
+            bestResult = c;
+        }
+      } else {
+
+        for (int pivot = start; pivot < stop; pivot++) {
+          var pivotValue = nums[pivot];
+          var leftSum = aux(nums, start, pivot, leftValue, pivotValue);
+          var rightSum = aux(nums, pivot + 1, stop, pivotValue, rightValue);
+          var c = leftSum + (leftValue * pivotValue * rightValue) + rightSum;
+          if (c > bestResult)
+            bestResult = c;
+        }
       }
 
       if (db) {
