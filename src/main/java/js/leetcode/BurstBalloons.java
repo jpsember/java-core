@@ -2,8 +2,12 @@ package js.leetcode;
 
 import static js.base.Tools.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import js.base.BasePrinter;
 
 public class BurstBalloons extends LeetCode {
 
@@ -82,7 +86,7 @@ public class BurstBalloons extends LeetCode {
     pr(INDENT, res);
 
     if (expected == null) {
-      var alg2 = new Slow();
+      var alg2 = new RecursionMemo();
       db = true;
       expected = alg2.maxCoins(nums);
       pr(alg2);
@@ -97,11 +101,6 @@ public class BurstBalloons extends LeetCode {
 
   }
 
-  /**
-   * A new recursive method in which we partition based on the *last* balloon to
-   * be popped, and supply the external left and right balloon values to each
-   * subarray
-   */
   private class Slow extends Alg {
 
     public int maxCoins(int[] nums) {
@@ -142,6 +141,284 @@ public class BurstBalloons extends LeetCode {
   }
 
   // ------------------------------------------------------------------
+
+  private class RecursionMemo extends Alg {
+
+    @Override
+    public int maxCoins(int[] nums) {
+      var first = constructNodes(nums);
+      var value = aux(first);
+      var entry = aux(first);
+      mFirstMove = entry;
+      mNums = nums;
+      db("recursion:", DASHES, INDENT, entry.popSequence(nums), CR, DASHES);
+      return value.value;
+    }
+
+    @Override
+    public String toString() {
+      if (mFirstMove != null) {
+        return BasePrinter.toString("recursion:", DASHES, INDENT, mFirstMove.popSequence(mNums), CR, DASHES);
+      }
+      return "RecursionMemo";
+    }
+
+    private Move mFirstMove;
+    private int[] mNums;
+
+    private Move aux(Node node) {
+      var cursor = node.next;
+      if (cursor.isRight())
+        return null;
+      if (cursor.next.isRight()) {
+        var output = new Move();
+        output.slot = cursor.slot;
+        output.value = cursor.value;
+        return output;
+      }
+      var key = node.memoKey();
+      var output = mMemo.get(key);
+      if (output == null) {
+        pushIndent();
+        db("aux", node, "{");
+
+        output = new Move();
+
+        // Try popping each possible balloon
+
+        while (!cursor.isRight()) {
+          var amt = cursor.popVal();
+          var save = cursor.delete();
+          var recAnswer = aux(node);
+          if (recAnswer != null) {
+            amt += recAnswer.value;
+          }
+          if (output.value < amt) {
+            output.value = amt;
+            output.slot = cursor.slot;
+            output.nextMove = recAnswer;
+          }
+          // Reinsert the deleted node
+          save.insert(cursor);
+          cursor = cursor.next;
+        }
+        db(output.value, "}");
+        popIndent();
+        db("storing key:", key, "=>", output);
+        mMemo.put(key, output);
+      }
+      return output;
+    }
+
+    private Map<Object, Move> mMemo = new HashMap<>();
+  }
+
+  /**
+   * A node in a linked list of balloons
+   */
+  private class Node {
+    int slot;
+    int value;
+    Node prev;
+    Node next;
+
+    Node(int value, int slot) {
+      this.value = value;
+      this.slot = slot;
+    }
+
+    public Node join(Node next) {
+      this.next = next;
+      next.prev = this;
+      return next;
+    }
+
+    public String toString() {
+      var ls = list();
+      var c = this;
+      if (c.prev == null)
+        c = c.next;
+      while (c.next != null) {
+        ls.add(c.value);
+        c = c.next;
+      }
+      return ls.toString();
+    }
+
+    public Object memoKey() {
+      var sb = new StringBuilder();
+      //   var ls = list();
+      var c = this;
+      if (c.prev == null)
+        c = c.next;
+      while (c.next != null) {
+        sb.append(c.slot);
+        sb.append(' ');
+        //        ls.add(c.slot);
+        c = c.next;
+      }
+      return sb.toString();
+    }
+
+    public int popVal() {
+      return prev.value * value * next.value;
+    }
+
+    public Node delete() {
+      // pr("...deleting node", slot, "(prev:", prev.slot, ")");
+      var ret = prev;
+      prev.join(next);
+      prev = null;
+      next = null;
+      return ret;
+    }
+
+    public Node insert(Node newNext) {
+      // pr("...inserting node", newNext.slot, "after", slot, "...");
+      var oldNext = next;
+      join(newNext);
+      newNext.join(oldNext);
+      return newNext;
+    }
+
+    public boolean isRight() {
+      return next == null;
+    }
+  }
+
+  /**
+   * A linked sequence of moves
+   */
+  private class Move {
+    int slot; // balloon to be popped
+    int value; // value of all moves in this list
+    Move nextMove; // next move in list
+
+    public String popSequence(int[] nums) {
+      var ent = this;
+      var game = new Bgame(nums);
+      while (ent != null) {
+        game.moveSlot(ent.slot);
+        ent = ent.nextMove;
+      }
+      return game.toString();
+    }
+
+    @Override
+    public String toString() {
+      var sb = sb();
+      var x = this;
+      while (x != null) {
+        sb.append("<#").append(x.slot).append(": ");
+        sb.append(x.value);
+        sb.append("> ");
+        x = x.nextMove;
+      }
+      return sb.toString();
+    }
+
+  }
+
+  private Node constructNodes(int[] nums) {
+    Node last = new Node(1, -1);
+    Node first = last;
+    for (int slot = 0; slot < nums.length; slot++) {
+      var n = new Node(nums[slot], slot);
+      last.join(n);
+      last = n;
+    }
+    last = last.join(new Node(1, -1));
+    return first;
+  }
+
+  private class Bgame {
+    Bgame(int[] nums) {
+      first = constructNodes(nums);
+      mNums = nums;
+    }
+
+    void moveSlot(int slot) {
+      makeMove(nodeForSlot(slot));
+    }
+
+    void makeMove(Node popNode) {
+      var v = popNode.popVal();
+      moveValues.add(v);
+      gameValue += v;
+      moves.add(popNode);
+      movesAux.add(popNode.delete());
+      if (false)
+        unmove();
+    }
+
+    void unmove() {
+      int i = moves.size() - 1;
+      var restored = moves.get(i);
+      var prev = movesAux.get(i);
+      prev.insert(restored);
+      gameValue -= moveValues.get(i);
+      moves.remove(i);
+      movesAux.remove(i);
+      moveValues.remove(i);
+    }
+
+    int moveCount() {
+      return moves.size();
+    }
+
+    private int[] mNums;
+    private Node first;
+    private int gameValue;
+    private List<Node> moves = new ArrayList<>();
+    private List<Node> movesAux = new ArrayList<>();
+    private List<Integer> moveValues = new ArrayList<>();
+
+    public int value() {
+      return gameValue;
+    }
+
+    public Node nodeForSlot(int slot) {
+      var x = first;
+      while (x != null) {
+        if (x.slot == slot)
+          return x;
+        x = x.next;
+      }
+      throw badState("no node found for slot:", slot);
+    }
+
+    @Override
+    public String toString() {
+      var sb = sb();
+      var gm = new Bgame(mNums);
+      for (int moveNum = 0; moveNum < moveCount(); moveNum++) {
+        var currMove = moves.get(moveNum);
+        sb.append("[ ");
+        var cursor = sb.length();
+
+        // Iterate over all nodes in the current game state
+        var n = gm.first.next;
+        while (n.next != null) {
+          tab(sb, cursor + n.slot * 4);
+          sb.append(n.slot == currMove.slot ? '*' : ' ');
+          sb.append(n.value);
+          n = n.next;
+        }
+        // Make move
+        var nd = gm.nodeForSlot(currMove.slot);
+        var val = nd.popVal();
+        gm.makeMove(nd);
+        var c2 = cursor + mNums.length * 4 + 3;
+        tab(sb, c2);
+        sb.append("] + " + val);
+        tab(sb, c2 + 8);
+        sb.append("= " + gm.value());
+        sb.append('\n');
+      }
+      return sb.toString();
+    }
+
+  }
 
   /**
    * A new recursive method in which we partition based on the *last* balloon to
@@ -197,7 +474,7 @@ public class BurstBalloons extends LeetCode {
           int diff1 = pivotValue - nums[pivot - 1];
           int diff2 = nums[pivot + 1] - pivotValue;
           if (diff1 * diff2 > 0) {
-            pr("...skipping pivot value:", pivotValue);
+            pr("...skipping pivot value:", pivotValue, "within", toStr(nums, start, stop));
             continue;
           }
         }
