@@ -16,6 +16,17 @@ public class BurstBalloons extends LeetCode {
 
   public void run() {
 
+    x("[2,5,3]");
+
+    if (true) {
+      int s = 126;
+      for (int y = 3; y < 20; y++) {
+        pr(VERT_SP, "y:", y);
+        xSeed(y * s + 17, y, null);
+      }
+      return;
+    }
+
     if (false)
       xSeed(123, 5, 722946);
     x("[3,1,5,8]");
@@ -43,11 +54,7 @@ public class BurstBalloons extends LeetCode {
     x(11, 5, 4);
     x("[11,5,4,8]");
     //
-    //    int s = 126;
-    //    for (int y = 3; y < 20; y++) {
-    //      pr(VERT_SP, "y:", y);
-    //      xSeed(y * s + 17, y, null);
-    //    }
+
     //    x("[1,1,1,10,2,0,1,1,1]");
     //
     //    x("[10,2,0]");
@@ -319,6 +326,9 @@ public class BurstBalloons extends LeetCode {
       if (memoValue >= 0)
         return (int) memoValue;
 
+      pushIndent();
+      db("aux", leftValue, ">>", toStr(mNums, start, stop), "<<", rightValue);
+
       // Consider each balloon as the *last* one to pop
 
       // Is there a heuristic we can employ to speed things up?
@@ -330,8 +340,28 @@ public class BurstBalloons extends LeetCode {
       // The values of the left and right sides are nonstrictly increasing as the number of values
       // increases.
 
+      // Determine the min and max pivot values, to avoid choosing a pivot value that is not equal to 
+      // one of them.
+      db("determining min/max of possible pivots:", toStr(nums, start, stop));
+      int minVal = Integer.MAX_VALUE;
+      int maxVal = Integer.MIN_VALUE;
+      for (int j = start; j < stop; j++) {
+        var x = nums[j];
+        minVal = Math.min(minVal, x);
+        maxVal = Math.max(maxVal, x);
+      }
+      db("min:", minVal, "max:", maxVal);
+
       for (int pivot = start; pivot < stop; pivot++) {
         var pivotValue = nums[pivot];
+        db("candidate pivot[", pivot, "]", pivotValue);
+
+        // Heuristic:  but it fails.
+        if (pivotValue > minVal && pivotValue < maxVal) {
+          db("omitting, slot", pivot, "value", pivotValue, "is between min,max", minVal, maxVal);
+          continue;
+        }
+
         // We never want a zero to be the *last* balloon popped in a set
         if (pivotValue == 0)
           continue;
@@ -344,6 +374,7 @@ public class BurstBalloons extends LeetCode {
           bestSlot = pivot;
         }
       }
+      popIndent();
 
       mMemo.put(key, bestResult | (((long) bestSlot) << 32));
       return bestResult;
