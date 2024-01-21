@@ -3,6 +3,7 @@ package js.leetcode;
 import static js.base.Tools.*;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,13 +17,16 @@ public class BurstBalloons extends LeetCode {
   }
 
   public void run() {
-    
-    
-    x("[8,2,6,8,9,8,1,4,1,5,3,0,7,7,0,4,2]");
-halt();
-    
+
+    x("[3,1,5,8]", 167);
+    if (true)
+      return;
+
+    x("[8,2,6,8,9,8,1,4,1,5,3,0,7,7,0,4,2]", 3414);
+    if (true)
+      return;
+
     x(3, 5, 10, 11, 9, 5, 3);
-    if (true) return;
     x(1, 8, 9, 7, 2);
 
     if (false)
@@ -85,11 +89,11 @@ halt();
   private void x(int[] nums, Integer expected) {
     db = nums.length < 12;
 
-    Alg alg1 = new RecursionLast();
+    var alg1 = new RecursionLast();
 
     pr(toStr(nums));
     var res = alg1.maxCoins(nums);
-    pr(INDENT, res);
+    pr(gameResults(nums, alg1.getSlots()));
 
     if (expected == null) {
       var alg2 = new RecursionMemo();
@@ -99,6 +103,66 @@ halt();
     }
 
     verify(res, expected);
+  }
+
+  private String gameResults(int[] nums, int[] slots) {
+    var sb = sb();
+
+    var dash = repeatText("----", nums.length + 4) + "\n";
+    sb.append(dash);
+    var slotEmptyFlags = new BitSet(nums.length);
+    var totalPopValue = 0;
+    var numsColumn = 0;
+
+    for (int turn = 0; turn < nums.length; turn++) {
+      var cursor = sb.length();
+      var currMove = slots[turn];
+      sb.append("[ ");
+
+      int leftValue = 1;
+      int rightValue = 1;
+      int leftIndex = Integer.MIN_VALUE;
+      int rightIndex = Integer.MAX_VALUE;
+
+      for (int i = 0; i < nums.length; i++) {
+        if (slotEmptyFlags.get(i))
+          continue;
+
+        if (i < currMove && i > leftIndex) {
+          leftIndex = i;
+          leftValue = nums[i];
+        } else if (i > currMove && i < rightIndex) {
+          rightIndex = i;
+          rightValue = nums[i];
+        }
+
+        tab(sb, cursor + 3 + i * 4);
+        sb.append(i == currMove ? '*' : ' ');
+        sb.append(nums[i]);
+      }
+
+      slotEmptyFlags.set(currMove);
+
+      var c2 = cursor + 3 + nums.length * 4;
+      tab(sb, c2);
+      sb.append("] = ");
+      numsColumn = sb.length() - cursor;
+      var popValue = nums[currMove] * leftValue * rightValue;
+      sb.append(fmt(popValue));
+      totalPopValue += popValue;
+      sb.append('\n');
+    }
+    sb.append(spaces(numsColumn));
+    sb.append(fmt(totalPopValue));
+    sb.append('\n');
+    sb.append(dash);
+
+    return sb.toString();
+  }
+
+  private String fmt(int value) {
+    var s = "" + value;
+    return spaces(6 - s.length()) + s;
   }
 
   private abstract class Alg {
@@ -392,23 +456,62 @@ halt();
   private class RecursionLast extends Alg {
 
     public int maxCoins(int[] nums) {
+      mNums = nums;
       mMemo.clear();
-      var result = aux(nums, 0, nums.length, 1, 1);
+      mSlots = null;
+      var result = aux(0, nums.length, 1, 1);
       return result;
     }
 
-    private int aux(int[] nums, int start, int stop, int leftValue, int rightValue) {
+    public int[] getSlots() {
+      if (mSlots == null) {
+        var x = mNums.length;
+        var sl = new ArrayList<Integer>(x);
+        auxFillSlots(sl, 0, x, 1, 1);
+        mSlots = new int[x];
+        for (int i = 0; i < x; i++)
+          mSlots[i] = sl.get(x - 1 - i);
+      }
+      return mSlots;
+    }
+
+    private void auxFillSlots(List<Integer> dest, int start, int stop, int leftValue, int rightValue) {
+      pr("auxFill, dest:", dest, "start:", start, "stop:", stop, leftValue, rightValue);
+      if (stop <= start)
+        return;
+      int slot = start;
+      if (stop > start + 1) {
+        var key = leftValue | (rightValue << 7) | (start << (7 + 7)) | (stop << (7 + 7 + 9));
+        var memoValue = mMemo.get(key);
+        pr("key:", key, "memoValue:", memoValue);
+        checkState(memoValue != null);
+        slot = (int) (memoValue >> 32);
+
+        pr("slot:", slot, "value:", memoValue.intValue());
+      }
+      dest.add(slot);
+      pr("...added:", slot);
+      auxFillSlots(dest, start, slot, leftValue, mNums[slot]);
+      auxFillSlots(dest, slot + 1, stop, mNums[slot], rightValue);
+    }
+
+    private int aux(int start, int stop, int leftValue, int rightValue) {
       if (stop <= start)
         return 0;
+      var nums = mNums;
       if (stop == start + 1)
         return leftValue * nums[start] * rightValue;
 
       // We store a key that embeds the left and right values (log 100 = 7 bits), and the
       // start and stop indices (log 300 = 9 bits)
       var key = leftValue | (rightValue << 7) | (start << (7 + 7)) | (stop << (7 + 7 + 9));
-      var output = mMemo.get(key);
-      if (output != null)
-        return output;
+      long memoValue = mMemo.getOrDefault(key, -1L);
+      if (memoValue >= 0)
+        return (int) memoValue;
+
+      //      var output = mMemo.get(key);
+      //      if (output != null)
+      //        return output;
 
       // Consider each balloon as the *last* one to pop
 
@@ -416,6 +519,7 @@ halt();
       // Skip certain values?
 
       var bestResult = 0;
+      var bestSlot = -1;
 
       // The values of the left and right sides are nonstrictly increasing as the number of values
       // increases.
@@ -426,18 +530,22 @@ halt();
         if (pivotValue == 0)
           continue;
 
-        var leftSum = aux(nums, start, pivot, leftValue, pivotValue);
-        var rightSum = aux(nums, pivot + 1, stop, pivotValue, rightValue);
+        var leftSum = aux(start, pivot, leftValue, pivotValue);
+        var rightSum = aux(pivot + 1, stop, pivotValue, rightValue);
         var c = leftSum + (leftValue * pivotValue * rightValue) + rightSum;
-        if (c > bestResult)
+        if (c > bestResult) {
           bestResult = c;
+          bestSlot = pivot;
+        }
       }
 
-      mMemo.put(key, bestResult);
+      mMemo.put(key, bestResult | (((long) bestSlot) << 32));
       return bestResult;
     }
 
-    private Map<Integer, Integer> mMemo = new HashMap<>();
+    private Map<Integer, Long> mMemo = new HashMap<>();
+    private int[] mNums;
+    private int[] mSlots;
   }
 
 }
