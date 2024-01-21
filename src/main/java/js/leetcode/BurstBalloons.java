@@ -87,7 +87,7 @@ public class BurstBalloons extends LeetCode {
 
     if (expected == null) {
       var alg2 = new RecursionMemo();
-      db = true;
+      //      db = true;
       expected = alg2.maxCoins(nums);
       pr(alg2);
     }
@@ -151,7 +151,6 @@ public class BurstBalloons extends LeetCode {
       var entry = aux(first);
       mFirstMove = entry;
       mNums = nums;
-      db("recursion:", DASHES, INDENT, entry.popSequence(nums), CR, DASHES);
       return value.value;
     }
 
@@ -429,10 +428,7 @@ public class BurstBalloons extends LeetCode {
 
     public int maxCoins(int[] nums) {
       mMemo.clear();
-      mCalls = 0;
-      mMisses = 0;
       var result = aux(nums, 0, nums.length, 1, 1);
-      pr("calls:", mCalls, "miss pct:", (mMisses * 100.0) / mCalls);
       return result;
     }
 
@@ -446,38 +442,25 @@ public class BurstBalloons extends LeetCode {
       // start and stop indices (log 300 = 9 bits)
       var key = leftValue | (rightValue << 7) | (start << (7 + 7)) | (stop << (7 + 7 + 9));
       var output = mMemo.get(key);
-      mCalls++;
       if (output != null)
         return output;
-      mMisses++;
-
-      if (db) {
-        pushIndent();
-        db("aux", leftValue, toStr(nums, start, stop), rightValue);
-      }
 
       // Consider each balloon as the *last* one to pop
 
       // Is there a heuristic we can employ to speed things up?
       // Skip certain values?
 
-      var bestResult = -1;
+      var bestResult = 0;
 
-      // The values of the left and right sides are nostrictly increasing as the number of values
+      // The values of the left and right sides are nonstrictly increasing as the number of values
       // increases.
 
       for (int pivot = start; pivot < stop; pivot++) {
-
-        // Heuristic: try not considering pivot values that are strictly between their neighbors
         var pivotValue = nums[pivot];
-        if (pivot > start && pivot < stop - 1) {
-          int diff1 = pivotValue - nums[pivot - 1];
-          int diff2 = nums[pivot + 1] - pivotValue;
-          if (diff1 * diff2 > 0) {
-            pr("...skipping pivot value:", pivotValue, "within", toStr(nums, start, stop));
-            continue;
-          }
-        }
+        // We never want a zero to be the *last* balloon popped in a set
+        if (pivotValue == 0)
+          continue;
+
         var leftSum = aux(nums, start, pivot, leftValue, pivotValue);
         var rightSum = aux(nums, pivot + 1, stop, pivotValue, rightValue);
         var c = leftSum + (leftValue * pivotValue * rightValue) + rightSum;
@@ -485,14 +468,10 @@ public class BurstBalloons extends LeetCode {
           bestResult = c;
       }
 
-      if (db) {
-        popIndent();
-      }
       mMemo.put(key, bestResult);
       return bestResult;
     }
 
-    private int mCalls, mMisses;
     private Map<Integer, Integer> mMemo = new HashMap<>();
   }
 }
