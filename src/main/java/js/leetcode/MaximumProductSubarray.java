@@ -32,7 +32,7 @@ public class MaximumProductSubarray extends LeetCode {
 
     Alg alg1 = new Linear();
 
-    pr(toStr(nums));
+    pr(str(nums));
     var res = alg1.maxProduct(nums);
     pr(INDENT, res);
 
@@ -85,7 +85,7 @@ public class MaximumProductSubarray extends LeetCode {
       }
 
       pushIndent();
-      db("aux", toStr(nums, cursor, nums.length));
+      db("aux", str(nums, cursor, nums.length));
 
       // We want to flip the 'max' flag for recursive calls if the first value is negative
 

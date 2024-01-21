@@ -44,7 +44,7 @@ public class TopKFrequentElements extends LeetCode {
 
   private void x(int[] nums, int k) {
     db = nums.length < 30;
-    db(toStr(nums), INDENT, "k=", k);
+    db(str(nums), INDENT, "k=", k);
     var res = topKFrequent(nums, k);
     var expected = SLOWTopKFrequent(nums, k);
     Arrays.sort(res);

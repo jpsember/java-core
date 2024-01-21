@@ -98,7 +98,7 @@ public class BurstBalloons extends LeetCode {
 
     var alg1 = new RecursionLast();
 
-    pr(toStr(nums));
+    pr(str(nums));
     var res = alg1.maxCoins(nums);
     pr(gameResults(nums, alg1.getSlots()));
 
@@ -313,6 +313,8 @@ public class BurstBalloons extends LeetCode {
     }
 
     private int aux(int start, int stop, int leftValue, int rightValue) {
+      final boolean dbx = false;
+
       if (stop <= start)
         return 0;
       var nums = mNums;
@@ -326,8 +328,10 @@ public class BurstBalloons extends LeetCode {
       if (memoValue >= 0)
         return (int) memoValue;
 
-      pushIndent();
-      db("aux", leftValue, ">>", toStr(mNums, start, stop), "<<", rightValue);
+      if (dbx) {
+        pushIndent();
+        db("aux", leftValue, ">>", str(mNums, start, stop), "<<", rightValue);
+      }
 
       // Consider each balloon as the *last* one to pop
 
@@ -342,7 +346,8 @@ public class BurstBalloons extends LeetCode {
 
       // Determine the min and max pivot values, to avoid choosing a pivot value that is not equal to 
       // one of them.
-      db("determining min/max of possible pivots:", toStr(nums, start, stop));
+      if (dbx)
+        db("determining min/max of possible pivots:", str(nums, start, stop));
       int minVal = Integer.MAX_VALUE;
       int maxVal = Integer.MIN_VALUE;
       for (int j = start; j < stop; j++) {
@@ -350,18 +355,22 @@ public class BurstBalloons extends LeetCode {
         minVal = Math.min(minVal, x);
         maxVal = Math.max(maxVal, x);
       }
-      db("min:", minVal, "max:", maxVal);
+      if (dbx)
+        db("min:", minVal, "max:", maxVal);
 
       for (int pivot = start; pivot < stop; pivot++) {
         var pivotValue = nums[pivot];
-        db("candidate pivot[", pivot, "]", pivotValue);
+        if (dbx)
+          db("candidate pivot[", pivot, "]", pivotValue);
 
         // Heuristic:  but it fails.
-        if (pivotValue > minVal && pivotValue < maxVal) {
-          db("omitting, slot", pivot, "value", pivotValue, "is between min,max", minVal, maxVal);
-          continue;
+        if (false) {
+          if (pivotValue > minVal && pivotValue < maxVal) {
+            if (dbx)
+              db("omitting, slot", pivot, "value", pivotValue, "is between min,max", minVal, maxVal);
+            continue;
+          }
         }
-
         // We never want a zero to be the *last* balloon popped in a set
         if (pivotValue == 0)
           continue;
@@ -374,7 +383,8 @@ public class BurstBalloons extends LeetCode {
           bestSlot = pivot;
         }
       }
-      popIndent();
+      if (dbx)
+        popIndent();
 
       mMemo.put(key, bestResult | (((long) bestSlot) << 32));
       return bestResult;

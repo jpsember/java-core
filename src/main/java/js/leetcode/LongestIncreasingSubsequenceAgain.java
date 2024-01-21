@@ -44,7 +44,7 @@ public class LongestIncreasingSubsequenceAgain extends LeetCode {
 
     Alg alg1 = new DP3();
 
-    pr(toStr(nums));
+    pr(str(nums));
     var res = alg1.lengthOfLIS(nums);
     pr(INDENT, res);
 
@@ -88,7 +88,7 @@ public class LongestIncreasingSubsequenceAgain extends LeetCode {
       }
 
       pushIndent();
-      db("aux", toStr(nums, cursor, nums.length), "p", prevValue);
+      db("aux", str(nums, cursor, nums.length), "p", prevValue);
 
       // Calculate result for skipping cursor value
       int result = aux(nums, cursor + 1, prevValue);

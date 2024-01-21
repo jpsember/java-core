@@ -337,12 +337,12 @@ public abstract class LeetCode {
     return js.toString();
   }
 
-  public String toStr(int[] array) {
+  public String str(int[] array) {
     return JSList.with(array).toString();
   }
 
-  public String toStr(int[] array, int start, int end) {
-    return toStr(Arrays.copyOfRange(array, start, end));
+  public String str(int[] array, int start, int end) {
+    return str(Arrays.copyOfRange(array, start, end));
   }
 
   private static List<Boolean> dbStack = arrayList();
