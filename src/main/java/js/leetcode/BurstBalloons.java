@@ -344,34 +344,13 @@ public class BurstBalloons extends LeetCode {
       // The values of the left and right sides are nonstrictly increasing as the number of values
       // increases.
 
-      // Determine the min and max pivot values, to avoid choosing a pivot value that is not equal to 
-      // one of them.
-      if (dbx)
-        db("determining min/max of possible pivots:", str(nums, start, stop));
-      int minVal = Integer.MAX_VALUE;
-      int maxVal = Integer.MIN_VALUE;
-      for (int j = start; j < stop; j++) {
-        var x = nums[j];
-        minVal = Math.min(minVal, x);
-        maxVal = Math.max(maxVal, x);
-      }
-      if (dbx)
-        db("min:", minVal, "max:", maxVal);
-
       for (int pivot = start; pivot < stop; pivot++) {
         var pivotValue = nums[pivot];
         if (dbx)
           db("candidate pivot[", pivot, "]", pivotValue);
 
-        // Heuristic:  but it fails.
-        if (false) {
-          if (pivotValue > minVal && pivotValue < maxVal) {
-            if (dbx)
-              db("omitting, slot", pivot, "value", pivotValue, "is between min,max", minVal, maxVal);
-            continue;
-          }
-        }
-        // We never want a zero to be the *last* balloon popped in a set
+        // We never want a zero to be the *last* balloon popped in a set.
+        // This is true, but I don't think it helps.
         if (pivotValue == 0)
           continue;
 
