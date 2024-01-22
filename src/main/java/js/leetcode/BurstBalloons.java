@@ -430,48 +430,47 @@ public class BurstBalloons extends LeetCode {
 
     public int maxCoins(int[] nums) {
 
-      int nc = nums.length;
+      int n = nums.length;
       {
         // Construct expanded num list by adding 1 to each side
-        var tmp = new int[nc + 2];
-        tmp[0] = tmp[nc + 1] = 1;
-        System.arraycopy(nums, 0, tmp, 1, nc);
+        var tmp = new int[n + 2];
+        tmp[0] = tmp[n + 1] = 1;
+        System.arraycopy(nums, 0, tmp, 1, n);
         nums = tmp;
-        nc = nums.length;
+        n = nums.length;
       }
 
       // Construct dynamic grid
       // The first dimension will be the 'from' slot, and the
       // second will be the 'to' slot.
       //
-      // We never need a 'from' value of nc-1, so don't allocate a row there;
-      // and we never need a 'to' value of zero, so we'll subtract one from each of these indices.
+      // We never need a 'from' value of nc-1, so don't allocate a row there.
+      // And we never need a 'to' value of zero, but to keep things simple we won't change
+      // anything there.
       //
-      final int DEST_OFFSET = 0; //-1;
-      var c = new int[nc - 1][nc +DEST_OFFSET];
+      var c = new int[n - 1][n];
 
-      // Outer loop iterates over the gap between the source and target balloons
-      for (int gap = 2; gap < nc; gap++) {
+      // Outer loop iterates over the maximum gap between source and target balloons,
+      // which is at most n, to jump from the leftmost '1' to the rightmost '1'.
+
+      for (int gap = 2; gap < n; gap++) {
         // Loop over each possible source balloon
-        for (int src = 0; src + gap < nc; src++) {
+        for (int src = 0; src + gap < n; src++) {
           var trg = src + gap;
+          var srcTrgProd = nums[src] * nums[trg];
 
           // Iterate over each possible step or 'middle' balloon
-          var bestSum = -1;
+          var bestSum = 0;
           for (int mid = src + 1; mid < trg; mid++) {
-          //  pr("src:",src,"mid:",mid,"trg:",trg);
-            var sum = c[src][mid + DEST_OFFSET] + nums[src] * nums[mid] * nums[trg]
-                + c[mid][trg + DEST_OFFSET];
+            var sum = c[src][mid] + srcTrgProd * nums[mid] + c[mid][trg];
             if (sum > bestSum)
               bestSum = sum;
           }
-          c[src][trg + DEST_OFFSET] = bestSum;
+          c[src][trg] = bestSum;
         }
-
         db("Gap", gap, INDENT, strTable(c));
-
       }
-      return c[0][nc - 1   +DEST_OFFSET];
+      return c[0][n - 1];
     }
 
     public String toString() {
