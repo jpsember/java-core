@@ -232,12 +232,21 @@ public abstract class LeetCode {
     if (!db)
       return "";
 
+    int maxVal = 0;
+    int minVal = 0;
+    for (var row : m) {
+      for (var col : row) {
+        maxVal = Math.max(maxVal, col);
+        minVal = Math.min(minVal, col);
+      }
+    }
+    int fieldWidth = Math.max((""+minVal).length(),(""+maxVal).length())+1;
+    
     int ht = m.length;
     int wd = m[0].length;
 
     var sb = new StringBuilder();
     var dash = "---------------------------------";
-    int fieldWidth = 5;
     int lblWidth = 6;
     var dl = wd * fieldWidth + fieldWidth;
     while (dash.length() < dl)

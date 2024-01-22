@@ -16,16 +16,18 @@ public class BurstBalloons extends LeetCode {
 
   public void run() {
 
-    x("51  23  10  41  45 *47      95      78");
-   halt();
-    x(" 51  23  10  41  45  47  35  95                 *97                      78");
-  //  x("[2,5,3]");
+    x("3 1 5 8");
 
-//    if (true) {
-//    xSeed(1000, 100, null);
-//    return;
-//    }
-    
+    x("51  23  10  41  45 *47      95      78");
+    halt();
+    x(" 51  23  10  41  45  47  35  95                 *97                      78");
+    //  x("[2,5,3]");
+
+    //    if (true) {
+    //    xSeed(1000, 100, null);
+    //    return;
+    //    }
+
     if (true) {
       int s = 128;
       for (int y = 3; y < 20; y++) {
@@ -104,7 +106,7 @@ public class BurstBalloons extends LeetCode {
   private void x(int[] nums, Integer expected) {
     db = nums.length < 12;
 
-    var alg1 = new RecursionLast();
+    var alg1 = new DP();
 
     pr(str(nums));
     var res = alg1.maxCoins(nums);
@@ -313,7 +315,7 @@ public class BurstBalloons extends LeetCode {
       sb.append(gameResults(mNums, getSlots()));
       sb.append('\n');
       sb.append("Calls:").append(mCallCount);
-      sb.append(" Cache miss %:").append((int)((mCacheMisses * 100.0) / mCallCount));
+      sb.append(" Cache miss %:").append((int) ((mCacheMisses * 100.0) / mCallCount));
       return sb.toString();
     }
 
@@ -367,22 +369,22 @@ public class BurstBalloons extends LeetCode {
       // The values of the left and right sides are nonstrictly increasing as the number of values
       // increases.
 
-//      if (false) {
-//        for (int j = start + 1; j < stop - 1; j++) {
-//          var x = nums[j];
-//          if (x < nums[j - 1] && x < nums[j + 1]) {
-//            int pivot = j;
-//            int pivotValue = x;
-//            var leftSum = aux(start, pivot, leftValue, pivotValue);
-//            var rightSum = aux(pivot + 1, stop, pivotValue, rightValue);
-//            var c = leftSum + (leftValue * pivotValue * rightValue) + rightSum;
-//
-//            bestResult = c;
-//            bestSlot = pivot;
-//
-//          }
-//        }
-//      }
+      //      if (false) {
+      //        for (int j = start + 1; j < stop - 1; j++) {
+      //          var x = nums[j];
+      //          if (x < nums[j - 1] && x < nums[j + 1]) {
+      //            int pivot = j;
+      //            int pivotValue = x;
+      //            var leftSum = aux(start, pivot, leftValue, pivotValue);
+      //            var rightSum = aux(pivot + 1, stop, pivotValue, rightValue);
+      //            var c = leftSum + (leftValue * pivotValue * rightValue) + rightSum;
+      //
+      //            bestResult = c;
+      //            bestSlot = pivot;
+      //
+      //          }
+      //        }
+      //      }
 
       if (bestSlot < 0) {
         for (int pivot = start; pivot < stop; pivot++) {
@@ -424,6 +426,45 @@ public class BurstBalloons extends LeetCode {
     private int[] mSlots;
     private int mCallCount;
     private int mCacheMisses;
+  }
+
+  private class DP extends Alg {
+
+    public int maxCoins(int[] nums) {
+      int nc = nums.length;
+      int nc2 = nc + 2;
+      var n2 = new int[nc2];
+
+      // Construct expanded num list by adding 1 to each side
+      n2[0] = n2[nc2 - 1] = 1;
+      System.arraycopy(nums, 0, n2, 1, nc);
+
+      // Construct dynamic grid
+      var c = new int[nc + 1][nc + 2];
+
+      for (int gap = 2; gap <= nc+1; gap++) {
+        db(VERT_SP, "gap:", gap);
+
+        for (int x = 0; x + gap < nc2; x++) {
+          var targ = x + gap;
+          db("x:", x, "targ:", targ);
+
+          var bestSum = -1;
+          for (int i = x + 1; i < targ; i++) {
+            var sum = c[x][i] + n2[x] * n2[i] * n2[targ] + c[i][targ];
+            db("...mid:", i, "sum:", sum);
+            if (sum > bestSum)
+              bestSum = sum;
+          }
+          db("...storing c[" + x + "][" + targ + "]=", bestSum);
+
+          c[x][targ] = bestSum;
+        }
+
+        db(strTable(c));
+      }
+      return c[0][nc2 - 1];
+    }
   }
 
 }
