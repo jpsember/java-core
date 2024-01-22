@@ -17,9 +17,7 @@ public class BurstBalloons extends LeetCode {
   public void run() {
 
     x("3 1 5 8");
-
     x("51  23  10  41  45 *47      95      78");
-    halt();
     x(" 51  23  10  41  45  47  35  95                 *97                      78");
     //  x("[2,5,3]");
 
@@ -431,39 +429,49 @@ public class BurstBalloons extends LeetCode {
   private class DP extends Alg {
 
     public int maxCoins(int[] nums) {
-      int nc = nums.length;
-      int nc2 = nc + 2;
-      var n2 = new int[nc2];
 
-      // Construct expanded num list by adding 1 to each side
-      n2[0] = n2[nc2 - 1] = 1;
-      System.arraycopy(nums, 0, n2, 1, nc);
+      int nc = nums.length;
+      {
+        // Construct expanded num list by adding 1 to each side
+        var tmp = new int[nc + 2];
+        tmp[0] = tmp[nc + 1] = 1;
+        System.arraycopy(nums, 0, tmp, 1, nc);
+        nums = tmp;
+        nc = nums.length;
+      }
 
       // Construct dynamic grid
-      var c = new int[nc + 1][nc + 2];
+      // The first dimension will be the 'from' slot, and the
+      // second will be the 'to' slot.
+      //
+      // We never need a 'to' value of zero, so we'll subtract one from each of these indices.
+      //
+      var c = new int[nc - 1][nc];
 
-      for (int gap = 2; gap <= nc+1; gap++) {
-        db(VERT_SP, "gap:", gap);
+      // Outer loop iterates over the gap between the source and target balloons
+      for (int gap = 2; gap < nc; gap++) {
+        // Loop over each possible source balloon
+        for (int src = 0; src + gap < nc; src++) {
+          var trg = src + gap;
 
-        for (int x = 0; x + gap < nc2; x++) {
-          var targ = x + gap;
-          db("x:", x, "targ:", targ);
-
+          // Iterate over each possible step or 'middle' balloon
           var bestSum = -1;
-          for (int i = x + 1; i < targ; i++) {
-            var sum = c[x][i] + n2[x] * n2[i] * n2[targ] + c[i][targ];
-            db("...mid:", i, "sum:", sum);
+          for (int mid = src + 1; mid < trg; mid++) {
+            var sum = c[src][mid] + nums[src] * nums[mid] * nums[trg] + c[mid][trg];
             if (sum > bestSum)
               bestSum = sum;
           }
-          db("...storing c[" + x + "][" + targ + "]=", bestSum);
-
-          c[x][targ] = bestSum;
+          c[src][trg] = bestSum;
         }
 
-        db(strTable(c));
+        db("Gap", gap, INDENT, strTable(c));
+
       }
-      return c[0][nc2 - 1];
+      return c[0][nc - 1];
+    }
+
+    public String toString() {
+      return "DP";
     }
   }
 
