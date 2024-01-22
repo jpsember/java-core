@@ -444,9 +444,11 @@ public class BurstBalloons extends LeetCode {
       // The first dimension will be the 'from' slot, and the
       // second will be the 'to' slot.
       //
-      // We never need a 'to' value of zero, so we'll subtract one from each of these indices.
+      // We never need a 'from' value of nc-1, so don't allocate a row there;
+      // and we never need a 'to' value of zero, so we'll subtract one from each of these indices.
       //
-      var c = new int[nc - 1][nc];
+      final int DEST_OFFSET = 0; //-1;
+      var c = new int[nc - 1][nc +DEST_OFFSET];
 
       // Outer loop iterates over the gap between the source and target balloons
       for (int gap = 2; gap < nc; gap++) {
@@ -457,17 +459,19 @@ public class BurstBalloons extends LeetCode {
           // Iterate over each possible step or 'middle' balloon
           var bestSum = -1;
           for (int mid = src + 1; mid < trg; mid++) {
-            var sum = c[src][mid] + nums[src] * nums[mid] * nums[trg] + c[mid][trg];
+          //  pr("src:",src,"mid:",mid,"trg:",trg);
+            var sum = c[src][mid + DEST_OFFSET] + nums[src] * nums[mid] * nums[trg]
+                + c[mid][trg + DEST_OFFSET];
             if (sum > bestSum)
               bestSum = sum;
           }
-          c[src][trg] = bestSum;
+          c[src][trg + DEST_OFFSET] = bestSum;
         }
 
         db("Gap", gap, INDENT, strTable(c));
 
       }
-      return c[0][nc - 1];
+      return c[0][nc - 1   +DEST_OFFSET];
     }
 
     public String toString() {
