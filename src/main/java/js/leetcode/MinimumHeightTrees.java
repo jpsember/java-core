@@ -7,6 +7,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
+import js.data.DataUtil;
+
 public class MinimumHeightTrees extends LeetCode {
 
   public static void main(String[] args) {
@@ -14,16 +16,25 @@ public class MinimumHeightTrees extends LeetCode {
   }
 
   public void run() {
+    x(1, "[]", "0");
+    x(2, "[[0,1]]", "0 1");
     //x(3, "[[0,1],[0,2]]");
     // x(4, "[[1,0],[1,2],[1,3]]");
     // x(4, "1 3 3 2 2 0");
     // x(6, "[[3,0],[3,1],[3,2],[3,4],[5,4]]");
-    x(6, "[[3,0],[3,1],[3,2],[3,4],[5,4]]");
+    // x(6, "[[3,0],[3,1],[3,2],[3,4],[5,4]]");
   }
 
   private void x(int n, String ns) {
+    x(n, ns, null);
+  }
+
+  private void x(int n, String ns, String exp) {
     var nums = extractNums(ns);
     var edges = new int[nums.length / 2][2];
+    int[] expected = null;
+    if (exp != null)
+      expected = extractNums(ns);
 
     for (int i = 0; i < nums.length; i += 2) {
       int j = i / 2;
@@ -33,6 +44,13 @@ public class MinimumHeightTrees extends LeetCode {
     var alg = new Solution();
     db = true;
     var result = alg.findMinHeightTrees(n, edges);
+    if (expected != null) {
+      result.sort(null);
+      var res = DataUtil.intArray(result);
+      Arrays.sort(res);
+      Arrays.sort(expected);
+      verify(res, expected);
+    }
     pr(result);
   }
 
@@ -113,7 +131,6 @@ public class MinimumHeightTrees extends LeetCode {
       // added to the answer list.
 
       var result = new HashSet<Integer>();
-      // var steps = new int[k + 1];
       int ki0 = k / 2;
       int ki1 = ki0 + (k & 1);
 
@@ -121,10 +138,10 @@ public class MinimumHeightTrees extends LeetCode {
         var a = diam.get(j);
         var b = diam.get(j + 1);
 
-        db("walking from", a, "to", b);
-
         var posn = a;
         int cursor = 1; // already at start
+        if (cursor >= ki0)
+          result.add(posn);
 
         while (posn != b) {
 
