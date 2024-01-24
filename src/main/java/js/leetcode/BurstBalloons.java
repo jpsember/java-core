@@ -279,153 +279,6 @@ public class BurstBalloons extends LeetCode {
     private int[] mSlots;
   }
 
-  /**
-   * A new recursive method in which we partition based on the *last* balloon to
-   * be popped, and supply the external left and right balloon values to each
-   * subarray
-   */
-  private class RecursionLast extends Alg {
-
-    public int maxCoins(int[] nums) {
-      checkState(mNums == null);
-      mNums = nums;
-      mMemo.clear();
-      var result = aux(0, nums.length, 1, 1);
-      return result;
-    }
-
-    public int[] getSlots() {
-      if (mSlots == null) {
-        var x = mNums.length;
-        var sl = new ArrayList<Integer>(x);
-        auxFillSlots(sl, 0, x, 1, 1);
-        mSlots = new int[x];
-        for (int i = 0; i < x; i++)
-          mSlots[i] = sl.get(x - 1 - i);
-      }
-      return mSlots;
-    }
-
-    @Override
-    public String toString() {
-      var sb = new StringBuilder();
-      sb.append("RecursionLast:\n");
-      sb.append(gameResults(mNums, getSlots()));
-      sb.append('\n');
-      sb.append("Calls:").append(mCallCount);
-      sb.append(" Cache miss %:").append((int) ((mCacheMisses * 100.0) / mCallCount));
-      return sb.toString();
-    }
-
-    private void auxFillSlots(List<Integer> dest, int start, int stop, int leftValue, int rightValue) {
-      if (stop <= start)
-        return;
-      int slot = start;
-      if (stop > start + 1) {
-        var key = leftValue | (rightValue << 7) | (start << (7 + 7)) | (stop << (7 + 7 + 9));
-        var memoValue = mMemo.get(key);
-        checkState(memoValue != null);
-        slot = (int) (memoValue >> 32);
-      }
-      dest.add(slot);
-      auxFillSlots(dest, start, slot, leftValue, mNums[slot]);
-      auxFillSlots(dest, slot + 1, stop, mNums[slot], rightValue);
-    }
-
-    private int aux(int start, int stop, int leftValue, int rightValue) {
-      final boolean dbx = false;
-
-      if (stop <= start)
-        return 0;
-
-      var nums = mNums;
-      if (stop == start + 1)
-        return leftValue * nums[start] * rightValue;
-      mCallCount++;
-
-      // We store a key that embeds the left and right values (log 100 = 7 bits), and the
-      // start and stop indices (log 300 = 9 bits)
-      var key = leftValue | (rightValue << 7) | (start << (7 + 7)) | (stop << (7 + 7 + 9));
-      long memoValue = mMemo.getOrDefault(key, -1L);
-      if (memoValue >= 0)
-        return (int) memoValue;
-      mCacheMisses++;
-
-      if (dbx) {
-        pushIndent();
-        db("aux", leftValue, ">>", str(mNums, start, stop), "<<", rightValue);
-      }
-
-      // Consider each balloon as the *last* one to pop
-
-      // Is there a heuristic we can employ to speed things up?
-      // Skip certain values?
-
-      var bestResult = 0;
-      var bestSlot = -1;
-
-      // The values of the left and right sides are nonstrictly increasing as the number of values
-      // increases.
-
-      //      if (false) {
-      //        for (int j = start + 1; j < stop - 1; j++) {
-      //          var x = nums[j];
-      //          if (x < nums[j - 1] && x < nums[j + 1]) {
-      //            int pivot = j;
-      //            int pivotValue = x;
-      //            var leftSum = aux(start, pivot, leftValue, pivotValue);
-      //            var rightSum = aux(pivot + 1, stop, pivotValue, rightValue);
-      //            var c = leftSum + (leftValue * pivotValue * rightValue) + rightSum;
-      //
-      //            bestResult = c;
-      //            bestSlot = pivot;
-      //
-      //          }
-      //        }
-      //      }
-
-      if (bestSlot < 0) {
-        for (int pivot = start; pivot < stop; pivot++) {
-          var pivotValue = nums[pivot];
-
-          // Heuristic: don't choose as last pivot if neighbors to each side are higher
-          // This saves only about 25%
-          if (true && pivot > start && pivot + 1 < stop && nums[pivot - 1] > pivotValue
-              && nums[pivot + 1] > pivotValue)
-            continue;
-
-          if (dbx)
-            db("candidate pivot[", pivot, "]", pivotValue);
-
-          // We never want a zero to be the *last* balloon popped in a set.
-          // This is true, but I don't think it helps.
-          if (pivotValue == 0)
-            continue;
-
-          var leftSum = aux(start, pivot, leftValue, pivotValue);
-          var rightSum = aux(pivot + 1, stop, pivotValue, rightValue);
-          var c = leftSum + (leftValue * pivotValue * rightValue) + rightSum;
-          if (c > bestResult) {
-            bestResult = c;
-            bestSlot = pivot;
-          }
-        }
-      }
-      if (dbx)
-        popIndent();
-
-      mMemo.put(key, bestResult | (((long) bestSlot) << 32));
-      return bestResult;
-    }
-
-    // The values are the score in the lower 32 bits, the last move in the upper 32 bits
-    private Map<Integer, Long> mMemo = new HashMap<>();
-    private int[] mNums;
-    private int[] mSlots;
-    private int mCallCount;
-    private int mCacheMisses;
-  }
-
   private class DP extends Alg {
 
     public int maxCoins(int[] nums) {
@@ -448,7 +301,7 @@ public class BurstBalloons extends LeetCode {
       // And we never need a 'to' value of zero, but to keep things simple we won't change
       // anything there.
       //
-      var c = new int[n - 1][n];
+      var g = new int[n - 1][n];
 
       // Outer loop iterates over the maximum gap between source and target balloons,
       // which is at most n, to jump from the leftmost '1' to the rightmost '1'.
@@ -461,16 +314,17 @@ public class BurstBalloons extends LeetCode {
 
           // Iterate over each possible step or 'middle' balloon
           var bestSum = 0;
+          var cSrc = g[src]; // optimization to avoid g[src][...] while src doesn't change
           for (int mid = src + 1; mid < trg; mid++) {
-            var sum = c[src][mid] + srcTrgProd * nums[mid] + c[mid][trg];
+            var sum = cSrc[mid] + srcTrgProd * nums[mid] + g[mid][trg];
             if (sum > bestSum)
               bestSum = sum;
           }
-          c[src][trg] = bestSum;
+          cSrc[trg] = bestSum;
         }
-        db("Gap", gap, INDENT, strTable(c));
+        //db("Gap", gap, INDENT, strTable(g));
       }
-      return c[0][n - 1];
+      return g[0][n - 1];
     }
 
     public String toString() {
