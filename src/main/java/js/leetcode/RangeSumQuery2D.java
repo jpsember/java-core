@@ -27,12 +27,12 @@ public class RangeSumQuery2D extends LeetCode {
   class NumMatrix {
 
     public NumMatrix(int[][] matrix) {
-      // this.matrix = matrix;
       int h = matrix.length;
       int w = matrix[0].length;
-      sum = new int[h][w];
-      sum[0][0] = matrix[0][0];
+      var s2 = new int[h][w];
+      s2[0][0] = matrix[0][0];
 
+      sum = new int[h + 1][w + 1];
       for (int scan = 1;; scan++) {
         int y = scan;
         int x = 0;
@@ -48,13 +48,14 @@ public class RangeSumQuery2D extends LeetCode {
           var prev2 = 0;
           var prev3 = 0;
           if (x > 0) {
-            prev1 = sum[y][x - 1];
+            prev1 = s2[y][x - 1];
             if (y > 0)
-              prev3 = sum[y - 1][x - 1];
+              prev3 = s2[y - 1][x - 1];
           }
           if (y > 0)
-            prev2 = sum[y - 1][x];
-          sum[y][x] = prev1 + prev2 - prev3 + matrix[y][x];
+            prev2 = s2[y - 1][x];
+          s2[y][x] = prev1 + prev2 - prev3 + matrix[y][x];
+          sum[y + 1][x + 1] = s2[y][x];
           x++;
           y--;
         }
@@ -62,18 +63,7 @@ public class RangeSumQuery2D extends LeetCode {
     }
 
     public int sumRegion(int row1, int col1, int row2, int col2) {
-      var x0 = col1;
-      var y0 = row1;
-      var x1 = col2;
-      var y1 = row2;
-      return sum(x1, y1) - sum(x1, y0 - 1) - sum(x0 - 1, y1) + sum(x0 - 1, y0 - 1);
-    }
-
-    private int sum(int x, int y) {
-      var result = 0;
-      if (x >= 0 && y >= 0)
-        result = sum[y][x];
-      return result;
+      return sum[row2 + 1][col2 + 1] - sum[row1][col2 + 1] - sum[row2 + 1][col1] + sum[row1][col1];
     }
 
     private int[][] sum;
