@@ -3,6 +3,7 @@ package js.leetcode;
 import static js.base.Tools.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class MinimumHeightTrees extends LeetCode {
@@ -12,10 +13,10 @@ public class MinimumHeightTrees extends LeetCode {
   }
 
   public void run() {
-
-    //    x(4, "[[1,0],[1,2],[1,3]]");
-    //    x(6, "[[3,0],[3,1],[3,2],[3,4],[5,4]]");
-    x(3, "[[0,1],[0,2]]");
+    // x(4, "[[1,0],[1,2],[1,3]]");
+    // x(6, "[[3,0],[3,1],[3,2],[3,4],[5,4]]");
+    // x(3, "[[0,1],[0,2]]");
+    x(6, "[[3,0],[3,1],[3,2],[3,4],[5,4]]");
   }
 
   private void x(int n, String ns) {
@@ -27,7 +28,9 @@ public class MinimumHeightTrees extends LeetCode {
       edges[j][0] = nums[i];
       edges[j][1] = nums[i + 1];
     }
-    var result = new Solution().findMinHeightTrees(n, edges);
+    var alg = new Solution();
+    db = true;
+    var result = alg.findMinHeightTrees(n, edges);
     pr(result);
   }
 
@@ -35,79 +38,94 @@ public class MinimumHeightTrees extends LeetCode {
 
     public List<Integer> findMinHeightTrees(int n, int[][] edges) {
 
-      db = true;
-      // Construct graph
-      var nodes = new Node[n];
-      for (int i = 0; i < n; i++)
-        nodes[i] = new Node(i);
+      // Perform Floyd-Warshall algorithm.
 
-      for (var edge : edges) {
-        var na = nodes[edge[0]];
-        var nb = nodes[edge[1]];
-        na.siblings.add(nb);
-        nb.siblings.add(na);
-      }
+      // Construct edge incidence matrix.   
+      mAdjMat = new int[n][n];
+      for (var row : mAdjMat)
+        Arrays.fill(row, Integer.MAX_VALUE);
 
-      // Choose an arbitrary node as the root of a tree
-      var root = nodes[0];
+      for (var edge : edges)
+        setEdge(edge[0], edge[1], 1);
+      db("adjmat:", INDENT, strTable(mAdjMat));
 
-      // Determine depth and height of each node relative to this tree
-      walk(root, 0);
-
-      // All nodes that have a height and depth "equal" to half the root's height are added to the
-      // output.  We have to compensate for the root's height being an odd number...
-      int v1 = root.height / 2;
-      int v2 = (root.height % 2 == 1) ? v1 + 1 : v1;
-
-      db("root:", root);
-      List<Integer> result = new ArrayList<>();
-      for (var node : nodes) {
-        pushIndent();
-        db("child:", node);
-        if ((node.depth == v1 && node.height == v2) || (node.depth == v2 && node.height == v1)) {
-          db("...adding to result");
-          result.add(node.val);
+      {
+        for (int k = 0; k < n; k++) {
+          for (int i = 0; i < n; i++) {
+            var distIK = getEdge(i, k);
+            if (distIK == Integer.MAX_VALUE)
+              continue;
+            for (int j = 0; j < n; j++) {
+              var distKJ = getEdge(k, j);
+              if (distKJ == Integer.MAX_VALUE)
+                continue;
+              var distIJ = getEdge(i, j);
+              var newdist = distIK + distKJ;
+              if (newdist < distIJ)
+                setEdge(i, j, newdist);
+            }
+          }
         }
-        popIndent();
       }
+      db("adjmat:", INDENT, strTable(mAdjMat));
+
+      // Set k = graph radius (the maximum distance between any two vertices)
+      var k = 0;
+      for (int i = 0; i < n; i++) {
+        for (int j = i + 1; j < n; j++) {
+          k = Math.max(k, mAdjMat[i][j]);
+        }
+      }
+      db("diameter, k:", k);
+
+      // While k > 1, delete all vertices that are at a distance k from any other 
+      // (still existing) vertex, and subtract 2 from k.  We are 'peeling an onion' of
+      // diameter pairs.
+
+      var dead = new boolean[n];
+
+      while (k > 1) {
+        db("deleting vertices separated by k=", k);
+        for (int i = 0; i < n; i++) {
+          if (dead[i])
+            continue;
+          for (int j = i + 1; j < n; j++) {
+            if (dead[j])
+              continue;
+            var dist = mAdjMat[i][j];
+            if (dist == k) {
+              dead[i] = true;
+              dead[j] = true;
+              db("...deleting vertices:", i, j);
+            }
+          }
+        }
+        k -= 2;
+      }
+
+      List<Integer> result = new ArrayList<>();
+      for (int i = 0; i < n; i++)
+        if (!dead[i])
+          result.add(i);
+
       return result;
     }
 
-    private void walk(Node node, int depth) {
-      node.depth = depth;
-      for (var sibling : node.siblings) {
-        // If we've already visited this node, do nothing
-        if (sibling.depth != null)
-          continue;
-        walk(sibling, depth + 1);
-        node.height = Math.max(node.height, 1 + sibling.height);
-      }
+    private void setEdge(int a, int b, int distance) {
+      if (a < b)
+        mAdjMat[a][b] = distance;
+      else
+        mAdjMat[b][a] = distance;
     }
 
-    private class Node {
-      int val;
-      List<Node> siblings = new ArrayList<>();
-      Integer depth;
-      int height;
-
-      Node(int val) {
-        this.val = val;
-      }
-
-      @Override
-      public String toString() {
-        var s = sb();
-        s.append("#").append(val);
-        s.append("->( ");
-        for (var c : siblings) {
-          s.append(c.val).append(' ');
-        }
-        s.append(") ");
-        if (depth != null)
-          s.append("depth:").append(depth).append(" height:").append(height);
-        return s.toString();
-      }
-
+    private int getEdge(int a, int b) {
+      if (a < b)
+        return mAdjMat[a][b];
+      else
+        return mAdjMat[b][a];
     }
+
+    private int[][] mAdjMat;
+
   }
 }
