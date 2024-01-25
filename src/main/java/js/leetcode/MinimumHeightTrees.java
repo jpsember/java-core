@@ -102,14 +102,14 @@ public class MinimumHeightTrees extends LeetCode {
       mK = root.height;
       calcParentPaths(root);
 
-      if (db) {
-        db(VERT_SP, "nodes after calc everything:");
-        db("k:", mK);
-        for (var nd : nodes) {
-          pr(nd);
-        }
-        db(VERT_SP);
-      }
+      //      if (db) {
+      //        db(VERT_SP, "nodes after calc everything:");
+      //        db("k:", mK);
+      //        for (var nd : nodes) {
+      //          pr(nd);
+      //        }
+      //        db(VERT_SP);
+      //      }
 
       List<Integer> result = new ArrayList<>();
 
@@ -121,23 +121,25 @@ public class MinimumHeightTrees extends LeetCode {
       int v1 = k / 2;
       int v2 = (root.height % 2 == 1) ? v1 + 1 : v1;
 
-      if (db) {
-        db("root:", root);
-        db("k:", k);
-        db("v1:", v1);
-        db("v2:", v2);
-      }
+      //      if (db) {
+      //        db("root:", root);
+      //        db("k:", k);
+      //        db("v1:", v1);
+      //        db("v2:", v2);
+      //      }
 
       for (var node : nodes) {
-        pushIndent();
-        if (db)
+        if (db) {
+          pushIndent();
           db("child:", node);
+        }
         if ((node.height == v1 && node.parentLen == v2) || (node.height == v2 && node.parentLen == v1)) {
           if (db)
             db("...adding to result");
           result.add(node.name);
         }
-        popIndent();
+        if (db)
+          popIndent();
       }
       return result;
     }
@@ -162,9 +164,7 @@ public class MinimumHeightTrees extends LeetCode {
         for (int i = node.children.size() - 1; i >= 0; i--) {
           var child = node.children.get(i);
           if (child == parent) {
-            // pr("...removing edge to parent");
             work.add(i);
-            //  node.children.remove(i);
           }
         }
         for (var index : work) {
@@ -176,15 +176,12 @@ public class MinimumHeightTrees extends LeetCode {
           stack.add(node);
         }
       }
-      //  deleteEdgesToParentNodes(child, node);
     }
 
     /**
      * Walk a subtree, calculating height of each node
      */
     private void calcHeights(Node node, Node parent) {
-      pr("walk2, node:", node.name);
-
       for (var child : node.children) {
         calcHeights(child, node);
         var childLongestPath = child.height;
@@ -196,9 +193,6 @@ public class MinimumHeightTrees extends LeetCode {
      * Walk subtree, calculating longest path through parent node
      */
     private void calcParentPaths(Node node) {
-
-      pr(VERT_SP, "calcParentPaths", node.name);
-
       // Determine the two highest height values of this node's children, and the node associated with the highest's
       Node maxChild1 = null;
       Node maxChild2 = null;
@@ -208,13 +202,10 @@ public class MinimumHeightTrees extends LeetCode {
           maxChild1 = n;
         else if (maxChild2 == null || n.height > maxChild2.height)
           maxChild2 = n;
-        pr("...child:", n.name, "max1:", maxChild1, "max2:", maxChild2);
       }
 
       for (var n : node.children) {
-        pr(VERT_SP, "calc parent path, ht1,2:", maxChild1, maxChild2);
         int longPath = 1 + node.parentLen;
-        pr("...initial val is parent's longest path:", longPath);
 
         var c = 0;
         if (maxChild1 != n)
