@@ -19,12 +19,15 @@ public class MinimumHeightTrees extends LeetCode {
 
   public void run() {
 
+    x(3, "[[0,1],[0,2]]", "0");
+
     x(4, "[[1,0],[1,2],[1,3]]", "1");
 
     x(1, "[]", "0");
     x(2, "[[0,1]]", "0 1");
 
-    x(1212, Files.readString(new File("1212.txt")));
+    if (false)
+      x(1212, Files.readString(new File("1212.txt")));
   }
 
   private void x(int n, String ns) {
@@ -34,29 +37,44 @@ public class MinimumHeightTrees extends LeetCode {
   private void x(int n, String ns, String exp) {
     var nums = extractNums(ns);
     var edges = new int[nums.length / 2][2];
-    int[] expected = null;
-    if (exp != null)
-      expected = extractNums(exp);
+    List<Integer> expected = null;
+    if (exp != null) {
+      expected = toList(extractNums(exp));
+    } else {
+      Alg alg;
+
+      alg = new FloydWarshall();
+      db = false;
+      expected = alg.findMinHeightTrees(n, edges);
+    }
 
     for (int i = 0; i < nums.length; i += 2) {
       int j = i / 2;
       edges[j][0] = nums[i];
       edges[j][1] = nums[i + 1];
     }
-    var alg = new Solution();
+    Alg alg;
+    alg = new Tree();
+
     db = nums.length < 20;
+    checkpoint("Starting alg");
     var result = alg.findMinHeightTrees(n, edges);
-    if (expected != null) {
+    checkpoint("Done alg");
+    {
       result.sort(null);
-      var res = DataUtil.intArray(result);
-      Arrays.sort(res);
-      Arrays.sort(expected);
-      verify(res, expected);
+      expected.sort(null);
+      verify(result, expected);
+      pr("result:", result);
     }
     pr(result);
   }
 
-  class Solution {
+  private interface Alg {
+
+    List<Integer> findMinHeightTrees(int n, int[][] edges);
+  }
+
+  class FloydWarshall implements Alg {
 
     public List<Integer> findMinHeightTrees(int n, int[][] edges) {
 
@@ -84,8 +102,10 @@ public class MinimumHeightTrees extends LeetCode {
         path[a][b] = b;
         path[b][a] = a;
       }
-      db("adjmat:", INDENT, strTable(dist));
+      if (db)
+        db("adjmat:", INDENT, strTable(dist));
 
+      pr("start floyd");
       {
         for (int k = 0; k < n; k++) {
           for (int i = 0; i < n; i++) {
@@ -106,7 +126,9 @@ public class MinimumHeightTrees extends LeetCode {
           }
         }
       }
-      db("adjmat:", INDENT, strTable(dist));
+      pr("end floyd");
+      if (db)
+        db("adjmat:", INDENT, strTable(dist));
 
       // Set k = graph radius (the maximum distance between any two vertices), and save all pairs
       // of vertices that are separated by this distance
@@ -127,7 +149,8 @@ public class MinimumHeightTrees extends LeetCode {
           }
         }
       }
-      db("diameter, k:", k);
+      if (db)
+        db("diameter, k:", k);
 
       // For each pair of diameter vertices (u,v), the node(s) halfway along the path between these two are 
       // added to the answer list.
@@ -139,13 +162,15 @@ public class MinimumHeightTrees extends LeetCode {
       int ki0 = k / 2;
       int ki1 = ki0 + (k & 1);
 
-      pr("k:", k, "ki0:", ki0, "ki1:", ki1);
+      // pr("k:", k, "ki0:", ki0, "ki1:", ki1);
 
       for (int j = 0; j < diam.size(); j += 2) {
+        pr("diam", j, "of", diam.size());
         var a = diam.get(j);
         var b = diam.get(j + 1);
 
-        db("extract path from", a, "to", b);
+        if (db)
+          db("extract path from", a, "to", b);
 
         var posn = a;
         int cursor = 1; // already at start
@@ -181,4 +206,88 @@ public class MinimumHeightTrees extends LeetCode {
     }
 
   }
+
+  class Tree implements Alg {
+
+    public List<Integer> findMinHeightTrees(int n, int[][] edges) {
+
+      // db = true;
+      // Construct graph
+      var nodes = new Node[n];
+      for (int i = 0; i < n; i++)
+        nodes[i] = new Node(i);
+
+      for (var edge : edges) {
+        var na = nodes[edge[0]];
+        var nb = nodes[edge[1]];
+        na.siblings.add(nb);
+        nb.siblings.add(na);
+      }
+
+      // Choose an arbitrary node as the root of a tree
+      var root = nodes[0];
+
+      // Determine depth and height of each node relative to this tree
+      walk(root, 0);
+
+      // All nodes that have a height and depth "equal" to half the root's height are added to the
+      // output.  We have to compensate for the root's height being an odd number...
+      int v1 = root.height / 2;
+      int v2 = (root.height % 2 == 1) ? v1 + 1 : v1;
+
+      if (db)
+        db("root:", root);
+      List<Integer> result = new ArrayList<>();
+      for (var node : nodes) {
+        pushIndent();
+        if (db)
+          db("child:", node);
+        if ((node.depth == v1 && node.height == v2) || (node.depth == v2 && node.height == v1)) {
+          if (db)
+            db("...adding to result");
+          result.add(node.val);
+        }
+        popIndent();
+      }
+      return result;
+    }
+
+    private void walk(Node node, int depth) {
+      node.depth = depth;
+      for (var sibling : node.siblings) {
+        // If we've already visited this node, do nothing
+        if (sibling.depth != null)
+          continue;
+        walk(sibling, depth + 1);
+        node.height = Math.max(node.height, 1 + sibling.height);
+      }
+    }
+
+    private class Node {
+      int val;
+      List<Node> siblings = new ArrayList<>();
+      Integer depth;
+      int height;
+
+      Node(int val) {
+        this.val = val;
+      }
+
+      @Override
+      public String toString() {
+        var s = sb();
+        s.append("#").append(val);
+        s.append("->( ");
+        for (var c : siblings) {
+          s.append(c.val).append(' ');
+        }
+        s.append(") ");
+        if (depth != null)
+          s.append("depth:").append(depth).append(" height:").append(height);
+        return s.toString();
+      }
+
+    }
+  }
+
 }

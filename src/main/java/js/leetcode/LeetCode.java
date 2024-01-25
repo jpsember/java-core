@@ -82,6 +82,13 @@ public abstract class LeetCode {
     return DataUtil.intArray(res);
   }
 
+  public static List<Integer> toList(int[] ints) {
+    var res = new ArrayList<Integer>(ints.length);
+    for (var q : ints)
+      res.add(q);
+    return res;
+  }
+
   public static int[][] extractMatrix(String s, int width) {
     var ints = extractNums(s);
     checkArgument(ints.length % width == 0, "unexpected count:", ints.length, "not multiple of width", width);
@@ -240,8 +247,8 @@ public abstract class LeetCode {
         minVal = Math.min(minVal, col);
       }
     }
-    int fieldWidth = Math.max((""+minVal).length(),(""+maxVal).length())+1;
-    
+    int fieldWidth = Math.max(("" + minVal).length(), ("" + maxVal).length()) + 1;
+
     int ht = m.length;
     int wd = m[0].length;
 
