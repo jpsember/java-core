@@ -4,11 +4,8 @@ import static js.base.Tools.*;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 
-import js.data.DataUtil;
 import js.file.Files;
 
 public class MinimumHeightTrees extends LeetCode {
@@ -88,8 +85,8 @@ public class MinimumHeightTrees extends LeetCode {
       for (var edge : edges) {
         var na = nodes[edge[0]];
         var nb = nodes[edge[1]];
-        na.edges.add(new Edge(nb));
-        nb.edges.add(new Edge(na));
+        na.children.add(nb);
+        nb.children.add(na);
       }
 
       // Choose an arbitrary node as the root of a tree
@@ -135,19 +132,19 @@ public class MinimumHeightTrees extends LeetCode {
       pr("walk2, node:", node.name);
 
       // Delete any edges that go back to the parent
-      for (int i = node.edges.size() - 1; i >= 0; i--) {
-        var e = node.edges.get(i);
-        if (e.dest == parent) {
+      for (int i = node.children.size() - 1; i >= 0; i--) {
+        var e = node.children.get(i);
+        if (e == parent) {
           pr("...removing edge to parent");
-          node.edges.remove(i);
+          node.children.remove(i);
         }
       }
 
       int longestPath = 0;
-      for (var e : node.edges) {
-        pr("walk2, edge:", e.dest.name);
-        walk2(e.dest, node);
-        var childLongestPath = e.dest.height;
+      for (var e : node.children) {
+        pr("walk2, edge:", e.name);
+        walk2(e, node);
+        var childLongestPath = e.height;
         longestPath = Math.max(longestPath, 1 + childLongestPath);
       }
 
@@ -171,9 +168,8 @@ public class MinimumHeightTrees extends LeetCode {
       int longHt2 = 0;
       Node longNode1 = null;
 
-      for (int i = 0; i < node.edges.size(); i++) {
-        var e = node.edges.get(i);
-        var n = e.dest;
+      for (int i = 0; i < node.children.size(); i++) {
+        var n = node.children.get(i);
         if (n.height > longHt1) {
           longHt2 = longHt1;
           longNode1 = n;
@@ -183,8 +179,7 @@ public class MinimumHeightTrees extends LeetCode {
         }
       }
 
-      for (var e : node.edges) {
-        var n = e.dest;
+      for (var n : node.children) {
 
         // The length of the longest path through this child's parent is the greater of
         // the path through its parent, or 2 + the longest height of some other child
@@ -204,21 +199,11 @@ public class MinimumHeightTrees extends LeetCode {
         }
         n.longestPathThroughParent = longPath;
       }
-
-    }
-
-    private class Edge {
-      Node dest;
-      // int longestPath;
-
-      Edge(Node dest) {
-        this.dest = dest;
-      }
     }
 
     private class Node {
       int name;
-      List<Edge> edges = new ArrayList<>();
+      List<Node> children = new ArrayList<>();
       // Length of longest path to leaf node
       int height;
       // Length of longest path through parent node
@@ -240,8 +225,7 @@ public class MinimumHeightTrees extends LeetCode {
         s.append("(h:").append(d(height));
         s.append(" p:").append(d(longestPathThroughParent));
         s.append(")->( ");
-        for (var edge : edges) {
-          var n = edge.dest;
+        for (var n : children) {
           s.append(n.name).append(' ');
         }
         s.append(") ");
