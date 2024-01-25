@@ -45,7 +45,7 @@ public class MinimumHeightTrees extends LeetCode {
     } else {
       Alg alg;
 
-      alg = new FloydWarshall();
+      alg = new Tree();
       db = false;
       expected = alg.findMinHeightTrees(n, edges);
     }
@@ -74,139 +74,6 @@ public class MinimumHeightTrees extends LeetCode {
   private interface Alg {
 
     List<Integer> findMinHeightTrees(int n, int[][] edges);
-  }
-
-  class FloydWarshall implements Alg {
-
-    public List<Integer> findMinHeightTrees(int n, int[][] edges) {
-
-      // Perform Floyd-Warshall algorithm.
-
-      // Construct edge incidence matrix, and path matrix.  
-      var dist = new int[n][n]; // Holds the shortest known number of edges between i and j
-      var path = new int[n][n]; // Holds intermediate destination on path from i to j (j if single step)
-
-      for (var row : dist)
-        Arrays.fill(row, Integer.MAX_VALUE);
-      for (int i = 0; i < n; i++)
-        dist[i][i] = 0;
-
-      if (db) {
-        for (var row : path)
-          Arrays.fill(row, Integer.MIN_VALUE);
-      }
-
-      for (var edge : edges) {
-        var a = edge[0];
-        var b = edge[1];
-        dist[a][b] = 1;
-        dist[b][a] = 1;
-        path[a][b] = b;
-        path[b][a] = a;
-      }
-      if (db)
-        db("adjmat:", INDENT, strTable(dist));
-
-      pr("start floyd");
-      {
-        for (int k = 0; k < n; k++) {
-          for (int i = 0; i < n; i++) {
-            var distIK = dist[i][k];
-            if (distIK == Integer.MAX_VALUE)
-              continue;
-            for (int j = 0; j < n; j++) {
-              var distKJ = dist[k][j];
-              if (distKJ == Integer.MAX_VALUE)
-                continue;
-              var distIJ = dist[i][j];
-              var newdist = distIK + distKJ;
-              if (newdist < distIJ) {
-                dist[i][j] = newdist;
-                path[i][j] = k;
-              }
-            }
-          }
-        }
-      }
-      pr("end floyd");
-      if (db)
-        db("adjmat:", INDENT, strTable(dist));
-
-      // Set k = graph radius (the maximum distance between any two vertices), and save all pairs
-      // of vertices that are separated by this distance
-
-      List<Integer> diam = new ArrayList<>();
-
-      var k = 0;
-      for (int i = 0; i < n; i++) {
-        for (int j = i + 1; j < n; j++) {
-          var k2 = dist[i][j];
-          if (k2 > k) {
-            diam.clear();
-            k = k2;
-          }
-          if (k == k2) {
-            diam.add(i);
-            diam.add(j);
-          }
-        }
-      }
-      if (db)
-        db("diameter, k:", k);
-
-      // For each pair of diameter vertices (u,v), the node(s) halfway along the path between these two are 
-      // added to the answer list.
-
-      var result = new HashSet<Integer>();
-      if (k == 0)
-        result.add(0);
-
-      int ki0 = k / 2;
-      int ki1 = ki0 + (k & 1);
-
-      // pr("k:", k, "ki0:", ki0, "ki1:", ki1);
-
-      for (int j = 0; j < diam.size(); j += 2) {
-        pr("diam", j, "of", diam.size());
-        var a = diam.get(j);
-        var b = diam.get(j + 1);
-
-        if (db)
-          db("extract path from", a, "to", b);
-
-        var posn = a;
-        int cursor = 1; // already at start
-        if (ki0 == 0) {
-          result.add(posn);
-        }
-
-        while (posn != b) {
-
-          // Advance posn to next *single step* towards b
-          int dest = b;
-          while (true) {
-            // Get next step along path
-            var firstStepToDest = path[posn][dest];
-            if (dest == firstStepToDest) // If this is a single step, stop
-              break;
-            dest = firstStepToDest;
-          }
-          posn = dest;
-
-          // If this position is halfway, add to result
-          if (cursor >= ki0)
-            result.add(posn);
-          // If remaining steps are past halfway, stop
-          if (cursor == ki1)
-            break;
-
-          cursor++;
-        }
-      }
-
-      return new ArrayList<Integer>(result);
-    }
-
   }
 
   class Tree implements Alg {
@@ -265,7 +132,7 @@ public class MinimumHeightTrees extends LeetCode {
      * height of each node
      */
     private void walk2(Node node, Node parent) {
-      pr("walk2, node:",node.name);
+      pr("walk2, node:", node.name);
 
       // Delete any edges that go back to the parent
       for (int i = node.edges.size() - 1; i >= 0; i--) {
@@ -281,7 +148,7 @@ public class MinimumHeightTrees extends LeetCode {
         pr("walk2, edge:", e.dest.name);
         walk2(e.dest, node);
         var childLongestPath = e.dest.height;
-        longestPath = Math.max(longestPath, 1+childLongestPath);
+        longestPath = Math.max(longestPath, 1 + childLongestPath);
       }
 
       node.height = longestPath;
