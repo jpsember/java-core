@@ -16,11 +16,11 @@ public class MinimumHeightTrees extends LeetCode {
 
   public void run() {
 
+    x(3, "[[0,1],[0,2]]", "0");
+
     x(5, "0 4 4 2 4 1 1 3", "1 4");
 
     x(4, "[[1,0],[1,2],[1,3]]", "1");
-
-    x(3, "[[0,1],[0,2]]", "0");
 
     x(1, "[]", "0");
     x(2, "[[0,1]]", "0 1");
@@ -75,6 +75,8 @@ public class MinimumHeightTrees extends LeetCode {
 
   class Tree implements Alg {
 
+    private int mK;
+
     public List<Integer> findMinHeightTrees(int n, int[][] edges) {
 
       // Construct graph
@@ -92,112 +94,123 @@ public class MinimumHeightTrees extends LeetCode {
       // Choose an arbitrary node as the root of a tree
       var root = nodes[0];
 
+      deleteEdgesToParentNodes(root, null);
       // Determine depth and height of each node relative to this tree.
-      walk2(root, null);
+      calcHeights(root, null);
 
-      walk3(root, 0);
+      mK = root.height;
+      calcParentPaths(root);
 
-      for (var nd : nodes) {
-        pr(nd);
+      if (db) {
+        db(VERT_SP, "nodes after calc everything:");
+        db("k:", mK);
+        for (var nd : nodes) {
+          pr(nd);
+        }
+        db(VERT_SP);
       }
 
       List<Integer> result = new ArrayList<>();
 
-      //      // All nodes that have a height and depth "equal" to half the root's height are added to the
-      //      // output.  We have to compensate for the root's height being an odd number...
-      //      int v1 = root.height / 2;
-      //      int v2 = (root.height % 2 == 1) ? v1 + 1 : v1;
-      //
-      //      if (db)
-      //        db("root:", root);
-      //       for (var node : nodes) {
-      //        pushIndent();
-      //        if (db)
-      //          db("child:", node);
-      //        if ((node.depth == v1 && node.height == v2) || (node.depth == v2 && node.height == v1)) {
-      //          if (db)
-      //            db("...adding to result");
-      //          result.add(node.val);
-      //        }
-      //        popIndent();
-      //      }
+      // All nodes that have a height + parent length "equal" to half the root's height are added to the
+      // output.  We have to compensate for the root's height being an odd number...
+
+      var k = mK;
+
+      int v1 = k / 2;
+      int v2 = (root.height % 2 == 1) ? v1 + 1 : v1;
+
+      if (db) {
+        db("root:", root);
+        db("k:", k);
+        db("v1:", v1);
+        db("v2:", v2);
+      }
+
+      for (var node : nodes) {
+        pushIndent();
+        if (db)
+          db("child:", node);
+        if ((node.height == v1 && node.parentLen == v2) || (node.height == v2 && node.parentLen == v1)) {
+          if (db)
+            db("...adding to result");
+          result.add(node.name);
+        }
+        popIndent();
+      }
       return result;
     }
 
     /**
-     * Walk a subtree, deleting edges that lead to parents, and calculating
-     * height of each node
+     * Walk a subtree, delete edges leading to parent nodes
      */
-    private void walk2(Node node, Node parent) {
+    private void deleteEdgesToParentNodes(Node node, Node parent) {
       pr("walk2, node:", node.name);
 
       // Delete any edges that go back to the parent
       for (int i = node.children.size() - 1; i >= 0; i--) {
-        var e = node.children.get(i);
-        if (e == parent) {
+        var child = node.children.get(i);
+        if (child == parent) {
           pr("...removing edge to parent");
           node.children.remove(i);
         }
       }
+      for (var child : node.children)
+        deleteEdgesToParentNodes(child, node);
+    }
 
-      int longestPath = 0;
-      for (var e : node.children) {
-        pr("walk2, edge:", e.name);
-        walk2(e, node);
-        var childLongestPath = e.height;
-        longestPath = Math.max(longestPath, 1 + childLongestPath);
+    /**
+     * Walk a subtree, calculating height of each node
+     */
+    private void calcHeights(Node node, Node parent) {
+      pr("walk2, node:", node.name);
+
+      for (var child : node.children) {
+        calcHeights(child, node);
+        var childLongestPath = child.height;
+        node.height = Math.max(node.height, 1 + childLongestPath);
       }
-
-      node.height = longestPath;
-      pr("...setting height:", node.height, "for:", node);
-
-      //      for (var sibling : node.siblings) {
-      //
-      //        walk(sibling, depth + 1);
-      //        node.height = Math.max(node.height, 1 + sibling.height);
-      //      }
     }
 
     /**
      * Walk subtree, calculating longest path through parent node
      */
-    private void walk3(Node node, int longestPathThroughParent) {
-      // node.depth = depth;
+    private void calcParentPaths(Node node) {
 
-      int longHt1 = 0;
-      int longHt2 = 0;
-      Node longNode1 = null;
+      pr(VERT_SP, "calcParentPaths", node.name);
 
-      for (int i = 0; i < node.children.size(); i++) {
-        var n = node.children.get(i);
-        if (n.height > longHt1) {
-          longHt2 = longHt1;
-          longNode1 = n;
-          longHt1 = n.height;
-        } else if (n.height > longHt2) {
-          longHt2 = n.height;
-        }
+      // Determine the two highest height values of this node's children, and the node associated with the highest's
+      Node maxChild1 = null;
+      Node maxChild2 = null;
+
+      for (var n : node.children) {
+        if (maxChild1 == null || n.height > maxChild1.height)
+          maxChild1 = n;
+        else if (maxChild2 == null || n.height > maxChild2.height)
+          maxChild2 = n;
+        pr("...child:", n.name, "max1:", maxChild1, "max2:", maxChild2);
       }
 
       for (var n : node.children) {
+        pr(VERT_SP, "calc parent path, ht1,2:", maxChild1, maxChild2);
+        int longPath = 1 + node.parentLen;
+        pr("...initial val is parent's longest path:", longPath);
 
-        // The length of the longest path through this child's parent is the greater of
-        // the path through its parent, or 2 + the longest height of some other child
-        int longPath = 1 + longestPathThroughParent;
-        if (longHt1 > longPath) {
-          if (longNode1 != n) {
-            int c = 2 + longHt1;
-            if (c > longPath)
-              longPath = c;
-          } else {
-            if (longHt2 > longPath) {
-              int c = 2 + longHt2;
-              if (c > longPath)
-                longPath = c;
-            }
-          }
-        }
-        n.longestPathThroughParent = longPath;
+        var c = 0;
+        if (maxChild1 != n)
+          c = 2 + maxChild1.height;
+        else if (maxChild2 != null)
+          c = 2 + maxChild2.height;
+
+        if (c > longPath)
+          longPath = c;
+
+        n.parentLen = longPath;
+        mK = Math.min(mK, n.height + n.parentLen);
+      }
+
+      for (var n : node.children) {
+        calcParentPaths(n);
       }
     }
 
@@ -207,7 +220,7 @@ public class MinimumHeightTrees extends LeetCode {
       // Length of longest path to leaf node
       int height;
       // Length of longest path through parent node
-      int longestPathThroughParent;
+      int parentLen;
 
       Node(int val) {
         this.name = val;
@@ -223,7 +236,7 @@ public class MinimumHeightTrees extends LeetCode {
         var s = sb();
         s.append("#").append(name);
         s.append("(h:").append(d(height));
-        s.append(" p:").append(d(longestPathThroughParent));
+        s.append(" p:").append(d(parentLen));
         s.append(")->( ");
         for (var n : children) {
           s.append(n.name).append(' ');
