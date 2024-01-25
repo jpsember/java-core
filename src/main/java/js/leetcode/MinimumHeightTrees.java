@@ -5,6 +5,7 @@ import static js.base.Tools.*;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 
 import js.file.Files;
 
@@ -94,7 +95,7 @@ public class MinimumHeightTrees extends LeetCode {
       // Choose an arbitrary node as the root of a tree
       var root = nodes[0];
 
-      deleteEdgesToParentNodes(root, null);
+      deleteEdgesToParentNodes(root);
       // Determine depth and height of each node relative to this tree.
       calcHeights(root, null);
 
@@ -142,29 +143,40 @@ public class MinimumHeightTrees extends LeetCode {
     }
 
     private List<Integer> work = new ArrayList<>(20);
-    
+
     /**
      * Walk a subtree, delete edges leading to parent nodes
      */
-    private void deleteEdgesToParentNodes(Node node, Node parent) {
-      pr("walk2, node:", node.name);
+    private void deleteEdgesToParentNodes(Node root) {
 
-      // Delete any edges that go back to the parent
-      
-      work.clear();
-      for (int i = node.children.size() - 1; i >= 0; i--) {
-        var child = node.children.get(i);
-        if (child == parent) {
-          pr("...removing edge to parent");
-          work.add(i);
-        //  node.children.remove(i);
+      var stack = new Stack<Node>();
+      stack.add(root);
+      stack.add(null);
+
+      while (!stack.isEmpty()) {
+        var parent = stack.pop();
+        var node = stack.pop();
+        // Delete any edges that go back to the parent
+
+        work.clear();
+        for (int i = node.children.size() - 1; i >= 0; i--) {
+          var child = node.children.get(i);
+          if (child == parent) {
+            // pr("...removing edge to parent");
+            work.add(i);
+            //  node.children.remove(i);
+          }
+        }
+        for (var index : work) {
+          node.children.remove(index.intValue());
+        }
+
+        for (var child : node.children) {
+          stack.add(child);
+          stack.add(node);
         }
       }
-      for (var index : work) {
-      node.children.remove(index);
-      }
-      for (var child : node.children)
-        deleteEdgesToParentNodes(child, node);
+      //  deleteEdgesToParentNodes(child, node);
     }
 
     /**
