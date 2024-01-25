@@ -17,6 +17,8 @@ public class MinimumHeightTrees extends LeetCode {
 
   public void run() {
 
+    x(5, "[[0,1],[0,2],[0,3],[3,4]]", "0 3");
+
     x(3, "[[0,1],[0,2]]", "0");
 
     x(5, "0 4 4 2 4 1 1 3", "1 4");
@@ -102,14 +104,14 @@ public class MinimumHeightTrees extends LeetCode {
       mK = root.height;
       calcParentPaths(root);
 
-      //      if (db) {
-      //        db(VERT_SP, "nodes after calc everything:");
-      //        db("k:", mK);
-      //        for (var nd : nodes) {
-      //          pr(nd);
-      //        }
-      //        db(VERT_SP);
-      //      }
+      if (db) {
+        db(VERT_SP, "nodes after calc everything:");
+        db("k:", mK);
+        for (var nd : nodes) {
+          pr(nd);
+        }
+        db(VERT_SP);
+      }
 
       List<Integer> result = new ArrayList<>();
 
@@ -119,24 +121,41 @@ public class MinimumHeightTrees extends LeetCode {
       var k = mK;
 
       int v1 = k / 2;
-      int v2 = (root.height % 2 == 1) ? v1 + 1 : v1;
+      int v2 = (k % 2 == 1) ? v1 + 1 : v1;
 
-      //      if (db) {
-      //        db("root:", root);
-      //        db("k:", k);
-      //        db("v1:", v1);
-      //        db("v2:", v2);
-      //      }
+      if (db) {
+        db("root:", root);
+        db("k:", k);
+        db("v1:", v1);
+        db("v2:", v2);
+      }
 
       for (var node : nodes) {
         if (db) {
           pushIndent();
-          db("child:", node);
+          db("node:", node);
+          db("height + parentLen:", node.height + node.parentLen);
         }
-        if ((node.height == v1 && node.parentLen == v2) || (node.height == v2 && node.parentLen == v1)) {
+
+        if ((node.height + node.parentLen == k) && (node.height == v1 || node.height == v2)) {
           if (db)
             db("...adding to result");
           result.add(node.name);
+        } else {
+          // If there is path from one child to another through the node that equals k...
+          int bestLen = -1;
+          for (var child : node.children) {
+            db("child:",child);
+            pushIndent();
+            int len = child.height;
+            db("child bestLen:", bestLen, "height:", child.height);
+            popIndent();
+            if (len + 1 + bestLen == k) {
+              result.add(node.name);
+              break;
+            }
+            bestLen =  Math.max(bestLen, 1+len);
+          }
         }
         if (db)
           popIndent();
@@ -217,7 +236,7 @@ public class MinimumHeightTrees extends LeetCode {
           longPath = c;
 
         n.parentLen = longPath;
-        mK = Math.min(mK, n.height + n.parentLen);
+        mK = Math.max(mK, n.height + n.parentLen);
       }
 
       for (var n : node.children) {
