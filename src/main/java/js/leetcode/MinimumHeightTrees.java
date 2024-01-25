@@ -19,9 +19,11 @@ public class MinimumHeightTrees extends LeetCode {
 
   public void run() {
 
-    x(3, "[[0,1],[0,2]]", "0");
+    x(5, "0 4 4 2 4 1 1 3", "1 4");
 
     x(4, "[[1,0],[1,2],[1,3]]", "1");
+
+    x(3, "[[0,1],[0,2]]", "0");
 
     x(1, "[]", "0");
     x(2, "[[0,1]]", "0 1");
@@ -211,7 +213,6 @@ public class MinimumHeightTrees extends LeetCode {
 
     public List<Integer> findMinHeightTrees(int n, int[][] edges) {
 
-      // db = true;
       // Construct graph
       var nodes = new Node[n];
       for (int i = 0; i < n; i++)
@@ -220,70 +221,163 @@ public class MinimumHeightTrees extends LeetCode {
       for (var edge : edges) {
         var na = nodes[edge[0]];
         var nb = nodes[edge[1]];
-        na.siblings.add(nb);
-        nb.siblings.add(na);
+        na.edges.add(new Edge(nb));
+        nb.edges.add(new Edge(na));
       }
 
       // Choose an arbitrary node as the root of a tree
       var root = nodes[0];
 
-      // Determine depth and height of each node relative to this tree
-      walk(root, 0);
+      // Determine depth and height of each node relative to this tree.
+      walk2(root, null);
 
-      // All nodes that have a height and depth "equal" to half the root's height are added to the
-      // output.  We have to compensate for the root's height being an odd number...
-      int v1 = root.height / 2;
-      int v2 = (root.height % 2 == 1) ? v1 + 1 : v1;
+      walk3(root, 0);
 
-      if (db)
-        db("root:", root);
-      List<Integer> result = new ArrayList<>();
-      for (var node : nodes) {
-        pushIndent();
-        if (db)
-          db("child:", node);
-        if ((node.depth == v1 && node.height == v2) || (node.depth == v2 && node.height == v1)) {
-          if (db)
-            db("...adding to result");
-          result.add(node.val);
-        }
-        popIndent();
+      for (var nd : nodes) {
+        pr(nd);
       }
+
+      List<Integer> result = new ArrayList<>();
+
+      //      // All nodes that have a height and depth "equal" to half the root's height are added to the
+      //      // output.  We have to compensate for the root's height being an odd number...
+      //      int v1 = root.height / 2;
+      //      int v2 = (root.height % 2 == 1) ? v1 + 1 : v1;
+      //
+      //      if (db)
+      //        db("root:", root);
+      //       for (var node : nodes) {
+      //        pushIndent();
+      //        if (db)
+      //          db("child:", node);
+      //        if ((node.depth == v1 && node.height == v2) || (node.depth == v2 && node.height == v1)) {
+      //          if (db)
+      //            db("...adding to result");
+      //          result.add(node.val);
+      //        }
+      //        popIndent();
+      //      }
       return result;
     }
 
-    private void walk(Node node, int depth) {
-      node.depth = depth;
-      for (var sibling : node.siblings) {
-        // If we've already visited this node, do nothing
-        if (sibling.depth != null)
-          continue;
-        walk(sibling, depth + 1);
-        node.height = Math.max(node.height, 1 + sibling.height);
+    /**
+     * Walk a subtree, deleting edges that lead to parents, and calculating
+     * height of each node
+     */
+    private void walk2(Node node, Node parent) {
+      pr("walk2, node:",node.name);
+
+      // Delete any edges that go back to the parent
+      for (int i = node.edges.size() - 1; i >= 0; i--) {
+        var e = node.edges.get(i);
+        if (e.dest == parent) {
+          pr("...removing edge to parent");
+          node.edges.remove(i);
+        }
+      }
+
+      int longestPath = 0;
+      for (var e : node.edges) {
+        pr("walk2, edge:", e.dest.name);
+        walk2(e.dest, node);
+        var childLongestPath = e.dest.height;
+        longestPath = Math.max(longestPath, 1+childLongestPath);
+      }
+
+      node.height = longestPath;
+      pr("...setting height:", node.height, "for:", node);
+
+      //      for (var sibling : node.siblings) {
+      //
+      //        walk(sibling, depth + 1);
+      //        node.height = Math.max(node.height, 1 + sibling.height);
+      //      }
+    }
+
+    /**
+     * Walk subtree, calculating longest path through parent node
+     */
+    private void walk3(Node node, int longestPathThroughParent) {
+      // node.depth = depth;
+
+      int longHt1 = 0;
+      int longHt2 = 0;
+      Node longNode1 = null;
+
+      for (int i = 0; i < node.edges.size(); i++) {
+        var e = node.edges.get(i);
+        var n = e.dest;
+        if (n.height > longHt1) {
+          longHt2 = longHt1;
+          longNode1 = n;
+          longHt1 = n.height;
+        } else if (n.height > longHt2) {
+          longHt2 = n.height;
+        }
+      }
+
+      for (var e : node.edges) {
+        var n = e.dest;
+
+        // The length of the longest path through this child's parent is the greater of
+        // the path through its parent, or 2 + the longest height of some other child
+        int longPath = 1 + longestPathThroughParent;
+        if (longHt1 > longPath) {
+          if (longNode1 != n) {
+            int c = 2 + longHt1;
+            if (c > longPath)
+              longPath = c;
+          } else {
+            if (longHt2 > longPath) {
+              int c = 2 + longHt2;
+              if (c > longPath)
+                longPath = c;
+            }
+          }
+        }
+        n.longestPathThroughParent = longPath;
+      }
+
+    }
+
+    private class Edge {
+      Node dest;
+      // int longestPath;
+
+      Edge(Node dest) {
+        this.dest = dest;
       }
     }
 
     private class Node {
-      int val;
-      List<Node> siblings = new ArrayList<>();
-      Integer depth;
+      int name;
+      List<Edge> edges = new ArrayList<>();
+      // Length of longest path to leaf node
       int height;
+      // Length of longest path through parent node
+      int longestPathThroughParent;
 
       Node(int val) {
-        this.val = val;
+        this.name = val;
+      }
+
+      private String d(int value) {
+        var s = "" + value;
+        return spaces(3 - s.length()) + s + " ";
       }
 
       @Override
       public String toString() {
         var s = sb();
-        s.append("#").append(val);
-        s.append("->( ");
-        for (var c : siblings) {
-          s.append(c.val).append(' ');
+        s.append("#").append(name);
+        s.append("(h:").append(d(height));
+        s.append(" p:").append(d(longestPathThroughParent));
+        s.append(")->( ");
+        for (var edge : edges) {
+          var n = edge.dest;
+          s.append(n.name).append(' ');
         }
         s.append(") ");
-        if (depth != null)
-          s.append("depth:").append(depth).append(" height:").append(height);
         return s.toString();
       }
 
