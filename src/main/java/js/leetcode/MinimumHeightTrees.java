@@ -25,7 +25,7 @@ public class MinimumHeightTrees extends LeetCode {
     x(1, "[]", "0");
     x(2, "[[0,1]]", "0 1");
 
-    if (false)
+    if (true)
       x(1212, Files.readString(new File("1212.txt")));
   }
 
@@ -141,6 +141,8 @@ public class MinimumHeightTrees extends LeetCode {
       return result;
     }
 
+    private List<Integer> work = new ArrayList<>(20);
+    
     /**
      * Walk a subtree, delete edges leading to parent nodes
      */
@@ -148,12 +150,18 @@ public class MinimumHeightTrees extends LeetCode {
       pr("walk2, node:", node.name);
 
       // Delete any edges that go back to the parent
+      
+      work.clear();
       for (int i = node.children.size() - 1; i >= 0; i--) {
         var child = node.children.get(i);
         if (child == parent) {
           pr("...removing edge to parent");
-          node.children.remove(i);
+          work.add(i);
+        //  node.children.remove(i);
         }
+      }
+      for (var index : work) {
+      node.children.remove(index);
       }
       for (var child : node.children)
         deleteEdgesToParentNodes(child, node);
