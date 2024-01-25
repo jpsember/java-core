@@ -2,12 +2,14 @@ package js.leetcode;
 
 import static js.base.Tools.*;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
 import js.data.DataUtil;
+import js.file.Files;
 
 public class MinimumHeightTrees extends LeetCode {
 
@@ -16,13 +18,13 @@ public class MinimumHeightTrees extends LeetCode {
   }
 
   public void run() {
+
+    x(4, "[[1,0],[1,2],[1,3]]", "1");
+
     x(1, "[]", "0");
     x(2, "[[0,1]]", "0 1");
-    //x(3, "[[0,1],[0,2]]");
-    // x(4, "[[1,0],[1,2],[1,3]]");
-    // x(4, "1 3 3 2 2 0");
-    // x(6, "[[3,0],[3,1],[3,2],[3,4],[5,4]]");
-    // x(6, "[[3,0],[3,1],[3,2],[3,4],[5,4]]");
+
+    x(1212, Files.readString(new File("1212.txt")));
   }
 
   private void x(int n, String ns) {
@@ -34,7 +36,7 @@ public class MinimumHeightTrees extends LeetCode {
     var edges = new int[nums.length / 2][2];
     int[] expected = null;
     if (exp != null)
-      expected = extractNums(ns);
+      expected = extractNums(exp);
 
     for (int i = 0; i < nums.length; i += 2) {
       int j = i / 2;
@@ -42,7 +44,7 @@ public class MinimumHeightTrees extends LeetCode {
       edges[j][1] = nums[i + 1];
     }
     var alg = new Solution();
-    db = true;
+    db = nums.length < 20;
     var result = alg.findMinHeightTrees(n, edges);
     if (expected != null) {
       result.sort(null);
@@ -131,17 +133,25 @@ public class MinimumHeightTrees extends LeetCode {
       // added to the answer list.
 
       var result = new HashSet<Integer>();
+      if (k == 0)
+        result.add(0);
+
       int ki0 = k / 2;
       int ki1 = ki0 + (k & 1);
+
+      pr("k:", k, "ki0:", ki0, "ki1:", ki1);
 
       for (int j = 0; j < diam.size(); j += 2) {
         var a = diam.get(j);
         var b = diam.get(j + 1);
 
+        db("extract path from", a, "to", b);
+
         var posn = a;
         int cursor = 1; // already at start
-        if (cursor >= ki0)
+        if (ki0 == 0) {
           result.add(posn);
+        }
 
         while (posn != b) {
 
