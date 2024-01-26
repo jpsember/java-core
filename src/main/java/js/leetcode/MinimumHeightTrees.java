@@ -49,15 +49,12 @@ public class MinimumHeightTrees extends LeetCode {
     if (exp != null) {
       expected = toList(extractNums(exp));
     } else {
-      Alg alg;
-
-      alg = new Tree2();
+      Alg alg = new Slow();
       db = false;
       expected = alg.findMinHeightTrees(n, edges);
     }
 
-    Alg alg;
-    alg = new Tree2();
+    Alg alg = new Tree2();
 
     db = nums.length < 20;
     checkpoint("Starting alg");
@@ -90,7 +87,7 @@ public class MinimumHeightTrees extends LeetCode {
     List<Integer> findMinHeightTrees(int n, int[][] edges);
   }
 
-  class Tree2 implements Alg {
+  class Slow implements Alg {
 
     public List<Integer> findMinHeightTrees(int n, int[][] edges) {
 
@@ -179,6 +176,109 @@ public class MinimumHeightTrees extends LeetCode {
         var s = sb();
         s.append("#").append(name);
         s.append(visited ? " V " : "   ");
+        s.append("->( ");
+        for (var n : children) {
+          s.append(n.name).append(' ');
+        }
+        s.append(") ");
+        return s.toString();
+      }
+
+    }
+  }
+
+  class Tree2 implements Alg {
+
+    public List<Integer> findMinHeightTrees(int n, int[][] edges) {
+
+      // Construct graph
+      var nodes = new Node[n];
+      for (int i = 0; i < n; i++)
+        nodes[i] = new Node(i);
+
+      for (var edge : edges) {
+        var na = nodes[edge[0]];
+        var nb = nodes[edge[1]];
+        na.children.add(nb);
+        nb.children.add(na);
+      }
+
+      // build list of leaf nodes
+
+      Set<Node> leafNodes = new HashSet<>();
+      for (var node : nodes) {
+        if (node.children.size() <= 1) {
+          leafNodes.add(node);
+          node.vis = true;
+        }
+      }
+
+      while (true) {
+
+        Set<Node> nextNodes = new HashSet<>();
+
+        pushIndent();
+        //        if (leafNodes.size() != 2)
+
+        for (var node : leafNodes) {
+          db(node);
+          if (node.children.isEmpty())
+            continue;
+
+          var dest = node.children.get(0);
+          // If this node is already in the leafNode list, skip
+          if (dest.vis)
+            continue;
+          node.children.remove(0);
+          dest.children.remove(node);
+          db("...adding modified:", dest);
+          nextNodes.add(dest);
+        }
+        popIndent();
+        db("next nodes:", nextNodes);
+
+        db("filterout nodes with deg > 1");
+        pushIndent();
+        // Filter out next nodes that have degree > 1, and mark
+        // remaining as visited
+        Set<Node> filtered = new HashSet<>();
+        for (var node : nextNodes) {
+          if (node.children.size() <= 1) {
+            db("...retaining node:", node);
+            node.vis = true;
+            filtered.add(node);
+          }
+        }
+        nextNodes = filtered;
+        popIndent();
+        db("filter out non-leaf:", nextNodes);
+
+        if (nextNodes.isEmpty())
+          break;
+        leafNodes = nextNodes;
+      }
+
+      List<Integer> result = new ArrayList<>();
+      for (var node : leafNodes)
+        result.add(node.name);
+
+      return result;
+    }
+
+    private class Node {
+      int name;
+      boolean vis;
+      List<Node> children = new ArrayList<>();
+
+      Node(int val) {
+        this.name = val;
+      }
+
+      @Override
+      public String toString() {
+        var s = sb();
+        s.append("#").append(name);
+        s.append(vis ? " V " : "   ");
         s.append("->( ");
         for (var n : children) {
           s.append(n.name).append(' ');
