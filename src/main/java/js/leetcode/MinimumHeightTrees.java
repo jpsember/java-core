@@ -18,6 +18,8 @@ public class MinimumHeightTrees extends LeetCode {
 
   public void run() {
 
+    x(7, "[[0,1],[1,2],[1,3],[2,4],[3,5],[4,6]]", "[1,2]");
+
     x(2, "[[0,1]]", "0 1");
 
     x(1, "[]", "0");
@@ -32,6 +34,7 @@ public class MinimumHeightTrees extends LeetCode {
 
     if (true)
       x(1212, Files.readString(new File("1212.txt")));
+
   }
 
   private void x(int n, String ns) {
@@ -40,7 +43,8 @@ public class MinimumHeightTrees extends LeetCode {
 
   private void x(int n, String ns, String exp) {
     var nums = extractNums(ns);
-    var edges = new int[nums.length / 2][2];
+    var edges = buildEdges(nums);
+
     List<Integer> expected = null;
     if (exp != null) {
       expected = toList(extractNums(exp));
@@ -52,25 +56,33 @@ public class MinimumHeightTrees extends LeetCode {
       expected = alg.findMinHeightTrees(n, edges);
     }
 
-    for (int i = 0; i < nums.length; i += 2) {
-      int j = i / 2;
-      edges[j][0] = nums[i];
-      edges[j][1] = nums[i + 1];
-    }
     Alg alg;
     alg = new Tree2();
 
     db = nums.length < 20;
     checkpoint("Starting alg");
     var result = alg.findMinHeightTrees(n, edges);
+    pr("result:", result);
     checkpoint("Done alg");
     {
       result.sort(null);
       expected.sort(null);
+      pr("expected after sort:", expected);
       verify(result, expected);
       pr("result:", result);
     }
     pr(result);
+  }
+
+  private int[][] buildEdges(int[] nums) {
+    var edges = new int[nums.length / 2][2];
+
+    for (int i = 0; i < nums.length; i += 2) {
+      int j = i / 2;
+      edges[j][0] = nums[i];
+      edges[j][1] = nums[i + 1];
+    }
+    return edges;
   }
 
   private interface Alg {
@@ -103,10 +115,8 @@ public class MinimumHeightTrees extends LeetCode {
           node.visited = true;
         }
       }
-      //db("built leaf nodes from:", nodes, INDENT, leafNodes);
 
       while (true) {
-        //db(VERT_SP, "top of loop", "leaf nodes:", leafNodes);
 
         Set<Node> nextNodes = new HashSet<>();
 
@@ -129,12 +139,13 @@ public class MinimumHeightTrees extends LeetCode {
 
         db("filterout nodes with deg > 1");
         pushIndent();
-        // Mark all the next nodes as visited, and filter out next nodes that have degree > 1
+        // Filter out next nodes that have degree > 1, and mark
+        // remaining as visited
         Set<Node> filtered = new HashSet<>();
         for (var node : nextNodes) {
-          node.visited = true;
           if (node.children.size() <= 1) {
             db("...retaining node:", node);
+            node.visited = true;
             filtered.add(node);
           }
         }
