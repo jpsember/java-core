@@ -207,10 +207,8 @@ public class MinimumHeightTrees extends LeetCode {
 
       Set<Node> leafNodes = new HashSet<>();
       for (var node : nodes) {
-        if (node.children.size() <= 1) {
+        if (node.children.size() <= 1)
           leafNodes.add(node);
-          node.vis = true;
-        }
       }
 
       while (true) {
@@ -218,7 +216,6 @@ public class MinimumHeightTrees extends LeetCode {
         Set<Node> nextNodes = new HashSet<>();
 
         pushIndent();
-        //        if (leafNodes.size() != 2)
 
         for (var node : leafNodes) {
           db(node);
@@ -226,9 +223,10 @@ public class MinimumHeightTrees extends LeetCode {
             continue;
 
           var dest = node.children.get(0);
-          // If this node is already in the leafNode list, skip
-          if (dest.vis)
+          // If dest node only has one edge, then we are down to only two nodes; skip this one
+          if (dest.children.size() == 1)
             continue;
+
           node.children.remove(0);
           dest.children.remove(node);
           db("...adding modified:", dest);
@@ -245,7 +243,7 @@ public class MinimumHeightTrees extends LeetCode {
         for (var node : nextNodes) {
           if (node.children.size() <= 1) {
             db("...retaining node:", node);
-            node.vis = true;
+            // node.vis = true;
             filtered.add(node);
           }
         }
@@ -267,7 +265,6 @@ public class MinimumHeightTrees extends LeetCode {
 
     private class Node {
       int name;
-      boolean vis;
       List<Node> children = new ArrayList<>();
 
       Node(int val) {
@@ -278,7 +275,6 @@ public class MinimumHeightTrees extends LeetCode {
       public String toString() {
         var s = sb();
         s.append("#").append(name);
-        s.append(vis ? " V " : "   ");
         s.append("->( ");
         for (var n : children) {
           s.append(n.name).append(' ');
