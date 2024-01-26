@@ -4,8 +4,9 @@ import static js.base.Tools.*;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Stack;
+import java.util.Set;
 
 import js.file.Files;
 
@@ -76,208 +77,6 @@ public class MinimumHeightTrees extends LeetCode {
     List<Integer> findMinHeightTrees(int n, int[][] edges);
   }
 
-  class Tree implements Alg {
-
-    private int mK;
-
-    public List<Integer> findMinHeightTrees(int n, int[][] edges) {
-
-      // Construct graph
-      var nodes = new Node[n];
-      for (int i = 0; i < n; i++)
-        nodes[i] = new Node(i);
-
-      for (var edge : edges) {
-        var na = nodes[edge[0]];
-        var nb = nodes[edge[1]];
-        na.children.add(nb);
-        nb.children.add(na);
-      }
-
-      // Choose an arbitrary node as the root of a tree
-      var root = nodes[0];
-
-      deleteEdgesToParentNodes(root);
-      // Determine depth and height of each node relative to this tree.
-      calcHeights(root, null);
-
-      mK = root.height;
-      calcParentPaths(root);
-
-      if (db) {
-        db(VERT_SP, "nodes after calc everything:");
-        db("k:", mK);
-        for (var nd : nodes) {
-          pr(nd);
-        }
-        db(VERT_SP);
-      }
-
-      List<Integer> result = new ArrayList<>();
-
-      // All nodes that have a height + parent length "equal" to half the root's height are added to the
-      // output.  We have to compensate for the root's height being an odd number...
-
-      var k = mK;
-
-      int v1 = k / 2;
-      int v2 = (k % 2 == 1) ? v1 + 1 : v1;
-
-      if (db) {
-        db("root:", root);
-        db("k:", k);
-        db("v1:", v1);
-        db("v2:", v2);
-      }
-
-      for (var node : nodes) {
-        if (db) {
-          pushIndent();
-          db("node:", node);
-          db("height + parentLen:", node.height + node.parentLen);
-        }
-
-        if ((node.height + node.parentLen == k) && (node.height == v1 || node.height == v2)) {
-          if (db)
-            db("...adding to result");
-          result.add(node.name);
-        } else {
-          // If there is path from one child to another through the node that equals k...
-          int bestLen = -1;
-          for (var child : node.children) {
-            db("child:", child);
-            pushIndent();
-            int len = child.height;
-            db("child bestLen:", bestLen, "height:", child.height);
-            popIndent();
-            if (len + 1 + bestLen == k) {
-              result.add(node.name);
-              break;
-            }
-            bestLen = Math.max(bestLen, 1 + len);
-          }
-        }
-        if (db)
-          popIndent();
-      }
-      return result;
-    }
-
-    private List<Integer> work = new ArrayList<>(20);
-
-    /**
-     * Walk a subtree, delete edges leading to parent nodes
-     */
-    private void deleteEdgesToParentNodes(Node root) {
-
-      var stack = new Stack<Node>();
-      stack.add(root);
-      stack.add(null);
-
-      while (!stack.isEmpty()) {
-        var parent = stack.pop();
-        var node = stack.pop();
-        // Delete any edges that go back to the parent
-
-        work.clear();
-        for (int i = node.children.size() - 1; i >= 0; i--) {
-          var child = node.children.get(i);
-          if (child == parent) {
-            work.add(i);
-          }
-        }
-        for (var index : work) {
-          node.children.remove(index.intValue());
-        }
-
-        for (var child : node.children) {
-          stack.add(child);
-          stack.add(node);
-        }
-      }
-    }
-
-    /**
-     * Walk a subtree, calculating height of each node
-     */
-    private void calcHeights(Node node, Node parent) {
-      for (var child : node.children) {
-        calcHeights(child, node);
-        var childLongestPath = child.height;
-        node.height = Math.max(node.height, 1 + childLongestPath);
-      }
-    }
-
-    /**
-     * Walk subtree, calculating longest path through parent node
-     */
-    private void calcParentPaths(Node node) {
-      // Determine the two highest height values of this node's children, and the node associated with the highest's
-      Node maxChild1 = null;
-      Node maxChild2 = null;
-
-      for (var n : node.children) {
-        if (maxChild1 == null || n.height > maxChild1.height)
-          maxChild1 = n;
-        else if (maxChild2 == null || n.height > maxChild2.height)
-          maxChild2 = n;
-      }
-
-      for (var n : node.children) {
-        int longPath = 1 + node.parentLen;
-
-        var c = 0;
-        if (maxChild1 != n)
-          c = 2 + maxChild1.height;
-        else if (maxChild2 != null)
-          c = 2 + maxChild2.height;
-
-        if (c > longPath)
-          longPath = c;
-
-        n.parentLen = longPath;
-        mK = Math.max(mK, n.height + n.parentLen);
-      }
-
-      for (var n : node.children) {
-        calcParentPaths(n);
-      }
-    }
-
-    private class Node {
-      int name;
-      List<Node> children = new ArrayList<>();
-      // Length of longest path to leaf node
-      int height;
-      // Length of longest path through parent node
-      int parentLen;
-
-      Node(int val) {
-        this.name = val;
-      }
-
-      private String d(int value) {
-        var s = "" + value;
-        return spaces(3 - s.length()) + s + " ";
-      }
-
-      @Override
-      public String toString() {
-        var s = sb();
-        s.append("#").append(name);
-        s.append("(h:").append(d(height));
-        s.append(" p:").append(d(parentLen));
-        s.append(")->( ");
-        for (var n : children) {
-          s.append(n.name).append(' ');
-        }
-        s.append(") ");
-        return s.toString();
-      }
-
-    }
-  }
-
   class Tree2 implements Alg {
 
     public List<Integer> findMinHeightTrees(int n, int[][] edges) {
@@ -296,7 +95,7 @@ public class MinimumHeightTrees extends LeetCode {
 
       // build list of leaf nodes
 
-      List<Node> leafNodes = new ArrayList<>();
+      Set<Node> leafNodes = new HashSet<>();
       for (var node : nodes) {
         if (node.children.size() == 1) {
           leafNodes.add(node);
@@ -304,7 +103,7 @@ public class MinimumHeightTrees extends LeetCode {
       }
 
       while (true) {
-        List<Node> nextNodes = new ArrayList<>();
+        Set<Node> nextNodes = new HashSet<>();
         for (var node : leafNodes) {
           var dest = node.children.get(0);
           if (dest.visited)
@@ -318,7 +117,7 @@ public class MinimumHeightTrees extends LeetCode {
           node.visited = true;
 
         // Mark all the next nodes as visited, and filter out next nodes that have degree > 1
-        List<Node> filtered = new ArrayList<>();
+        Set<Node> filtered = new HashSet<>();
         for (var node : nextNodes) {
           node.visited = true;
           if (node.children.size() <= 1)
