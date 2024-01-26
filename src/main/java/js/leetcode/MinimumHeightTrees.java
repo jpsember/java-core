@@ -45,7 +45,7 @@ public class MinimumHeightTrees extends LeetCode {
     } else {
       Alg alg;
 
-      alg = new Tree();
+      alg = new Tree2();
       db = false;
       expected = alg.findMinHeightTrees(n, edges);
     }
@@ -56,7 +56,7 @@ public class MinimumHeightTrees extends LeetCode {
       edges[j][1] = nums[i + 1];
     }
     Alg alg;
-    alg = new Tree();
+    alg = new Tree2();
 
     db = nums.length < 20;
     checkpoint("Starting alg");
@@ -145,7 +145,7 @@ public class MinimumHeightTrees extends LeetCode {
           // If there is path from one child to another through the node that equals k...
           int bestLen = -1;
           for (var child : node.children) {
-            db("child:",child);
+            db("child:", child);
             pushIndent();
             int len = child.height;
             db("child bestLen:", bestLen, "height:", child.height);
@@ -154,7 +154,7 @@ public class MinimumHeightTrees extends LeetCode {
               result.add(node.name);
               break;
             }
-            bestLen =  Math.max(bestLen, 1+len);
+            bestLen = Math.max(bestLen, 1 + len);
           }
         }
         if (db)
@@ -268,6 +268,90 @@ public class MinimumHeightTrees extends LeetCode {
         s.append("(h:").append(d(height));
         s.append(" p:").append(d(parentLen));
         s.append(")->( ");
+        for (var n : children) {
+          s.append(n.name).append(' ');
+        }
+        s.append(") ");
+        return s.toString();
+      }
+
+    }
+  }
+
+  class Tree2 implements Alg {
+
+    public List<Integer> findMinHeightTrees(int n, int[][] edges) {
+
+      // Construct graph
+      var nodes = new Node[n];
+      for (int i = 0; i < n; i++)
+        nodes[i] = new Node(i);
+
+      for (var edge : edges) {
+        var na = nodes[edge[0]];
+        var nb = nodes[edge[1]];
+        na.children.add(nb);
+        nb.children.add(na);
+      }
+
+      // build list of leaf nodes
+
+      List<Node> leafNodes = new ArrayList<>();
+      for (var node : nodes) {
+        if (node.children.size() == 1) {
+          leafNodes.add(node);
+        }
+      }
+
+      while (true) {
+        List<Node> nextNodes = new ArrayList<>();
+        for (var node : leafNodes) {
+          var dest = node.children.get(0);
+          if (dest.visited)
+            continue;
+          node.children.remove(0);
+          dest.children.remove(node);
+          nextNodes.add(dest);
+        }
+
+        for (var node : nextNodes)
+          node.visited = true;
+
+        // Mark all the next nodes as visited, and filter out next nodes that have degree > 1
+        List<Node> filtered = new ArrayList<>();
+        for (var node : nextNodes) {
+          node.visited = true;
+          if (node.children.size() <= 1)
+            filtered.add(node);
+        }
+        nextNodes = filtered;
+        if (nextNodes.isEmpty())
+          break;
+        leafNodes = nextNodes;
+      }
+
+      List<Integer> result = new ArrayList<>();
+      for (var node : leafNodes)
+        result.add(node.name);
+
+      return result;
+    }
+
+    private class Node {
+      int name;
+      boolean visited;
+      List<Node> children = new ArrayList<>();
+
+      Node(int val) {
+        this.name = val;
+      }
+
+      @Override
+      public String toString() {
+        var s = sb();
+        s.append("#").append(name);
+        s.append(visited ? " V " : "   ");
+        s.append("->( ");
         for (var n : children) {
           s.append(n.name).append(' ');
         }
