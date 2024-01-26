@@ -205,7 +205,7 @@ public class MinimumHeightTrees extends LeetCode {
 
       // build list of leaf nodes
 
-      Set<Node> leafNodes = new HashSet<>();
+      List<Node> leafNodes = new ArrayList<>(nodes.length);
       for (var node : nodes) {
         if (node.children.size() <= 1)
           leafNodes.add(node);
@@ -213,7 +213,7 @@ public class MinimumHeightTrees extends LeetCode {
 
       while (true) {
 
-        Set<Node> nextNodes = new HashSet<>();
+        List<Node> nextNodes = new ArrayList<>(leafNodes.size());
 
         pushIndent();
 
@@ -230,7 +230,10 @@ public class MinimumHeightTrees extends LeetCode {
           node.children.remove(0);
           dest.children.remove(node);
           db("...adding modified:", dest);
-          nextNodes.add(dest);
+          if (!dest.flag) {
+            dest.flag = true;
+            nextNodes.add(dest);
+          }
         }
         popIndent();
         db("next nodes:", nextNodes);
@@ -239,8 +242,9 @@ public class MinimumHeightTrees extends LeetCode {
         pushIndent();
         // Filter out next nodes that have degree > 1, and mark
         // remaining as visited
-        Set<Node> filtered = new HashSet<>();
+        List<Node> filtered = new ArrayList<>(nextNodes.size());
         for (var node : nextNodes) {
+          node.flag = false;
           if (node.children.size() <= 1) {
             db("...retaining node:", node);
             // node.vis = true;
@@ -265,6 +269,7 @@ public class MinimumHeightTrees extends LeetCode {
 
     private class Node {
       int name;
+      boolean flag; // Flag for whether node is already in a particular list
       List<Node> children = new ArrayList<>();
 
       Node(int val) {
