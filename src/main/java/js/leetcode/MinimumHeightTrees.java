@@ -18,16 +18,17 @@ public class MinimumHeightTrees extends LeetCode {
 
   public void run() {
 
-    x(5, "[[0,1],[0,2],[0,3],[3,4]]", "0 3");
+    x(2, "[[0,1]]", "0 1");
+
+    x(1, "[]", "0");
 
     x(3, "[[0,1],[0,2]]", "0");
+
+    x(5, "[[0,1],[0,2],[0,3],[3,4]]", "0 3");
 
     x(5, "0 4 4 2 4 1 1 3", "1 4");
 
     x(4, "[[1,0],[1,2],[1,3]]", "1");
-
-    x(1, "[]", "0");
-    x(2, "[[0,1]]", "0 1");
 
     if (true)
       x(1212, Files.readString(new File("1212.txt")));
@@ -97,33 +98,50 @@ public class MinimumHeightTrees extends LeetCode {
 
       Set<Node> leafNodes = new HashSet<>();
       for (var node : nodes) {
-        if (node.children.size() == 1) {
+        if (node.children.size() <= 1) {
           leafNodes.add(node);
+          node.visited = true;
         }
       }
+      //db("built leaf nodes from:", nodes, INDENT, leafNodes);
 
       while (true) {
+        //db(VERT_SP, "top of loop", "leaf nodes:", leafNodes);
+
         Set<Node> nextNodes = new HashSet<>();
+
+        pushIndent();
         for (var node : leafNodes) {
+          db(node);
+          if (node.children.isEmpty())
+            continue;
+
           var dest = node.children.get(0);
           if (dest.visited)
             continue;
           node.children.remove(0);
           dest.children.remove(node);
+          db("...adding modified:", dest);
           nextNodes.add(dest);
         }
+        popIndent();
+        db("next nodes:", nextNodes);
 
-        for (var node : nextNodes)
-          node.visited = true;
-
+        db("filterout nodes with deg > 1");
+        pushIndent();
         // Mark all the next nodes as visited, and filter out next nodes that have degree > 1
         Set<Node> filtered = new HashSet<>();
         for (var node : nextNodes) {
           node.visited = true;
-          if (node.children.size() <= 1)
+          if (node.children.size() <= 1) {
+            db("...retaining node:", node);
             filtered.add(node);
+          }
         }
         nextNodes = filtered;
+        popIndent();
+        db("filter out non-leaf:", nextNodes);
+
         if (nextNodes.isEmpty())
           break;
         leafNodes = nextNodes;
