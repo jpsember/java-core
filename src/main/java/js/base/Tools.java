@@ -180,67 +180,12 @@ public final class Tools {
     }
 
     info.key = key.substring(cursor);
-    
-    pr("key:",key,quote(info.key),info.skipCount, info.maxPerSession);
     return info;
   }
 
   private static void processClearAlertHistoryFlag() {
   }
 
-  
-//  private static boolean processAlertForMultipleSessions(AlertInfo info) {
-//    if (sPriorityAlertMap == null) {
-//
-//      File d =       Files.S.projectDirectory();
-//      if (Files.empty(d)) {
-//       d =  Files.S.getFileWithinParents(null, ".git");
-//       if ( !Files.empty(d)) {
-//         d = Files.parent(d);
-//       } else {
-//         d = Files.currentDirectory();
-//       }
-//      }
-//      
-//      priorityAlertPersistPath = d.JoinM(".go_flags.json")
-//      priorityAlertMap = NewJSMap()
-//      if clearPriorityAlertMapFlag {
-//      } else {
-//        restored, err := JSMapFromFileIfExists(priorityAlertPersistPath)
-//        if err != nil {
-//          Pr("Problem parsing:", priorityAlertPersistPath, ", error:", err)
-//          priorityAlertMap = NewJSMap()
-//          // Discard old file
-//          priorityAlertPersistPath.DeleteFile()
-//        } else {
-//          priorityAlertMap = restored
-//        }
-//      }
-//      const expectedVersion = 2
-//      if priorityAlertMap.OptInt("version", 0) != expectedVersion {
-//        priorityAlertMap.Clear().Put("version", expectedVersion)
-//      }
-//    }
-//
-//    m := priorityAlertMap.OptMapOrEmpty(info.key)
-//    currTime := CurrentTimeMs()
-//    elapsed := TestAlertDuration
-//    if elapsed == 0 {
-//      lastReport := m.OptLong("r", 0)
-//      elapsed = currTime - lastReport
-//    }
-//    CheckArg(elapsed >= 0)
-//    if elapsed < info.delayMs {
-//      return false
-//    }
-//    m.Put("r", currTime)
-//    priorityAlertMap.Put(info.key, m)
-//    if !testAlertState {
-//      priorityAlertPersistPath.WriteStringM(priorityAlertMap.CompactString())
-//    }
-//    return true
-//  }
-  
   private static void auxAlert(int skipCount, String key, String prompt, Object... args) {
 
     processClearAlertHistoryFlag();
@@ -256,28 +201,21 @@ public final class Tools {
     // If there's a multi-session priority value, process it
     //
     if (info.delayMs > 0) {
-      
-      
-//      synchronized (sReportCountMap) {
-//        JSMap flagsMap = sPersistedAlertFlagsMap;
-//        File flagsFile = sPersistedAlertFlagsFile;
-//        if (flagsMap == null) {
-//          flagsFile = sPersistedAlertFlagsFile = Files.getDesktopFile("_alerts_.json");
-//          flagsMap = sPersistedAlertFlagsMap = JSMap.fromFileIfExists(flagsFile);
-//        }
-//        if (flagsMap.containsKey(reportText))
-//          return null;
-//        flagsMap.put(reportText, true);
-//        Files.S.writePretty(flagsFile, flagsMap);
-//      }
-//      
-      
-      
-      
-      
-      
-      
-      
+
+      //      synchronized (sReportCountMap) {
+      //        JSMap flagsMap = sPersistedAlertFlagsMap;
+      //        File flagsFile = sPersistedAlertFlagsFile;
+      //        if (flagsMap == null) {
+      //          flagsFile = sPersistedAlertFlagsFile = Files.getDesktopFile("_alerts_.json");
+      //          flagsMap = sPersistedAlertFlagsMap = JSMap.fromFileIfExists(flagsFile);
+      //        }
+      //        if (flagsMap.containsKey(reportText))
+      //          return null;
+      //        flagsMap.put(reportText, true);
+      //        Files.S.writePretty(flagsFile, flagsMap);
+      //      }
+      //      
+
       //       // Do this before locking, as it might attempt to use locks
       //       Files.proj
       //       FindProjectDirM()
@@ -297,7 +235,7 @@ public final class Tools {
     sb.append(prompt);
     sb.append(' ');
 
-    getStackTraceElement(sb,  1+skipCount + info.skipCount);
+    getStackTraceElement(sb, 1 + skipCount + info.skipCount);
 
     if (args.length > 0) {
       sb.append(info.key + " " + BasePrinter.toString(args));
@@ -1218,6 +1156,8 @@ public final class Tools {
 
   public static void wtf(Object... msgs) {
     synchronized (Tools.class) {
+      if (sWtfCallback == null)
+        return;
       pr(insertStringToFront("" + sWtfCounter, msgs));
       sWtfCallback.accept(sWtfCounter, msgs);
       sWtfCounter++;
@@ -1243,5 +1183,5 @@ public final class Tools {
 
   private static BiConsumer<Integer, Object[]> sWtfCallback;
   private static int sWtfCounter;
-  
+
 }
