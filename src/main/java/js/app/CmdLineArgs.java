@@ -31,6 +31,7 @@ import java.util.*;
 import java.util.regex.Pattern;
 
 import js.base.BaseObject;
+import js.base.BasePrinter;
 import js.data.DataUtil;
 import js.file.Files;
 import js.parsing.RegExp;
@@ -312,7 +313,9 @@ public final class CmdLineArgs extends BaseObject {
   /**
    * Parse command line arguments
    */
-  public void parse(String[] args) {
+  public void parse(App app, String[] args) {
+    checkState(!mLocked);
+    mApp = app;
     lock();
     List<Object> argList = unpackArguments(args);
     readArgumentValues(argList);
@@ -327,12 +330,32 @@ public final class CmdLineArgs extends BaseObject {
     throw new CmdLineArgException(message);
   }
 
+  @Deprecated // Does this need to be public?
   public void help() {
+    help(null);
+  }
+
+  public void help(AppOper optionalOper) {
     checkState(mLocked);
     if (helpShown())
       return;
+
     StringBuilder sb = new StringBuilder();
     sb.append("\n");
+
+    if (optionalOper != null) {
+      BasePrinter b = new BasePrinter();
+      optionalOper.getOperSpecificHelp(b);
+      sb.append(b.toString());
+    } else {
+      auxHelp(sb);
+    }
+
+    mHelpHasBeenShown = true;
+    System.out.println(sb.toString());
+  }
+
+  private void auxHelp(StringBuilder sb) {
     if (mBanner != null) {
       sb.append(mBanner);
       sb.append("\n\n");
@@ -379,7 +402,9 @@ public final class CmdLineArgs extends BaseObject {
       String desc = opt.mDescription;
 
       if (opt.mDefaultValue != null) {
-        desc += " [" + opt.mDefaultValue + "]";
+        var s = opt.mDefaultValue.toString();
+        if (!s.isEmpty())
+          desc += " [" + s + "]";
       }
 
       phrases.add(desc);
@@ -394,8 +419,6 @@ public final class CmdLineArgs extends BaseObject {
       sb.append(phrase2);
       sb.append("\n");
     }
-    mHelpHasBeenShown = true;
-    System.out.println(sb.toString());
   }
 
   public boolean helpShown() {
@@ -450,7 +473,19 @@ public final class CmdLineArgs extends BaseObject {
         if (opt.mType == T_BOOL) {
           opt.addValue(Boolean.TRUE);
           if (opt.mLongName == HELP) {
-            help();
+            AppOper oper = null;
+
+            // If there's a following argument that matches the name of an operation, 
+            // generate operation-specific help.
+            var app = mApp;
+            if (app.hasMultipleOperations()) {
+              if (cursor < args.size()) {
+                var operArg = args.get(cursor).toString();
+                oper = app.findOper(operArg);
+                cursor++;
+              }
+            }
+            help(oper);
             break;
           }
           continue;
@@ -514,7 +549,10 @@ public final class CmdLineArgs extends BaseObject {
   private void lock() {
     if (mLocked)
       return;
-    add(HELP).desc("Show this message");
+    var msg = "Show help";
+    if (mApp.hasMultipleOperations())
+      msg += " (\"help <opername>\" for a specific operation)";
+    add(HELP).desc(msg);
     // Reserve the 'h' short name for the help option
     shortName("h");
 
@@ -774,6 +812,7 @@ public final class CmdLineArgs extends BaseObject {
   private boolean mLocked;
   private String mBanner;
   private Option mOpt;
+  private App mApp;
   private Map<String, Option> mNamedOptionMap = hashMap();
   private List<String> mExtraArguments = arrayList();
   private List<String> mOptionList = arrayList();

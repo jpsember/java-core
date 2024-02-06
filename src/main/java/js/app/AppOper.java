@@ -82,6 +82,11 @@ public abstract class AppOper extends BaseObject {
     return null;
   }
 
+  protected void getOperSpecificHelp(BasePrinter b) {
+    todo("No oper-specific help has been defined for:", userCommand(), "class:", name());
+    b.pr("No specific help is available for:", userCommand());
+  }
+
   // ------------------------------------------------------------------
   // Command line (or json) arguments
   // ------------------------------------------------------------------

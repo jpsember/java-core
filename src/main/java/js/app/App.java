@@ -69,7 +69,7 @@ public abstract class App extends BaseObject {
     registerOperations();
     mOrderedOperCommands.sort(null);
 
-    cmdLineArgs().parse(cmdLineArguments);
+    cmdLineArgs().parse(this, cmdLineArguments);
     if (cmdLineArgs().helpShown())
       return;
 
@@ -107,6 +107,10 @@ public abstract class App extends BaseObject {
     return mOperMap.size() > 1;
   }
 
+  protected final AppOper findOper(String key) {
+    return mOperMap.get(key);
+  }
+
   private Map<String, AppOper> mOperMap;
   private List<String> mOrderedOperCommands;
 
@@ -118,7 +122,7 @@ public abstract class App extends BaseObject {
     } else {
       while (args.hasNextArg()) {
         String operation = args.nextArg();
-        AppOper oper = mOperMap.get(operation);
+        AppOper oper = findOper(operation);
         checkArgument(oper != null, "No such operation:", operation);
         auxRunOper(oper);
       }
@@ -180,7 +184,7 @@ public abstract class App extends BaseObject {
       {
         addAppCommandLineArgs(ca);
         for (String key : mOrderedOperCommands) {
-          AppOper oper = mOperMap.get(key);
+          AppOper oper = findOper(key);
           oper.addCommandLineArgs(ca);
         }
       }
@@ -213,7 +217,7 @@ public abstract class App extends BaseObject {
     }
 
     for (String key : mOrderedOperCommands) {
-      AppOper oper = mOperMap.get(key);
+      AppOper oper = findOper(key);
       BasePrinter b = new BasePrinter();
       oper.getHelp(b);
       if (!hasMultipleOperations())
