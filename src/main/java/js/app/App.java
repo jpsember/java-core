@@ -213,7 +213,7 @@ public abstract class App extends BaseObject {
 
     if (hasMultipleOperations()) {
       sb.append("\nUsage: [--<app arg>]* [<operation> <operation arg>*]*\n\n");
-      sb.append("Operations:\n");
+      sb.append("Operations:\n\n");
     }
 
     for (String key : mOrderedOperCommands) {

@@ -698,7 +698,7 @@ public final class CmdLineArgs extends BaseObject {
   }
 
   /**
-   * Return TRUE if next argument matches a string, otherwise FALSE
+   * Return TRUE and read next argument if it matches a string, otherwise FALSE
    */
   public final Boolean nextArgIf(String name) {
     return nextArgIf(name, false);

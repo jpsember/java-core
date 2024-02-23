@@ -185,7 +185,8 @@ public abstract class AppOper extends BaseObject {
           accessor = Accessor.dataAccessor(argsBuilder, key);
           a.nextArg();
         } catch (IllegalArgumentException e) {
-          log("no accessor built for arg:", key, e.getMessage());
+          // This is a confusing thing to report if we are mixing json and non-json args, so don't print it
+          //log("no accessor built for arg:", key, e.getMessage());
           break;
         }
         Object value = accessor.get();

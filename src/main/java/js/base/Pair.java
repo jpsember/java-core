@@ -31,7 +31,8 @@ import static js.base.Tools.*;
  */
 public final class Pair<T1, T2> {
 
-  public Pair(T1 first, T2 second) {
+  // Use the Tools.pair() method to construct pairs.
+  Pair(T1 first, T2 second) {
     this.first = first;
     this.second = second;
   }

@@ -1148,7 +1148,7 @@ public final class DataUtil {
     JSMap json = readJsonMap(jsonLength, bytes);
     byte[] payload = new byte[bytes.remaining()];
     bytes.get(payload);
-    return new Pair<>(json, payload);
+    return pair(json, payload);
   }
 
   private static JSMap readJsonMap(int length, ByteBuffer buffer) {
@@ -1204,7 +1204,7 @@ public final class DataUtil {
   public static StringBuilder toHex(StringBuilder sbOrNull, int value, int digits, boolean stripLeadingZeros,
       boolean groupsOfFour) {
     StringBuilder sb = constructStringBuilderIfNec(sbOrNull);
-    
+
     boolean nonZeroSeen = !stripLeadingZeros;
 
     while (digits-- > 0) {
