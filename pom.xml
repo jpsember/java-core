@@ -8,9 +8,6 @@
   <artifactId>java-core</artifactId>
   <version>1.0</version>
 
-  <packaging>jar</packaging>  <!-- is this necessary? -->
-
-
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
@@ -24,7 +21,6 @@
       <version>2.6</version>
     </dependency>
   </dependencies>
-
 
   <build>
     <plugins>
