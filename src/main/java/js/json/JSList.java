@@ -423,6 +423,13 @@ public final class JSList extends JSObject implements Iterable<Object> {
   }
 
   /**
+   * Assumes list contains only Numbers, and extracts those as integers
+   */
+  public int[] asIntArray() {
+    return DataUtil.intArrayFromObjectList(mList);
+  }
+
+  /**
    * Returns iterable, assuming list contains only elements of type: JSMap
    */
   public Iterable<JSMap> asMaps() {

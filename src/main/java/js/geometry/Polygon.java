@@ -99,7 +99,10 @@ public final class Polygon implements AbstractData {
     }
 
     JSList lst = m.getList(KEY_POINTS);
-    int[] coordinates = DataUtil.intArray(lst.wrappedList());
+    int s = lst.size();
+    int[] coordinates = new int[s];
+    for (int i = 0; i < s; i++)
+      coordinates[i] = lst.getInt(i);
     return new Polygon(constructVertices(coordinates), m.opt("open"));
   }
 

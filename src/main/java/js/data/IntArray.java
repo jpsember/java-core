@@ -171,6 +171,7 @@ public class IntArray implements AbstractData {
     return mArray[position];
   }
 
+  @Deprecated
   public static IntArray from(JSList jsonList) {
     List<? extends Object> list = jsonList.wrappedList();
     int size = list.size();

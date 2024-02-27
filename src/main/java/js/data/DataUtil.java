@@ -63,9 +63,6 @@ public final class DataUtil {
    */
   public static final long ONE_MB = ONE_KB * ONE_KB;
 
-  @Deprecated
-  public static final boolean NULL_LIST_ELEMENTS_ALLOWED = false;
-
   static {
     loadTools();
   }
@@ -303,20 +300,6 @@ public final class DataUtil {
       throw badArg("Unexpected array length", array.length, ", expected", expectedLength,
           ifNullOrEmpty(contextOrNull, "(no context given)"));
     return array;
-  }
-
-  /**
-   * Build primitive array of ints from a collection of Numbers
-   */
-  public static int[] intArray(Collection numberCollection) {
-    int[] primitiveArray = new int[numberCollection.size()];
-    int i = 0;
-    for (Object y : numberCollection) {
-      Number x = (Number) y;
-      primitiveArray[i] = x.intValue();
-      i++;
-    }
-    return primitiveArray;
   }
 
   public static short[] shortArray(int size, short[] optionalExistingArray) {
@@ -900,7 +883,8 @@ public final class DataUtil {
   public static int[] parseIntsFromArrayOrBase64(Object value) {
     if (value instanceof String)
       return parseBase64Ints((String) value);
-    return IntArray.from((JSList) value).array();
+    var json = (JSList) value;
+    return intArrayFromObjectList(json.wrappedList());
   }
 
   /**
@@ -1456,6 +1440,38 @@ public final class DataUtil {
       nestedMap = childMap;
     }
     return nestedMap;
+  }
+
+  /**
+   * Convert a collection of numbers to an array of ints
+   */
+  public static int[] intArray(Collection<? extends Number> numberCollection) {
+    int[] out = new int[numberCollection.size()];
+    int i = 0;
+    for (Number x : numberCollection)
+      out[i++] = x.intValue();
+    return out;
+  }
+
+  /**
+   * Convert a collection of numbers to an array of ints
+   */
+  public static int[] intArrayFromObjectList(Collection<? extends Object> numberCollection) {
+    int[] out = new int[numberCollection.size()];
+    int i = 0;
+    for (Object x : numberCollection)
+      out[i++] = ((Number) x).intValue();
+    return out;
+  }
+
+  /**
+   * Convert a primitive array of ints to a list of Integers
+   */
+  public static ArrayList<Integer> intList(int[] intArray) {
+    var out = new ArrayList<Integer>(intArray.length);
+    for (int x : intArray)
+      out.add(x);
+    return out;
   }
 
 }
