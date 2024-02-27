@@ -604,12 +604,19 @@ public final class Files extends BaseObject {
     return sHomeDir;
   }
 
+  public static File binDirectory() {
+    if (sBinDir == null)
+      sBinDir = new File("/usr/local/bin");
+    return sBinDir;
+  }
+
   public static File fileRelativeToCurrent(File file) {
     return fileRelativeToDirectory(file, currentDirectory());
   }
 
   private static File sCurrentDir;
   private static File sHomeDir;
+  private static File sBinDir;
 
   /**
    * Get the OSX Desktop directory
