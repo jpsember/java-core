@@ -74,6 +74,7 @@ public final class JSMap extends JSObject {
     return jsMap;
   }
 
+  @Deprecated // Not used
   public static JSMap fromResource(Class theClass, String resourceName) {
     return new JSMap(Files.readString(theClass, resourceName));
   }
