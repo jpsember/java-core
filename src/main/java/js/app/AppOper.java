@@ -277,6 +277,19 @@ public abstract class AppOper extends BaseObject {
   static class ExitOperImmediately extends RuntimeException {
   }
 
+  /**
+   * If a string value is empty, and additional arguments exist, read the next
+   * argument and return that
+   */
+  protected final String readIfMissing(String value) {
+    if (value.isEmpty()) {
+      var args = app().cmdLineArgs();
+      if (args.hasNextArg())
+        value = args.nextArg();
+    }
+    return value;
+  }
+
   private Boolean mArgsSupported;
   private AbstractData mJsonArgs;
 
@@ -317,4 +330,5 @@ public abstract class AppOper extends BaseObject {
   public final RuntimeException setError(Object... messages) {
     return app().setErrorWithContext(null, messages);
   }
+
 }
