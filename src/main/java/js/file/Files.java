@@ -775,9 +775,9 @@ public final class Files extends BaseObject {
    */
   public void deleteDirectory(File dir, String requiredSubstring) {
     assertNonEmpty(dir, "deleteDirectory");
-    checkArgument(requiredSubstring.length() > 5, "required substring is too short");
-    String baseName = basename(dir);
-    checkArgument(baseName.contains(requiredSubstring), "attempt to delete directory", dir,
+    var s = dir.toString();
+    checkArgument(requiredSubstring.length() > 3, "required substring is too short");
+    checkArgument(s.contains(requiredSubstring), "attempt to delete directory", dir,
         "that doesn't contain the required substring", quote(requiredSubstring));
     deleteDirectory(dir);
   }

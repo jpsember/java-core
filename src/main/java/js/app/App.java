@@ -221,7 +221,7 @@ public abstract class App extends BaseObject {
       BasePrinter b = new BasePrinter();
       oper.getHelp(b);
       if (!hasMultipleOperations())
-        sb.append("\nUsage: " + name() + " ");
+        sb.append("\nUsage: " + DataUtil.convertUnderscoresToCamelCase(name()) + " ");
       sb.append(b.toString());
       sb.append('\n');
     }
