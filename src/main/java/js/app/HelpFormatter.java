@@ -22,7 +22,7 @@ public class HelpFormatter {
   private String buildString() {
     var sb = new StringBuilder();
 
-    int itemsWidth = 25;
+    int itemsWidth = 18;
     int sep = 2;
 
     for (var item : mItemList) {
@@ -35,7 +35,7 @@ public class HelpFormatter {
       var i = sb.length();
       sb.append(label);
       var sp = i + itemsWidth + sep - sb.length();
-      if (sp < 0) {
+      if (sp <= 0) {
         sb.append('\n');
         sp = itemsWidth + sep;
       }

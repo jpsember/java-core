@@ -39,6 +39,13 @@ import js.geometry.MyMath;
 
 public abstract class App extends BaseObject {
 
+  @Deprecated
+  public void setCustomArgs(String spaceDelimitedArgs) {
+    if (alert("using custom args: " + spaceDelimitedArgs)) {
+      mCustomArgs = DataUtil.toStringArray(split(spaceDelimitedArgs, ' '));
+    }
+  }
+
   // ------------------------------------------------------------------
   // Singleton support
   // ------------------------------------------------------------------
@@ -64,6 +71,8 @@ public abstract class App extends BaseObject {
    * Subclass should call this method from its main(String[]) method
    */
   public final void startApplication(String[] cmdLineArguments) {
+    if (mCustomArgs != null)
+      cmdLineArguments = mCustomArgs;
     mOperMap = hashMap();
     mOrderedOperCommands = arrayList();
     registerOperations();
@@ -121,7 +130,7 @@ public abstract class App extends BaseObject {
       oper = mOperMap.values().iterator().next();
     } else {
       // Look for operation as first arg
-      if ( args.hasNextArg()) {
+      if (args.hasNextArg()) {
         String operation = args.nextArg();
         oper = findOper(operation);
         checkArgument(oper != null, "No such operation:", operation);
@@ -136,7 +145,7 @@ public abstract class App extends BaseObject {
       pr("please specify an operation");
       return;
     }
-      auxRunOper(oper);
+    auxRunOper(oper);
   }
 
   private void auxRunOper(AppOper oper) {
@@ -216,6 +225,13 @@ public abstract class App extends BaseObject {
   }
 
   private void defineCommandLineArgs(CmdLineArgs args) {
+    var hf = new HelpFormatter();
+    for (String key : mOrderedOperCommands) {
+      AppOper oper = findOper(key);
+      hf.addItem(oper.userCommand(), oper.getHelpDescription());
+    }
+    var help = hf.toString();
+
     StringBuilder sb = new StringBuilder(name().toLowerCase());
     sb.append(" version: ");
     sb.append(getVersion());
@@ -224,26 +240,13 @@ public abstract class App extends BaseObject {
     if (hasMultipleOperations()) {
       sb.append("\nUsage: [--<app arg>]* [<operation> <operation arg>*]*\n\n");
       sb.append("Operations:\n\n");
+      sb.append(help);
+      sb.append("\nApp arguments:");
     } else {
       sb.append("\nUsage: " + DataUtil.convertUnderscoresToCamelCase(name()));
+      sb.append(help);
     }
-
-    var hf = new HelpFormatter();
-
-    for (String key : mOrderedOperCommands) {
-      AppOper oper = findOper(key);
-      BasePrinter b = new BasePrinter();
-      oper.getHelp(b);
-      todo("separate handling if single oper");
-      hf.addItem(oper.userCommand(), b.toString());
-      //      sb.append(b.toString());
-      //      sb.append('\n');
-    }
-    sb.append(hf.toString());
-
-    if (hasMultipleOperations())
-      sb.append("\nApp arguments:");
-
+    
     cmdLineArgs().banner(sb.toString());
   }
 
@@ -355,5 +358,6 @@ public abstract class App extends BaseObject {
   }
 
   private AppErrorException mAppErrorException;
+  private String[] mCustomArgs;
 
 }

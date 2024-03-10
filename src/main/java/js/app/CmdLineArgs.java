@@ -27,7 +27,9 @@ package js.app;
 import static js.base.Tools.*;
 
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import js.base.BaseObject;
@@ -330,11 +332,6 @@ public final class CmdLineArgs extends BaseObject {
     throw new CmdLineArgException(message);
   }
 
-  @Deprecated // Does this need to be public?
-  public void help() {
-    help(null);
-  }
-
   public void help(AppOper optionalOper) {
     checkState(mLocked);
     if (helpShown())
@@ -345,6 +342,8 @@ public final class CmdLineArgs extends BaseObject {
 
     if (optionalOper != null) {
       BasePrinter b = new BasePrinter();
+      if (mApp.hasMultipleOperations())
+        b.pr("Help for operation", quote(optionalOper.userCommand()) + ":", INDENT);
       optionalOper.getOperSpecificHelp(b);
       sb.append(b.toString());
     } else {
@@ -424,7 +423,7 @@ public final class CmdLineArgs extends BaseObject {
   public boolean helpShown() {
     return mHelpHasBeenShown;
   }
-  
+
   protected boolean helpRequested() {
     return mHelpRequested;
   }
@@ -468,7 +467,7 @@ public final class CmdLineArgs extends BaseObject {
   }
 
   private boolean mHelpRequested;
-  
+
   private void readArgumentValues(List<Object> args) {
     int cursor = 0;
     while (cursor < args.size()) {

@@ -27,7 +27,6 @@ package js.app;
 import static js.base.Tools.*;
 
 import java.io.File;
-import java.util.List;
 import java.util.Set;
 
 import js.base.BaseObject;
@@ -62,26 +61,17 @@ public abstract class AppOper extends BaseObject {
   // Help
   // ------------------------------------------------------------------
 
-  protected final void getHelp(BasePrinter b) {
-    b.prNoCr(getHelpDescription(), INDENT);
-    List<Object> add = getAdditionalArgs();
-    if (add != null)
-      b.pr(add.toArray());
-  }
-
   protected String getHelpDescription() {
     return "no help description defined yet!";
   }
 
-  @Deprecated
-  protected List<Object> getAdditionalArgs() {
-    return null;
-  }
-
-  @Deprecated
   protected void getOperSpecificHelp(BasePrinter b) {
     todo("No oper-specific help has been defined for:", userCommand(), "class:", name());
-    b.pr("No specific help is available for:", userCommand());
+    if (app().hasMultipleOperations()) {
+      b.pr("No specific help is available for:", userCommand());
+    } else {
+      b.pr("No help is available");
+    }
   }
 
   // ------------------------------------------------------------------
