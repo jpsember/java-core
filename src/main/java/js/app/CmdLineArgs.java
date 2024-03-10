@@ -424,6 +424,10 @@ public final class CmdLineArgs extends BaseObject {
   public boolean helpShown() {
     return mHelpHasBeenShown;
   }
+  
+  protected boolean helpRequested() {
+    return mHelpRequested;
+  }
 
   private Option claimName(String name, Option forOwner) {
     if (mNamedOptionMap.containsKey(name))
@@ -463,6 +467,8 @@ public final class CmdLineArgs extends BaseObject {
     return argList;
   }
 
+  private boolean mHelpRequested;
+  
   private void readArgumentValues(List<Object> args) {
     int cursor = 0;
     while (cursor < args.size()) {
@@ -473,20 +479,7 @@ public final class CmdLineArgs extends BaseObject {
         if (opt.mType == T_BOOL) {
           opt.addValue(Boolean.TRUE);
           if (opt.mLongName == HELP) {
-            AppOper oper = null;
-
-            // If there's a following argument that matches the name of an operation, 
-            // generate operation-specific help.
-            var app = mApp;
-            if (app.hasMultipleOperations()) {
-              if (cursor < args.size()) {
-                var operArg = args.get(cursor).toString();
-                oper = app.findOper(operArg);
-                cursor++;
-              }
-            }
-            help(oper);
-            break;
+            mHelpRequested = true;
           }
           continue;
         }
@@ -834,5 +827,4 @@ public final class CmdLineArgs extends BaseObject {
   public static boolean isDefaultValue(Object val) {
     return val == FILE || val == STRING || val == INT || val == FLOAT;
   }
-
 }

@@ -115,18 +115,28 @@ public abstract class App extends BaseObject {
   private List<String> mOrderedOperCommands;
 
   private void runApplication(CmdLineArgs args) {
+    AppOper oper = null;
     if (!hasMultipleOperations()) {
       checkArgument(!mOperMap.isEmpty(), "no AppOper defined");
-      AppOper oper = mOperMap.values().iterator().next();
-      auxRunOper(oper);
+      oper = mOperMap.values().iterator().next();
     } else {
-      while (args.hasNextArg()) {
+      // Look for operation as first arg
+      if ( args.hasNextArg()) {
         String operation = args.nextArg();
-        AppOper oper = findOper(operation);
+        oper = findOper(operation);
         checkArgument(oper != null, "No such operation:", operation);
-        auxRunOper(oper);
       }
     }
+
+    if (args.helpRequested()) {
+      args.help(oper);
+      return;
+    }
+    if (oper == null) {
+      pr("please specify an operation");
+      return;
+    }
+      auxRunOper(oper);
   }
 
   private void auxRunOper(AppOper oper) {
