@@ -39,11 +39,10 @@ import js.geometry.MyMath;
 
 public abstract class App extends BaseObject {
 
-  @Deprecated
+  @Deprecated // For quick tests within IDE
   public void setCustomArgs(String spaceDelimitedArgs) {
-    if (alert("using custom args: " + spaceDelimitedArgs)) {
+    if (alert("using custom args: " + spaceDelimitedArgs))
       mCustomArgs = DataUtil.toStringArray(split(spaceDelimitedArgs, ' '));
-    }
   }
 
   // ------------------------------------------------------------------
@@ -199,14 +198,7 @@ public abstract class App extends BaseObject {
         ca.add(CLARG_VALIDATE_KEYS).desc("Check for extraneous keys").shortName("K");
         ca.add(CLARG_GEN_ARGS).desc("Generate default operation arguments").shortName("g");
       }
-
-      {
-        addAppCommandLineArgs(ca);
-        for (String key : mOrderedOperCommands) {
-          AppOper oper = findOper(key);
-          oper.addCommandLineArgs(ca);
-        }
-      }
+      addAppCommandLineArgs(ca);
       ca.banner(getClass().getSimpleName() + " banner (!!! Please add one)");
       ca.add(CLARG_DRYRUN).desc("Dry run");
       ca.add(CLARG_SHOW_EXCEPTIONS).desc("Show exception stack traces").shortName("e");
@@ -225,6 +217,7 @@ public abstract class App extends BaseObject {
   }
 
   private void defineCommandLineArgs(CmdLineArgs args) {
+    todo("move this to where it is called");
     var hf = new HelpFormatter();
     for (String key : mOrderedOperCommands) {
       AppOper oper = findOper(key);
