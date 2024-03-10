@@ -228,7 +228,7 @@ public abstract class App extends BaseObject {
     var hf = new HelpFormatter();
     for (String key : mOrderedOperCommands) {
       AppOper oper = findOper(key);
-      hf.addItem(oper.userCommand(), oper.getHelpDescription());
+      hf.addItem(oper.userCommand(), oper.shortHelp());
     }
     var help = hf.toString();
 
@@ -246,7 +246,7 @@ public abstract class App extends BaseObject {
       sb.append("\nUsage: " + DataUtil.convertUnderscoresToCamelCase(name()));
       sb.append(help);
     }
-    
+
     cmdLineArgs().banner(sb.toString());
   }
 
