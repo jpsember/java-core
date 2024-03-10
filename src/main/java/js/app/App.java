@@ -204,7 +204,29 @@ public abstract class App extends BaseObject {
       ca.add(CLARG_SHOW_EXCEPTIONS).desc("Show exception stack traces").shortName("e");
       ca.add(CLARG_VERBOSE).desc("Verbose messages").shortName("v");
       ca.add(CLARG_VERSION).desc("Display version number").shortName("n");
-      defineCommandLineArgs(ca);
+
+      var hf = new HelpFormatter();
+      for (String key : mOrderedOperCommands) {
+        AppOper oper = findOper(key);
+        hf.addItem(oper.userCommand(), oper.shortHelp());
+      }
+      var help = hf.toString();
+
+      StringBuilder sb = new StringBuilder(name().toLowerCase());
+      sb.append(" version: ");
+      sb.append(getVersion());
+      sb.append("\n");
+
+      if (hasMultipleOperations()) {
+        sb.append("\nUsage: [--<app arg>]* [<operation> <operation arg>*]*\n\n");
+        sb.append("Operations:\n\n");
+        sb.append(help);
+        sb.append("\nApp arguments:");
+      } else {
+        sb.append("\nUsage: " + DataUtil.convertUnderscoresToCamelCase(name()));
+        sb.append(help);
+      }
+      ca.banner(sb.toString());
     }
     return mCmdLineArgs;
   }
@@ -214,33 +236,6 @@ public abstract class App extends BaseObject {
    * called if args file is not supported
    */
   public void addAppCommandLineArgs(CmdLineArgs ca) {
-  }
-
-  private void defineCommandLineArgs(CmdLineArgs args) {
-    todo("move this to where it is called");
-    var hf = new HelpFormatter();
-    for (String key : mOrderedOperCommands) {
-      AppOper oper = findOper(key);
-      hf.addItem(oper.userCommand(), oper.shortHelp());
-    }
-    var help = hf.toString();
-
-    StringBuilder sb = new StringBuilder(name().toLowerCase());
-    sb.append(" version: ");
-    sb.append(getVersion());
-    sb.append("\n");
-
-    if (hasMultipleOperations()) {
-      sb.append("\nUsage: [--<app arg>]* [<operation> <operation arg>*]*\n\n");
-      sb.append("Operations:\n\n");
-      sb.append(help);
-      sb.append("\nApp arguments:");
-    } else {
-      sb.append("\nUsage: " + DataUtil.convertUnderscoresToCamelCase(name()));
-      sb.append(help);
-    }
-
-    cmdLineArgs().banner(sb.toString());
   }
 
   private CmdLineArgs mCmdLineArgs;
