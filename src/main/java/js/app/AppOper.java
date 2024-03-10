@@ -62,13 +62,8 @@ public abstract class AppOper extends BaseObject {
   // Help
   // ------------------------------------------------------------------
 
-  private static final Object SEP = TAB(24);
-
   protected final void getHelp(BasePrinter b) {
-    if (app().hasMultipleOperations()) {
-      b.prNoCr(userCommand(), SEP);
-      b.prNoCr(getHelpDescription(), INDENT);
-    }
+    b.prNoCr(getHelpDescription(), INDENT);
     List<Object> add = getAdditionalArgs();
     if (add != null)
       b.pr(add.toArray());
@@ -78,10 +73,12 @@ public abstract class AppOper extends BaseObject {
     return "no help description defined yet!";
   }
 
+  @Deprecated
   protected List<Object> getAdditionalArgs() {
     return null;
   }
 
+  @Deprecated
   protected void getOperSpecificHelp(BasePrinter b) {
     todo("No oper-specific help has been defined for:", userCommand(), "class:", name());
     b.pr("No specific help is available for:", userCommand());

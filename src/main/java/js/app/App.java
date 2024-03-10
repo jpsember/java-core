@@ -214,17 +214,23 @@ public abstract class App extends BaseObject {
     if (hasMultipleOperations()) {
       sb.append("\nUsage: [--<app arg>]* [<operation> <operation arg>*]*\n\n");
       sb.append("Operations:\n\n");
+    } else {
+      sb.append("\nUsage: " + DataUtil.convertUnderscoresToCamelCase(name()));
     }
+
+    var hf = new HelpFormatter();
 
     for (String key : mOrderedOperCommands) {
       AppOper oper = findOper(key);
       BasePrinter b = new BasePrinter();
       oper.getHelp(b);
-      if (!hasMultipleOperations())
-        sb.append("\nUsage: " + DataUtil.convertUnderscoresToCamelCase(name()) + " ");
-      sb.append(b.toString());
-      sb.append('\n');
+      todo("separate handling if single oper");
+      hf.addItem(oper.userCommand(), b.toString());
+      //      sb.append(b.toString());
+      //      sb.append('\n');
     }
+    sb.append(hf.toString());
+
     if (hasMultipleOperations())
       sb.append("\nApp arguments:");
 
