@@ -82,7 +82,7 @@ public abstract class AppOper extends BaseObject {
 
   @Deprecated // use longHelp() instead
   protected void getOperSpecificHelp(BasePrinter b) {
-    getLongHelp(b);
+    longHelp(b);
   }
 
   // ------------------------------------------------------------------
