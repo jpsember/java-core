@@ -61,16 +61,17 @@ public abstract class AppOper extends BaseObject {
   // Help
   // ------------------------------------------------------------------
 
-  protected String shortHelp() {
+  protected String getHelpDescription() {
     return "no help description defined yet!";
   }
 
-  protected void longHelp(BasePrinter b) {
-    todo("No longHelp has been defined for:", userCommand(), "class:", name());
-    if (app().hasMultipleOperations())
-      b.pr("No additional help is available for:", userCommand());
-    else
+  protected void getOperSpecificHelp(BasePrinter b) {
+    todo("No oper-specific help has been defined for:", userCommand(), "class:", name());
+    if (app().hasMultipleOperations()) {
+      b.pr("No specific help is available for:", userCommand());
+    } else {
       b.pr("No help is available");
+    }
   }
 
   // ------------------------------------------------------------------
@@ -225,6 +226,13 @@ public abstract class AppOper extends BaseObject {
   }
 
   /**
+   * Add 'dash-style' command line arguments; only called if json args not
+   * supported
+   */
+  protected void addCommandLineArgs(CmdLineArgs ca) {
+  }
+
+  /**
    * Hook for operation-specific additional argument handling within the
    * handlingArgs() loop
    */
@@ -271,6 +279,24 @@ public abstract class AppOper extends BaseObject {
 
   private Boolean mArgsSupported;
   private AbstractData mJsonArgs;
+
+  // ------------------------------------------------------------------
+  // README file generation
+  // ------------------------------------------------------------------
+
+  public final BasePrinter readme() {
+    if (mReadMe == null)
+      mReadMe = new BasePrinter();
+    return mReadMe;
+  }
+
+  public final void writeReadme(File directory) {
+    String content = readme().toString().trim();
+    checkState(!content.isEmpty(), "No README content was generated");
+    Files.S.writeString(new File(directory, "README.md"), content + "\n");
+  }
+
+  private BasePrinter mReadMe;
 
   // ------------------------------------------------------------------
   // Convenience methods accessing parent app

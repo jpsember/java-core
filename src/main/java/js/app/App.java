@@ -39,10 +39,11 @@ import js.geometry.MyMath;
 
 public abstract class App extends BaseObject {
 
-  @Deprecated // For quick tests within IDE
+  @Deprecated
   public void setCustomArgs(String spaceDelimitedArgs) {
-    if (alert("using custom args: " + spaceDelimitedArgs))
+    if (alert("using custom args: " + spaceDelimitedArgs)) {
       mCustomArgs = DataUtil.toStringArray(split(spaceDelimitedArgs, ' '));
+    }
   }
 
   // ------------------------------------------------------------------
@@ -198,35 +199,20 @@ public abstract class App extends BaseObject {
         ca.add(CLARG_VALIDATE_KEYS).desc("Check for extraneous keys").shortName("K");
         ca.add(CLARG_GEN_ARGS).desc("Generate default operation arguments").shortName("g");
       }
-      addAppCommandLineArgs(ca);
+
+      {
+        addAppCommandLineArgs(ca);
+        for (String key : mOrderedOperCommands) {
+          AppOper oper = findOper(key);
+          oper.addCommandLineArgs(ca);
+        }
+      }
       ca.banner(getClass().getSimpleName() + " banner (!!! Please add one)");
       ca.add(CLARG_DRYRUN).desc("Dry run");
       ca.add(CLARG_SHOW_EXCEPTIONS).desc("Show exception stack traces").shortName("e");
       ca.add(CLARG_VERBOSE).desc("Verbose messages").shortName("v");
       ca.add(CLARG_VERSION).desc("Display version number").shortName("n");
-
-      var hf = new HelpFormatter();
-      for (String key : mOrderedOperCommands) {
-        AppOper oper = findOper(key);
-        hf.addItem(oper.userCommand(), oper.shortHelp());
-      }
-      var help = hf.toString();
-
-      StringBuilder sb = new StringBuilder(name().toLowerCase());
-      sb.append(" version: ");
-      sb.append(getVersion());
-      sb.append("\n");
-
-      if (hasMultipleOperations()) {
-        sb.append("\nUsage: [--<app arg>]* [<operation> <operation arg>*]*\n\n");
-        sb.append("Operations:\n\n");
-        sb.append(help);
-        sb.append("\nApp arguments:");
-      } else {
-        sb.append("\nUsage: " + DataUtil.convertUnderscoresToCamelCase(name()));
-        sb.append(help);
-      }
-      ca.banner(sb.toString());
+      defineCommandLineArgs(ca);
     }
     return mCmdLineArgs;
   }
@@ -236,6 +222,32 @@ public abstract class App extends BaseObject {
    * called if args file is not supported
    */
   public void addAppCommandLineArgs(CmdLineArgs ca) {
+  }
+
+  private void defineCommandLineArgs(CmdLineArgs args) {
+    var hf = new HelpFormatter();
+    for (String key : mOrderedOperCommands) {
+      AppOper oper = findOper(key);
+      hf.addItem(oper.userCommand(), oper.getHelpDescription());
+    }
+    var help = hf.toString();
+
+    StringBuilder sb = new StringBuilder(name().toLowerCase());
+    sb.append(" version: ");
+    sb.append(getVersion());
+    sb.append("\n");
+
+    if (hasMultipleOperations()) {
+      sb.append("\nUsage: [--<app arg>]* [<operation> <operation arg>*]*\n\n");
+      sb.append("Operations:\n\n");
+      sb.append(help);
+      sb.append("\nApp arguments:");
+    } else {
+      sb.append("\nUsage: " + DataUtil.convertUnderscoresToCamelCase(name()));
+      sb.append(help);
+    }
+    
+    cmdLineArgs().banner(sb.toString());
   }
 
   private CmdLineArgs mCmdLineArgs;
