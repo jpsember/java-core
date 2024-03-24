@@ -344,7 +344,7 @@ public final class CmdLineArgs extends BaseObject {
       BasePrinter b = new BasePrinter();
       if (mApp.hasMultipleOperations())
         b.pr("Help for operation", quote(optionalOper.userCommand()) + ":", INDENT);
-      optionalOper.getOperSpecificHelp(b);
+      optionalOper.longHelp(b);
       sb.append(b.toString());
     } else {
       auxHelp(sb);
