@@ -61,17 +61,28 @@ public abstract class AppOper extends BaseObject {
   // Help
   // ------------------------------------------------------------------
 
-  protected String getHelpDescription() {
-    return "no help description defined yet!";
+  protected String shortHelp() {
+    todo("No shortHelp() has been defined for:", userCommand(), "class:", name());
+    return "no help available";
   }
 
-  protected void getOperSpecificHelp(BasePrinter b) {
-    todo("No oper-specific help has been defined for:", userCommand(), "class:", name());
+  @Deprecated // use shortHelp() instead
+  protected String getHelpDescription() {
+    return shortHelp();
+  }
+
+  protected void longHelp(BasePrinter b) {
+    todo("No longHelp() has been defined for:", userCommand(), "class:", name());
     if (app().hasMultipleOperations()) {
-      b.pr("No specific help is available for:", userCommand());
+      b.pr("No detailed help is available for:", userCommand());
     } else {
-      b.pr("No help is available");
+      b.pr("No detailed help is available");
     }
+  }
+
+  @Deprecated // use longHelp() instead
+  protected void getOperSpecificHelp(BasePrinter b) {
+    getLongHelp(b);
   }
 
   // ------------------------------------------------------------------
