@@ -79,37 +79,17 @@ public final class Tools {
   // ------------------------------------------------------------------
 
   /**
-   * Print message that code is unimplemented at current line; prints a specific
-   * string only once. Thread safe. Not very efficient, since it needs to
-   * construct a stack trace
-   */
-  public static boolean todo(Object... messageObjects) {
-    return todoWithSkip(1, messageObjects);
-  }
-
-  private static boolean todoWithSkip(int skipCount, Object... messageObjects) {
-    String message = reportMaxTimes("TODO", 1, 1 + skipCount, messageObjects);
-    if (message != null)
-      pr(message);
-    return true;
-  }
-
-  /**
    * Print alert message only once. Thread safe. Always returns true
    */
-  public static boolean alert(Object... messageObjects) {
-    return alertWithSkip(1, messageObjects);
+  public static boolean alert(String key, Object... message) {
+    auxAlert(1, key, "ALERT", message);
+    return true;
   }
 
   public static boolean todo(String key, Object... message) {
     auxAlert(1, key, "TODO", message);
     return true;
   }
-  //
-  //func Todo(key string, message ...any) bool {
-  //  auxAlert(1, key, "TODO", message...)
-  //  return true
-  //}
 
   private static Map<String, Integer> sAlertCounterMap = concurrentHashMap();
 
@@ -242,7 +222,9 @@ public final class Tools {
     } else {
       sb.append(info.key);
     }
-    System.out.println(sb.toString());
+
+    // I think we want to be calling our logger instead of System.out!
+    pr(sb);
   }
 
   /**
@@ -1113,7 +1095,7 @@ public final class Tools {
 
   public static void testOnlyAlert() {
     if (!testMode()) {
-      alertWithSkip(1, "*** SHOULD ONLY BE CALLED IN TEST MODE");
+      alert("<1SHOULD ONLY BE CALLED IN TEST MODE");
     }
   }
 

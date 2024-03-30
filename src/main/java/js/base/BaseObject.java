@@ -256,7 +256,18 @@ public class BaseObject {
 
     private File registerFile() {
       if (mRegisterFile == null) {
-        mRegisterFile = Files.S.fileWithinProjectConfigDirectory("verbosity_register.json");
+        // Attempt to find a project config subdirectory.  If not found, use a temporary file as the register file
+        File attempt = null;
+        try {
+          attempt = Files.S.fileWithinProjectConfigDirectory("verbosity_register.json");
+        } catch (IllegalArgumentException e) {
+          System.out.println("caught: " + e);
+        }
+        if (attempt == null) {
+          attempt = Files.createTempFile("_register_file_", "");
+          Files.S.writeString(attempt, "{}");
+        }
+        mRegisterFile = attempt;
       }
       return mRegisterFile;
     }

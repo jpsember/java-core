@@ -10,6 +10,7 @@ public class HelpFormatter {
 
   public void addItem(String item, Object details) {
     checkState(mString == null);
+    checkState(item != null);
     mItemList.add(pair(item, details));
   }
 

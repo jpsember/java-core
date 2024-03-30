@@ -287,9 +287,11 @@ public final class IRect implements AbstractData {
   }
 
   public static IRect rectContainingPoints(IPoint s1, IPoint s2) {
-    IPoint m1 = new IPoint(Math.min(s1.x, s2.x), Math.min(s1.y, s2.y));
-    IPoint m2 = new IPoint(Math.max(s1.x, s2.x), Math.max(s1.y, s2.y));
-    return new IRect(m1.x, m1.y, m2.x - m1.x, m2.y - m1.y);
+    var x1 = Math.min(s1.x, s2.x);
+    var y1 = Math.min(s1.y, s2.y);
+    var x2 = Math.max(s1.x, s2.x);
+    var y2 = Math.max(s1.y, s2.y);
+    return new IRect(x1, y1, x2 - x1, y2 - y1);
   }
 
   public boolean intersects(IRect t) {
