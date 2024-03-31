@@ -264,7 +264,7 @@ public class BaseObject {
           System.out.println("caught: " + e);
         }
         if (attempt == null) {
-          attempt = Files.createTempFile("_register_file_", "");
+          attempt = new File("_SKIP_register_file.json");
           Files.S.writeString(attempt, "{}");
         }
         mRegisterFile = attempt;
