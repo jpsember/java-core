@@ -24,13 +24,13 @@
  **/
 package js.base;
 
-import static js.base.Tools.*;
-
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
+
+import org.apache.commons.io.FileUtils;
 
 import js.file.Files;
 import js.geometry.MyMath;
@@ -1168,5 +1168,6 @@ public final class Tools {
   public static void main(String[] args) {
     pr("hello");
     todo("!this has an exclamation mark");
+    var f = FileUtils.getUserDirectory();
   }
 }
