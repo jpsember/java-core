@@ -257,12 +257,8 @@ public class BaseObject {
     private File registerFile() {
       if (mRegisterFile == null) {
         // Attempt to find a project config subdirectory.  If not found, use a temporary file as the register file
-        File dir = null;
-        try {
-          dir = Files.S.fileWithinProjectConfigDirectory("verbosity_register.json");
-        } catch (IllegalArgumentException e) {
-          System.out.println("caught: " + e);
-        }
+        Files.S.optProjectConfigDirectory();
+        File dir = Files.S.fileWithinProjectConfigDirectory("verbosity_register.json");
         if (dir == null) {
           dir = new File("_SKIP_register_file.json");
           if (!dir.exists())

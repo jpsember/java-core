@@ -24,6 +24,8 @@
  **/
 package js.base;
 
+import static js.base.Tools.*;
+
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.*;
@@ -163,12 +165,7 @@ public final class Tools {
     return info;
   }
 
-  private static void processClearAlertHistoryFlag() {
-  }
-
   private static void auxAlert(int skipCount, String key, String prompt, Object... args) {
-
-    processClearAlertHistoryFlag();
     var info = extractAlertInfo(key);
     var cachedInfo = sAlertCounterMap.getOrDefault(info.key, 0) + 1;
     sAlertCounterMap.put(info.key, cachedInfo);
@@ -181,30 +178,29 @@ public final class Tools {
     // If there's a multi-session priority value, process it
     //
     if (info.delayMs > 0) {
+      synchronized (sReportCountMap) {
+        JSMap flagsMap = sPersistedAlertFlagsMap;
+        File flagsFile = sPersistedAlertFlagsFile;
+        if (flagsMap == null) {
+          flagsFile = sPersistedAlertFlagsFile = new File(Files.S.optProjectConfigDirectory(), "alerts.json");
+          flagsMap = sPersistedAlertFlagsMap = JSMap.fromFileIfExists(flagsFile);
+        }
+        final int expectedVersion = 1;
+        final String VERSION_KEY = "~~version~~";
+        if (flagsMap.opt(VERSION_KEY, 0) != expectedVersion)
+          flagsMap.clear().put(VERSION_KEY, expectedVersion);
 
-      //      synchronized (sReportCountMap) {
-      //        JSMap flagsMap = sPersistedAlertFlagsMap;
-      //        File flagsFile = sPersistedAlertFlagsFile;
-      //        if (flagsMap == null) {
-      //          flagsFile = sPersistedAlertFlagsFile = Files.getDesktopFile("_alerts_.json");
-      //          flagsMap = sPersistedAlertFlagsMap = JSMap.fromFileIfExists(flagsFile);
-      //        }
-      //        if (flagsMap.containsKey(reportText))
-      //          return null;
-      //        flagsMap.put(reportText, true);
-      //        Files.S.writePretty(flagsFile, flagsMap);
-      //      }
-      //      
-
-      //       // Do this before locking, as it might attempt to use locks
-      //       Files.proj
-      //       FindProjectDirM()
-      //       debugLock.Lock()
-      //       flag := processAlertForMultipleSessions(info)
-      //       debugLock.Unlock()
-      //       if !flag {
-      //         return
-      //       }
+        var m = flagsMap.optJSMapOrEmpty(info.key);
+        var currTime = System.currentTimeMillis();
+        var lastReport = m.opt("r", 0L);
+        var elapsed = currTime - lastReport;
+        checkArgument(elapsed >= 0);
+        if (elapsed < info.delayMs)
+          return;
+        m.put("r", currTime);
+        flagsMap.put(info.key, m);
+        Files.S.writeString(sPersistedAlertFlagsFile, flagsMap.toString());
+      }
     } else {
       // If we've exceeded the max per session count, exit now
       if (cachedInfo > info.maxPerSession)
@@ -1166,4 +1162,11 @@ public final class Tools {
   private static BiConsumer<Integer, Object[]> sWtfCallback;
   private static int sWtfCounter;
 
+  /**
+   * A main() method for quick tests within the IDE
+   */
+  public static void main(String[] args) {
+    pr("hello");
+    todo("!this has an exclamation mark");
+  }
 }

@@ -1079,6 +1079,26 @@ public final class Files extends BaseObject {
   }
 
   /**
+   * Get the project config directory. If not yet set, sets it to
+   * <project_directory>/project_config if directory exists, or create a
+   * temporary directory
+   */
+  public File optProjectConfigDirectory() {
+    if (mProjectConfigDirectory == null) {
+      try {
+        projectDirectory();
+      } catch (Throwable t) {
+        setProjectDirectory(createTempDir("_project_directory_"));
+      }
+      var f = new File(projectDirectory(), PROJECT_CONFIG_DIR_NAME);
+      if (!f.exists())
+        f.mkdirs();
+      setProjectConfigDirectory(f);
+    }
+    return projectConfigDirectory();
+  }
+
+  /**
    * Set project config directory; must not already be defined
    */
   public void setProjectConfigDirectory(File directory) {
