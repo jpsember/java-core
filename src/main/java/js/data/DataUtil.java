@@ -1352,6 +1352,10 @@ public final class DataUtil {
     return Arrays.copyOf(source, source.length);
   }
 
+  public static long[] copyOf(long[] source) {
+    return Arrays.copyOf(source,source.length);
+  }
+
   public static int[] copyOf(int[] source) {
     return Arrays.copyOf(source, source.length);
   }

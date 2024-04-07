@@ -41,11 +41,12 @@ public class LongArray implements AbstractData {
   // The abstract data classes will attempt to use a class variable to parse 
   // such items, so supply one that can act as a parser
   //
-  public static final LongArray DEFAULT_INSTANCE = new LongArray();
+  public static final LongArray DEFAULT_INSTANCE = with(DataUtil.EMPTY_LONG_ARRAY);
 
   @Override
   public Builder toBuilder() {
-    throw new UnsupportedOperationException();
+    long[] copy = DataUtil.copyOf(mArray);
+    return new Builder(copy);
   }
 
   @Override
@@ -70,9 +71,7 @@ public class LongArray implements AbstractData {
     long[] w = new long[sourceList.size()];
     for (int i = 0; i < w.length; i++)
       w[i] = sourceList.get(i).longValue();
-    LongArray result = new LongArray();
-    result.mArray = w;
-    return result;
+    return new LongArray(w);
   }
 
   @Override
@@ -103,13 +102,11 @@ public class LongArray implements AbstractData {
   }
 
   public static Builder newBuilder() {
-    return new Builder(DEFAULT_INSTANCE);
+    return new Builder(DataUtil.EMPTY_LONG_ARRAY);
   }
 
   public static LongArray with(long... longs) {
-    LongArray r = new LongArray();
-    r.mArray = longs;
-    return r;
+    return new LongArray(longs);
   }
 
   public final int indexOf(long value) {
@@ -153,9 +150,9 @@ public class LongArray implements AbstractData {
 
   public static final class Builder extends LongArray {
 
-    private Builder(LongArray source) {
-      mUsed = source.mArray.length;
-      mArray = Arrays.copyOf(source.mArray, mUsed);
+    private Builder(long[] array) {
+      super(array);
+      mUsed = array.length;
     }
 
     @Override
@@ -176,9 +173,7 @@ public class LongArray implements AbstractData {
 
     @Override
     public LongArray build() {
-      LongArray r = new LongArray();
-      r.mArray = trimmedArray();
-      return r;
+      return with(Arrays.copyOf(mArray, mUsed));
     }
 
     @Override
@@ -255,15 +250,13 @@ public class LongArray implements AbstractData {
     long[] array = new long[size];
     for (int i = 0; i < size; i++)
       array[i] = ((Number) list.get(i)).longValue();
-    LongArray result = new LongArray();
-    result.mArray = array;
-    return result;
+    return new LongArray(array);
   }
 
   // ------------------------------------------------------------------
 
-  private LongArray() {
-    mArray = DataUtil.EMPTY_LONG_ARRAY;
+  private LongArray(long[] wrappedArray) {
+    mArray = wrappedArray;
   }
 
   protected long[] mArray;
