@@ -158,7 +158,7 @@ public class IntArray implements AbstractData {
         return i;
     return -1;
   }
-
+ 
   public final boolean isEmpty() {
     return size() == 0;
   }

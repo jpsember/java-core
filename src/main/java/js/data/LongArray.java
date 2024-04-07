@@ -65,7 +65,7 @@ public class LongArray implements AbstractData {
   @Override
   public LongArray parse(Object object) {
     JSList source = (JSList) object;
-    
+
     List<Number> sourceList = (List<Number>) source.wrappedList();
     long[] w = new long[sourceList.size()];
     for (int i = 0; i < w.length; i++)
@@ -110,6 +110,14 @@ public class LongArray implements AbstractData {
     LongArray r = new LongArray();
     r.mArray = longs;
     return r;
+  }
+
+  public final int indexOf(long value) {
+    int size = size();
+    for (int i = 0; i < size; i++)
+      if (mArray[i] == value)
+        return i;
+    return -1;
   }
 
   /**
@@ -195,6 +203,14 @@ public class LongArray implements AbstractData {
         mArray[z] = mArray[z - 1];
       mArray[position] = value;
       mUsed++;
+      return this;
+    }
+
+    public Builder remove(int position) {
+      if (position < 0 || position >= size())
+        throw badArg("attempt to remove from position:", position, "; size", size());
+      System.arraycopy(mArray, position + 1, mArray, position, size() - position);
+      mUsed--;
       return this;
     }
 

@@ -1168,6 +1168,6 @@ public final class Tools {
   public static void main(String[] args) {
     pr("hello");
     todo("!this has an exclamation mark");
-    var f = FileUtils.getUserDirectory();
+    FileUtils.getUserDirectory();
   }
 }
