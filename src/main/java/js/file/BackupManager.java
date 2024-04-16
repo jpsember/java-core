@@ -74,6 +74,11 @@ public final class BackupManager extends BaseObject {
     return makeBackup(new File(fileOrDirectory));
   }
 
+  public BackupManager withMaxBackups(int max) {
+    mMaxBackupsCount = max;
+    return this;
+  }
+
   /**
    * Make a backup of a file or directory
    */

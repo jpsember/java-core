@@ -204,7 +204,7 @@ public class LongArray implements AbstractData {
     public Builder remove(int position) {
       if (position < 0 || position >= size())
         throw badArg("attempt to remove from position:", position, "; size", size());
-      System.arraycopy(mArray, position + 1, mArray, position, size() - position);
+      System.arraycopy(mArray, position + 1, mArray, position, size() - 1 - position);
       mUsed--;
       return this;
     }

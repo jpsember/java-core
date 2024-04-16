@@ -128,12 +128,16 @@ public class ShortArray implements AbstractData {
     return mArray.length;
   }
 
-  public final boolean contains(int value) {
+  public final boolean contains(short value) {
+    return indexOf(value) >= 0;
+  }
+
+  public final int indexOf(short value) {
     int size = size();
     for (int i = 0; i < size; i++)
       if (mArray[i] == value)
-        return true;
-    return false;
+        return i;
+    return -1;
   }
 
   public final boolean isEmpty() {

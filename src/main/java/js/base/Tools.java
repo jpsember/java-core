@@ -128,8 +128,8 @@ public final class Tools {
   //<[0-9]+              Skip first n entries in stack trace
   private static AlertInfo extractAlertInfo(String key) {
 
-    final int minute = 60 * 1000;
-    final int hour = minute * 60;
+    final long minute = 60 * 1000;
+    final long hour = minute * 60;
 
     var info = new AlertInfo();
     info.maxPerSession = 1;
