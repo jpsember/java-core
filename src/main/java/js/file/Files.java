@@ -1286,16 +1286,25 @@ public final class Files extends BaseObject {
 
   /**
    * Get an input stream to a resource, which is stored in the class folder (or
-   * one of its subfolders)
+   * one of its subfolders).
+   * 
+   * If not found, in case program is not running from a jar file, looks in
+   * "~/src/main/resources/..."
    */
   public static BufferedInputStream openResource(Class theClass, String resourceName) {
     try {
       InputStream is = theClass.getResourceAsStream(resourceName);
+      if (is == null) {
+        var packageName = theClass.getPackageName();
+        // Look for the resource in a src directory
+        var alt = "src/main/resources/" + packageName.replace('.', '/') + "/" + resourceName;
+        is = Files.openInputStream(new File(alt));
+      }
       if (is == null)
-        throw die("stream returned null");
+        throw die(); // caught immediately below, so no message required
       return new BufferedInputStream(is);
     } catch (Throwable e) {
-      //      pr("Failed to open resource for class:", theClass, "name:", resourceName);
+      pr("Failed to open resource for class:", theClass, "name:", resourceName);
       throw asFileException(e);
     }
   }
