@@ -45,7 +45,7 @@ public class ProblemReporter extends BaseObject {
    */
   public static ProblemReporter infrequentLogger(float periodSeconds, int maxReports) {
     ProblemReporter p = new ProblemReporter();
-    p.withReporter(new InfrequentLoggerReporter(periodSeconds, maxReports).disableIfTest());
+    p.withReporter(new InfrequentLoggerReporter(periodSeconds, maxReports));
     return p;
   }
 
@@ -237,8 +237,6 @@ public class ProblemReporter extends BaseObject {
   private static Map<String, ProblemReporter> sGrowthReporters = hashMap();
 
   public static void reportGrowth(String message, int currentValue, int maxStepSize) {
-    if (testMode())
-      return;
     ProblemReporter rep = sGrowthReporters.get(message);
     if (rep == null) {
       rep = ProblemReporter.growthReporter();

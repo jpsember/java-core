@@ -1087,14 +1087,16 @@ public final class Tools {
   // Program context
   // ------------------------------------------------------------------
 
+  @Deprecated
   public static boolean testMode() {
-    return sTestModeFlag;
+    return false;
   }
 
   /**
    * Throw exception if not in test mode
    */
-  public static void testOnlyAssert() {
+  @Deprecated
+   public static void testOnlyAssert() {
     if (!testMode())
       badState("test-only");
   }
@@ -1102,28 +1104,17 @@ public final class Tools {
   /**
    * Throw exception if in test mode
    */
+  @Deprecated
   public static void nonTestOnlyAssert() {
     if (testMode())
       badState("non-test-only");
   }
 
+  @Deprecated
   public static void testOnlyAlert() {
     if (!testMode()) {
       alert("<1SHOULD ONLY BE CALLED IN TEST MODE");
     }
-  }
-
-  private static final boolean sTestModeFlag;
-
-  static {
-    // Determine if we're in test mode by seeing if there's a MyTestCase class
-    boolean testMode = true;
-    try {
-      Class.forName("js.testutil.MyTestCase");
-    } catch (ClassNotFoundException e) {
-      testMode = false;
-    }
-    sTestModeFlag = testMode;
   }
 
   public static JSMap mapWithClassName(Object object) {

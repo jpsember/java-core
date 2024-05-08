@@ -36,8 +36,6 @@ class InfrequentLoggerReporter extends ProblemListener {
   @Override
   public void accept(ProblemReporter reporter) {
     if (sufficientTimeElapsed()) {
-      if (testMode() && mDisableIfTest)
-        return;
       pr(insertStringToFront("***** (" + reporter.name() + "):", reporter.getProblemDescription()));
       Throwable throwable = reporter.optStackTrace();
       if (reporter.requireStackTrace())
@@ -47,10 +45,9 @@ class InfrequentLoggerReporter extends ProblemListener {
     }
   }
 
+  @Deprecated
   public InfrequentLoggerReporter disableIfTest() {
-    mDisableIfTest = true;
     return this;
   }
 
-  private boolean mDisableIfTest;
 }

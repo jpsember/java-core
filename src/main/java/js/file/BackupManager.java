@@ -158,7 +158,6 @@ public final class BackupManager extends BaseObject {
    * Public for tests only
    */
   public File getSourceRootDirectory() {
-    testOnlyAssert();
     return baseDirectory();
   }
 
@@ -167,12 +166,10 @@ public final class BackupManager extends BaseObject {
   // ------------------------------------------------------------------
 
   public File getBackupDirectory() {
-    testOnlyAssert();
     return backupDirectory();
   }
 
   public void setCurrentTime(long timeMs) {
-    testOnlyAssert();
     mCurrentTimeMs = timeMs;
   }
 

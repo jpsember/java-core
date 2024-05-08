@@ -155,27 +155,25 @@ public final class SystemUtil {
   // behaviour with command line apps
   // ------------------------------------------------------------------
 
+  @Deprecated
   public static boolean consoleAppFlag() {
-    if (sConsoleAppFlag == null) {
-      setConsoleAppFlag(true);
-    }
-    return sConsoleAppFlag;
+    return true;
   }
 
+  @Deprecated
   public static void setConsoleAppFlag(boolean consoleAppFlag) {
-    checkState(sConsoleAppFlag == null || sConsoleAppFlag == consoleAppFlag,
-        "console app flag has already been set to", sConsoleAppFlag);
-    if (sConsoleAppFlag != null)
-      return;
-    sConsoleAppFlag = consoleAppFlag;
-    if (consoleAppFlag)
-      System.setProperty("java.awt.headless", "true");
-    else {
-      System.setProperty("apple.laf.useScreenMenuBar", "true");
-    }
   }
 
-  public static Boolean sConsoleAppFlag;
+  public static void prepareForConsoleOrGUI(boolean consoleMode) {
+    if (sConsoleFlag != null && sConsoleFlag != consoleMode) {
+      alert("<1prepareForConsoleOrGUI:", consoleMode, "when already set to:", sConsoleFlag);
+    }
+    sConsoleFlag = consoleMode;
+    System.setProperty("java.awt.headless", consoleMode ? "true" : "false");
+    System.setProperty("apple.laf.useScreenMenuBar", consoleMode ? "false" : "true");
+  }
+
+  private static Boolean sConsoleFlag;
 
   /**
    * For OSX, set the Dock icon
@@ -183,6 +181,7 @@ public final class SystemUtil {
    * ...does nothing at present, as the functionality vanished after upgrading
    * my version of OSX.
    */
+  @Deprecated
   public static void setDockIcon() {
   }
 
