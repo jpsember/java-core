@@ -41,7 +41,7 @@ public abstract class App extends BaseObject {
 
   @Deprecated
   public void setCustomArgs(String spaceDelimitedArgs) {
-    if (alert("using custom args: " + spaceDelimitedArgs)) {
+    if (alert("<1using custom args: " + spaceDelimitedArgs)) {
       mCustomArgs = DataUtil.toStringArray(split(spaceDelimitedArgs, ' '));
     }
   }
@@ -106,6 +106,7 @@ public abstract class App extends BaseObject {
   protected abstract void registerOperations();
 
   protected void registerOper(AppOper oper) {
+    checkNotNull(oper.userCommand());
     AppOper previousMapping = mOperMap.put(oper.userCommand(), oper);
     checkState(previousMapping == null, "duplicate operation key:", oper.userCommand());
     mOrderedOperCommands.add(oper.userCommand());
@@ -228,6 +229,8 @@ public abstract class App extends BaseObject {
     var hf = new HelpFormatter();
     for (String key : mOrderedOperCommands) {
       AppOper oper = findOper(key);
+      var cmd = oper.userCommand();
+      checkNonEmpty(cmd, "no userCommand() found for oper:", oper);
       hf.addItem(oper.userCommand(), oper.shortHelp());
     }
     var help = hf.toString();
@@ -246,7 +249,7 @@ public abstract class App extends BaseObject {
       sb.append("\nUsage: " + DataUtil.convertUnderscoresToCamelCase(name()));
       sb.append(help);
     }
-    
+
     cmdLineArgs().banner(sb.toString());
   }
 

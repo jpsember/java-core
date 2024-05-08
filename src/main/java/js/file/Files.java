@@ -1293,7 +1293,7 @@ public final class Files extends BaseObject {
         throw die("stream returned null");
       return new BufferedInputStream(is);
     } catch (Throwable e) {
-      pr("Failed to open resource for class:", theClass, "name:", resourceName);
+      //      pr("Failed to open resource for class:", theClass, "name:", resourceName);
       throw asFileException(e);
     }
   }

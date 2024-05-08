@@ -165,6 +165,8 @@ public final class SystemUtil {
   public static void setConsoleAppFlag(boolean consoleAppFlag) {
     checkState(sConsoleAppFlag == null || sConsoleAppFlag == consoleAppFlag,
         "console app flag has already been set to", sConsoleAppFlag);
+    if (sConsoleAppFlag != null)
+      return;
     sConsoleAppFlag = consoleAppFlag;
     if (consoleAppFlag)
       System.setProperty("java.awt.headless", "true");
