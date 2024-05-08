@@ -118,14 +118,15 @@ public final class Tools {
     return result;
   }
 
-  //Parse an alert key into an alertInfo structure.
-  //Can contain zero or more prefixes of the form:
+  // Parse an alert key into an alertInfo structure.
+  // Can contain zero or more prefixes of the form:
   //
   //-              Never print
   //!          Print about once per day
   //?              Print about once per month
   //#[0-9]+              Print n times, every time program is run
   //<[0-9]+              Skip first n entries in stack trace
+  //
   private static AlertInfo extractAlertInfo(String key) {
 
     final long minute = 60 * 1000;
@@ -162,6 +163,14 @@ public final class Tools {
     }
 
     info.key = key.substring(cursor);
+
+    if (DEBUG_ALERTS) {
+      var m = map();
+      m.put("", key);
+      m.put("key", info.key).put("delayMS", info.delayMs).put("maxPerSession", info.maxPerSession)
+          .put("skipCount", info.skipCount);
+      System.out.println("Extracted alert info from: " + key + "\n" + m.prettyPrint());
+    }
     return info;
   }
 
@@ -183,6 +192,8 @@ public final class Tools {
         File flagsFile = sPersistedAlertFlagsFile;
         if (flagsMap == null) {
           flagsFile = sPersistedAlertFlagsFile = new File(Files.S.optProjectConfigDirectory(), "alerts.json");
+          if (DEBUG_ALERTS)
+            pr("...reading flags map from file:", INDENT, Files.infoMap(flagsFile));
           flagsMap = sPersistedAlertFlagsMap = JSMap.fromFileIfExists(flagsFile);
         }
         final int expectedVersion = 1;
@@ -195,10 +206,15 @@ public final class Tools {
         var lastReport = m.opt("r", 0L);
         var elapsed = currTime - lastReport;
         checkArgument(elapsed >= 0);
+        if (DEBUG_ALERTS)
+          pr("elapsed time (ms):", elapsed);
+
         if (elapsed < info.delayMs)
           return;
         m.put("r", currTime);
         flagsMap.put(info.key, m);
+        if (DEBUG_ALERTS)
+          pr("writing flags map to:", sPersistedAlertFlagsFile, INDENT, flagsMap);
         Files.S.writeString(sPersistedAlertFlagsFile, flagsMap.toString());
       }
     } else {
@@ -353,6 +369,8 @@ public final class Tools {
     }
     return sb;
   }
+
+  private static final boolean DEBUG_ALERTS = false;
 
   private static final Map<String, Integer> sReportCountMap = new ConcurrentHashMap<>();
 

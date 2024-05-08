@@ -1088,6 +1088,8 @@ public final class Files extends BaseObject {
       try {
         projectDirectory();
       } catch (Throwable t) {
+        System.out.println(
+            "No project directory found; creating temporary one.  Call Files.setProjectDirectory() if desired.");
         setProjectDirectory(createTempDir("_project_directory_"));
       }
       var f = new File(projectDirectory(), PROJECT_CONFIG_DIR_NAME);
