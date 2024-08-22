@@ -62,13 +62,7 @@ public abstract class AppOper extends BaseObject {
   // ------------------------------------------------------------------
 
   protected String shortHelp() {
-    todo("No shortHelp() has been defined for:", userCommand(), "class:", name());
-    return "no help available";
-  }
-
-  @Deprecated // use shortHelp() instead
-  protected String getHelpDescription() {
-    return shortHelp();
+    return "install github project as local maven dependency";
   }
 
   protected void longHelp(BasePrinter b) {
