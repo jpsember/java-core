@@ -604,12 +604,57 @@ public final class Files extends BaseObject {
     return sHomeDir;
   }
 
-  public static File binDirectory() {
-    if (sBinDir == null)
-      sBinDir = new File("/usr/local/bin");
-    return sBinDir;
+  // ------------------------------------------------------------------
+  // Locating executable files (when running within Eclipse, it has
+  // a lot of trouble finding certain executables; I guess the PATH
+  // is missing some stuff).
+  // ------------------------------------------------------------------
+
+  /**
+   * Attempt to locate a program file. If eclipse is false, just returns the
+   * name.
+   */
+  public static File programPath(String name) {
+    File f = null;
+    {
+      f = sProgramPathMap.get(name);
+      if (f == null) {
+        f = findProgramPath(name);
+        sProgramPathMap.put(name, f);
+      }
+    }
+    //pr("programPath for:",name,"is:",Files.infoMap(f));
+    return f;
   }
 
+  private static File findProgramPath(String progName) {
+    String[] dirs = { "/usr/local/bin", "/opt/homebrew/bin", };
+    File progPath = null;
+    for (var d : dirs) {
+      var c = new File(d, progName);
+      if (c.exists()) {
+        progPath = c;
+        break;
+      }
+    }
+    if (progPath == null) {
+      progPath = new File(progName);
+    }
+    return progPath;
+  }
+
+  private static Map<String, File> sProgramPathMap = hashMap();
+
+  public static File binDirectory() {
+    todo("!modify Files version");
+    if (sBinDir == null) {
+      var d = new File(Files.homeDirectory(), "bin");
+      Files.assertDirectoryExists(d, "please create a 'bin' subdirectory in the home directory");
+      sBinDir = d;
+    }
+    return sBinDir;
+  }
+ 
   public static File fileRelativeToCurrent(File file) {
     return fileRelativeToDirectory(file, currentDirectory());
   }
