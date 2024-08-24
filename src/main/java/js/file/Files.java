@@ -646,7 +646,6 @@ public final class Files extends BaseObject {
   private static Map<String, File> sProgramPathMap = hashMap();
 
   public static File binDirectory() {
-    todo("!modify Files version");
     if (sBinDir == null) {
       var d = new File(Files.homeDirectory(), "bin");
       Files.assertDirectoryExists(d, "please create a 'bin' subdirectory in the home directory");
@@ -654,7 +653,7 @@ public final class Files extends BaseObject {
     }
     return sBinDir;
   }
- 
+
   public static File fileRelativeToCurrent(File file) {
     return fileRelativeToDirectory(file, currentDirectory());
   }
