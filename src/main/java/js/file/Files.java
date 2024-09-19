@@ -1109,7 +1109,6 @@ public final class Files extends BaseObject {
   public void setProjectDirectory(File directory) {
     checkState(mProjectDirectory == null, "project directory already set to:", mProjectDirectory);
     mProjectDirectory = getCanonicalFile(directory);
-    pr("set project directory to:",Files.infoMap(mProjectDirectory));
   }
 
   /**
@@ -1133,7 +1132,6 @@ public final class Files extends BaseObject {
       try {
         projectDirectory();
       } catch (Throwable t) {
-        pr("caught throwable:",INDENT,t);
         System.out.println(
             "No project directory found; creating temporary one.  Call Files.setProjectDirectory() if desired.");
         setProjectDirectory(createTempDir("_project_directory_"));
