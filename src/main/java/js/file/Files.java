@@ -797,12 +797,14 @@ public final class Files extends BaseObject {
   public void deleteDirectory(File dir) {
     try {
       assertNonEmpty(dir, "deleteDirectory");
+      
       {
+        final int MIN_PATH_LENGTH = 16;
         // As a safety precaution, we will fail if the length of the absolute path is too short
         String str = dir.getPath();
-        if (str.length() < 30)
+        if (str.length() < MIN_PATH_LENGTH)
           str = dir.getAbsolutePath();
-        if (str.length() < 30 && !str.endsWith("/gen"))
+        if (str.length() < MIN_PATH_LENGTH && !str.endsWith("/gen"))
           die("Can't delete directory whose length is too short;", dir);
       }
       log("Delete directory:", dir);
