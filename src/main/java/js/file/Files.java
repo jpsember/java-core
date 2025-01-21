@@ -797,7 +797,7 @@ public final class Files extends BaseObject {
   public void deleteDirectory(File dir) {
     try {
       assertNonEmpty(dir, "deleteDirectory");
-      
+
       {
         final int MIN_PATH_LENGTH = 16;
         // As a safety precaution, we will fail if the length of the absolute path is too short
@@ -1134,8 +1134,9 @@ public final class Files extends BaseObject {
       try {
         projectDirectory();
       } catch (Throwable t) {
-        System.out.println(
-            "No project directory found; creating temporary one.  Call Files.setProjectDirectory() if desired.");
+        if (false)
+          System.out.println(
+              "No project directory found; creating temporary one.  Call Files.setProjectDirectory() if desired.");
         setProjectDirectory(createTempDir("_project_directory_"));
       }
       var f = new File(projectDirectory(), PROJECT_CONFIG_DIR_NAME);
