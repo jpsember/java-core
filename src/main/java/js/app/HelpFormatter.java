@@ -31,7 +31,7 @@ public class HelpFormatter {
       var details = item.second.toString().stripTrailing();
 
       if (label.length() > itemsWidth) {
-        todo("support splitting at space");
+        //todo("support splitting at space");
       }
       var i = sb.length();
       sb.append(label);
