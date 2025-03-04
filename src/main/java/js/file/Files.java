@@ -1335,17 +1335,16 @@ public final class Files extends BaseObject {
    * Get an input stream to a resource, which is stored in the class folder (or
    * one of its subfolders).
    * 
-   * If not found, in case program is not running from a jar file, looks in
-   * "~/src/main/resources/..."
+   * If not found, in case program is not running from a jar file, looks in the
+   * directory specified by a call to setAlternateResourceDir()
    */
   public static BufferedInputStream openResource(Class theClass, String resourceName) {
     try {
       InputStream is = theClass.getResourceAsStream(resourceName);
-      if (is == null) {
+      if (is == null && nonEmpty(sAlternateResourcesDir)) {
         var packageName = theClass.getPackageName();
-        // Look for the resource in a src directory
-        var alt = "src/main/resources/" + packageName.replace('.', '/') + "/" + resourceName;
-        is = Files.openInputStream(new File(alt));
+        var resourcePath = packageName.replace('.', '/') + "/" + resourceName;
+        is = Files.openInputStream(new File(sAlternateResourcesDir, resourcePath));
       }
       if (is == null)
         throw die(); // caught immediately below, so no message required
@@ -1566,6 +1565,11 @@ public final class Files extends BaseObject {
   }
 
   private static Map<String, Function<File, Object>> sHashFnMap = concurrentHashMap();
+  private static File sAlternateResourcesDir;
+
+  public static void setAlternateResourceDir(File f) {
+    sAlternateResourcesDir = f;
+  }
 
   // ------------------------------------------------------------------
   // File extensions
