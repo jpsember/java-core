@@ -225,7 +225,7 @@ public final class Polygon implements AbstractData {
     return v;
   }
 
-  private Polygon(Collection<IPoint> vertices, boolean isOpen) {
+  public Polygon(Collection<IPoint> vertices, boolean isOpen) {
     this(IPoint.toArray(vertices), isOpen);
   }
 
