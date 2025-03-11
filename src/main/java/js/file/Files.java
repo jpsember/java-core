@@ -1517,7 +1517,7 @@ public final class Files extends BaseObject {
   public static final File DEFAULT = new File("");
 
   public static final DataOutputStream NULL_DATA_OUTPUT_STREAM = new DataOutputStream(
-      NullOutputStream.INSTANCE);
+      new NullOutputStream());
 
   public static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
 
