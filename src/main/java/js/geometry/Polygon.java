@@ -194,6 +194,16 @@ public final class Polygon implements AbstractData {
     this(IPoint.toArray(vertices), template.mOpen);
   }
 
+  public static Polygon fromVertices(Collection<FPoint> vertices, boolean open) {
+    var iVerts = new IPoint[vertices.size()];
+    var i = INIT_INDEX;
+    for (var x : vertices) {
+      i++;
+      iVerts[i] = x.toIPoint();
+    }
+    return new Polygon(iVerts, open);
+  }
+
   public Polygon(IPoint[] vertices, boolean open) {
     mVerts = Arrays.copyOf(vertices, vertices.length);
     this.mOpen = open;

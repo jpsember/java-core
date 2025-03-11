@@ -292,4 +292,8 @@ public final class FPoint implements AbstractData {
     }
   }
 
+  public FPoint negate() {
+    return new FPoint(-x, -y);
+  }
+
 }
