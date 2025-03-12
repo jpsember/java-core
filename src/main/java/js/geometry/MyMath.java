@@ -104,8 +104,8 @@ public final class MyMath {
     return squaredMagnitudeOfRay(s2.x - s1.x, s2.y - s1.y);
   }
 
-  public static float distanceBetween(FPoint s1, FPoint s2) {
-    return sqrtf(squaredMagnitudeOfRay(s2.x - s1.x, s2.y - s1.y));
+  public static float distanceBetween(Point2 s1, Point2 s2) {
+    return sqrtf(squaredMagnitudeOfRay(s2.getX() - s1.getX(), s2.getY() - s1.getY()));
   }
 
   public static float distanceBetween(IPoint s1, IPoint s2) {
@@ -213,7 +213,7 @@ public final class MyMath {
    *          FPoint2
    * @param l1
    *          FPoint2
-   * @param ptOnSeg
+   * @param ptOnSegOrNull
    *          if not null, closest point on segment to point is stored here
    * @return float
    */
@@ -240,8 +240,8 @@ public final class MyMath {
     return dist;
   }
 
-  public static FPoint pointOnCircle(FPoint origin, float angle, float radius) {
-    return pointOnCircle(origin.x, origin.y, angle, radius);
+  public static FPoint pointOnCircle(Point2 origin, float angle, float radius) {
+    return pointOnCircle(origin.getX(), origin.getY(), angle, radius);
   }
 
   public static FPoint pointOnCircle(float originX, float originY, float angle, float radius) {
@@ -383,16 +383,12 @@ public final class MyMath {
     return result;
   }
 
-  public static float polarAngle(FPoint ray) {
-    return polarAngle(ray.x, ray.y);
+  public static float polarAngle(Point2 ray) {
+    return polarAngle(ray.getX(), ray.getY());
   }
 
-  public static float polarAngle(FPoint pt0, FPoint pt1) {
-    return polarAngle(pt1.x - pt0.x, pt1.y - pt0.y);
-  }
-
-  public static float polarAngle(IPoint pt0, IPoint pt1) {
-    return polarAngle(pt1.x - pt0.x, pt1.y - pt0.y);
+  public static float polarAngle(Point2 pt0, Point2 pt1) {
+    return polarAngle(pt1.getX() - pt0.getX(), pt1.getY() - pt0.getY());
   }
 
   public static float polarAngle(float x, float y) {

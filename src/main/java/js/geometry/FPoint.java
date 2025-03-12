@@ -1,18 +1,18 @@
 /**
  * MIT License
- * 
+ *
  * Copyright (c) 2021 Jeff Sember
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -20,7 +20,6 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- * 
  **/
 package js.geometry;
 
@@ -33,7 +32,27 @@ import java.util.Objects;
 import js.data.AbstractData;
 import js.json.*;
 
-public final class FPoint implements AbstractData {
+public final class FPoint implements AbstractData, Point2 {
+
+  @Override
+  public FPoint asFPoint() {
+    return this;
+  }
+
+  @Override
+  public IPoint asIPoint() {
+    return toIPoint();
+  }
+
+  @Override
+  public float getX() {
+    return x;
+  }
+
+  @Override
+  public float getY() {
+    return y;
+  }
 
   // ------------------------------------------------------------------
   // AbstractData interface
@@ -171,11 +190,13 @@ public final class FPoint implements AbstractData {
   public final float x;
   public final float y;
 
-  public static FPoint interpolate(FPoint p1, FPoint p2, float t) {
-    return new FPoint(p1.x + t * (p2.x - p1.x), p1.y + t * (p2.y - p1.y));
+  public static FPoint interpolate(Point2 p1, Point2 p2, float t) {
+    var x = p1.getX();
+    var y = p1.getY();
+    return new FPoint(x + t * (p2.getX() - x), y + t * (p2.getY() - y));
   }
 
-  public static FPoint midPoint(FPoint p1, FPoint p2) {
+  public static FPoint midPoint(Point2 p1, Point2 p2) {
     return interpolate(p1, p2, .5f);
   }
 
@@ -295,5 +316,6 @@ public final class FPoint implements AbstractData {
   public FPoint negate() {
     return new FPoint(-x, -y);
   }
+
 
 }
