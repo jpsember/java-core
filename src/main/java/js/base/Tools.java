@@ -225,7 +225,7 @@ public final class Tools {
 
     var sb = new StringBuilder("*** ");
     sb.append(prompt);
-    sb.append(' ');
+    sb.append(" ."); // Add a period so IntelliJ makes a clickable link
 
     getStackTraceElement(sb, 1 + skipCount + info.skipCount);
 

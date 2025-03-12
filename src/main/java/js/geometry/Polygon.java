@@ -131,9 +131,13 @@ public final class Polygon implements AbstractData {
     return target;
   }
 
-  public void extractVertices(List<IPoint> target) {
+  public List<IPoint> extractVertices(List<IPoint> optionalTarget) {
+    List<IPoint> target = optionalTarget;
+    if (optionalTarget == null)
+      target = arrayList();
     for (IPoint v : mVerts)
       target.add(v);
+    return target;
   }
 
   public Polygon withVertices(Collection<IPoint> v) {
