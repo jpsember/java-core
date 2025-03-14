@@ -1,18 +1,18 @@
 /**
  * MIT License
- * 
+ *
  * Copyright (c) 2021 Jeff Sember
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -20,7 +20,6 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- * 
  **/
 package js.base;
 
@@ -52,27 +51,25 @@ public final class Tools {
   // ------------------------------------------------------------------
 
   /**
-   * 
    * Initial value for counters used in for-each loops where the item index is
    * required as well, e.g.
-   * 
+   *
    * <pre>
-   * 
+   *
    * int i = INIT_INDEX;
    * for (String s : stringCollection) {
    *   i++;
-   *   
+   *
    *   if (i == ...) ...
    *   ...
    * }
-   *   
+   *
    * I haven't found a cleaner way to accomplish this.
-   * 
+   *
    * </pre>
-   * 
+   *
    * Using this symbolic constant is a good way to indicate this technique is
    * being used.
-   * 
    */
   public static final int INIT_INDEX = -1;
 
@@ -223,9 +220,7 @@ public final class Tools {
         return;
     }
 
-    var sb = new StringBuilder("*** ");
-    sb.append(prompt);
-    sb.append(" ."); // Add a period so IntelliJ makes a clickable link
+    var sb = prepareAlertBuffer(prompt);
 
     getStackTraceElement(sb, 1 + skipCount + info.skipCount);
 
@@ -265,8 +260,7 @@ public final class Tools {
    * client code. Like 'alert' and 'todo', it generates a stack trace so it's
    * not particularly quick
    *
-   * @param oper
-   *          code to run if this is the first time called from the location
+   * @param oper code to run if this is the first time called from the location
    * @return true
    */
   public static boolean once(Runnable oper) {
@@ -278,12 +272,17 @@ public final class Tools {
     return true;
   }
 
-  private static String reportMaxTimes(String type, int limit, int stackFrameSkipCount,
-      Object... messageObjects) {
+  private static StringBuilder prepareAlertBuffer(String type) {
     StringBuilder sb = new StringBuilder();
     sb.append("*** ");
-
     sb.append(ifNullOrEmpty(type, "WARNING"));
+    sb.append(" .");  // Add a period so IntelliJ makes a clickable link
+    return sb;
+  }
+
+  private static String reportMaxTimes(String type, int limit, int stackFrameSkipCount,
+                                       Object... messageObjects) {
+    var sb = prepareAlertBuffer(type);
     int fileModeSentinalPosition = sb.length() + 2;
 
     int locationPosition = sb.length();
@@ -1096,7 +1095,7 @@ public final class Tools {
    * Throw exception if not in test mode
    */
   @Deprecated
-   public static void testOnlyAssert() {
+  public static void testOnlyAssert() {
     if (!testMode())
       badState("test-only");
   }
