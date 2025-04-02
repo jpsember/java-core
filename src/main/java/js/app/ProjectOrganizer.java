@@ -46,12 +46,8 @@ public class ProjectOrganizer extends BaseObject {
       addProjectHint(Files.currentDirectory());
 
     }
-//    auxDefine(fileOrDirectoryToStartSearch);
     if (!defined()) {
       for (var hint : mHints) {
-//        if (hint.equals(fileOrDirectoryToStartSearch)) {
-//          continue;
-//        }
         auxDefine(hint);
         if (defined()) break;
       }
