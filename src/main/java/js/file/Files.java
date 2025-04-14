@@ -1580,5 +1580,7 @@ public final class Files extends BaseObject {
   public static final String EXT_JSON = "json";
   public static final String EXT_ZIP = "zip";
   public static final String EXT_TMP = "tmp";
+  public static final String EXT_CSV = "csv";
+  public static final String EXT_JPROJ = "jproj";
 
 }

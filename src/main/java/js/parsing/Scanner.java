@@ -126,7 +126,9 @@ public final class Scanner extends BaseObject {
             bestTokenName = mDfa.tokenName(newTokenId);
           }
         } else {
-          if (rangeContainsValue(edge.codeSets(), ch)) {
+          // If the character is non-ascii, allow it if the range includes 255
+          var effectiveCh = (ch >= 128) ? 255: ch;
+          if (rangeContainsValue(edge.codeSets(), effectiveCh)) {
             nextState = edge.destinationState();
             break;
           }
