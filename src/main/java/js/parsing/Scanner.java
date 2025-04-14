@@ -242,11 +242,13 @@ public final class Scanner extends BaseObject {
   }
 
   private static boolean rangeContainsValue(int[] range, int value) {
+    // If the value is > 255, accept it if the range contains 255
+    var effectiveValue = (value > 255) ? 255 : value;
     int i = 0;
     while (i < range.length) {
-      if (value < range[i])
+      if (effectiveValue < range[i])
         return false;
-      if (value < range[i + 1])
+      if (effectiveValue < range[i + 1])
         return true;
       i += 2;
     }
