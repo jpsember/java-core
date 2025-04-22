@@ -18,7 +18,7 @@ public class ProjectOrganizer extends BaseObject {
   public static final ProjectOrganizer SHARED_INSTANCE = new ProjectOrganizer();
 
   private ProjectOrganizer() {
-    alertVerbose();
+   // alertVerbose();
   }
 
   public void addProjectHint(File dir) {

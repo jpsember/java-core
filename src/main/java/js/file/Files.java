@@ -1516,6 +1516,7 @@ public final class Files extends BaseObject {
    */
   public static final File DEFAULT = new File("");
 
+  @SuppressWarnings("deprecation")
   public static final DataOutputStream NULL_DATA_OUTPUT_STREAM = new DataOutputStream(
       new NullOutputStream());
 
