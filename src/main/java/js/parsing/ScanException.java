@@ -43,7 +43,6 @@ public final class ScanException extends RuntimeException {
     String text = BasePrinter.toString(messages);
     if (token == null)
       return text;
-    
     return token.locInfo() + ": " + quote(token.text()) + "; " + text;
   }
 
