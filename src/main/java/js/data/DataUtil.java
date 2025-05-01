@@ -1239,6 +1239,10 @@ public final class DataUtil {
   }
 
   public static String hexDump(byte[] byteArray, int offset, int length) {
+    return hexDump(byteArray, offset, length, false);
+  }
+
+  public static String hexDump(byte[] byteArray, int offset, int length, boolean withAscii) {
 
     int groupSize = (1 << 2); // Must be power of 2
 
@@ -1246,7 +1250,6 @@ public final class DataUtil {
     boolean hideZeroes = true;
     boolean groups = true;
     boolean absoluteIndex = false;
-    boolean withASCII = false;
 
     StringBuilder sb = new StringBuilder("\n");
     int i = 0;
@@ -1276,7 +1279,7 @@ public final class DataUtil {
             sb.append("| ");
         }
       }
-      if (withASCII) {
+      if (withAscii) {
         sb.append(' ');
         for (int j = 0; j < rSize; j++) {
           byte v = byteArray[offset + i + j];
@@ -1353,7 +1356,7 @@ public final class DataUtil {
   }
 
   public static long[] copyOf(long[] source) {
-    return Arrays.copyOf(source,source.length);
+    return Arrays.copyOf(source, source.length);
   }
 
   public static int[] copyOf(int[] source) {
