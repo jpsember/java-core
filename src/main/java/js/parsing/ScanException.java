@@ -27,6 +27,7 @@ package js.parsing;
 import static js.base.Tools.*;
 
 import js.base.BasePrinter;
+import js.data.DataUtil;
 
 public final class ScanException extends RuntimeException {
 
@@ -43,7 +44,8 @@ public final class ScanException extends RuntimeException {
     String text = BasePrinter.toString(messages);
     if (token == null)
       return text;
-    return token.locInfo() + ": " + quote(token.text()) + "; " + text;
+    var tt = DataUtil.escapeChars(token.text(), true);
+    return token.locInfo() + ": " + tt + "; " + text;
   }
 
   private Token mToken;
