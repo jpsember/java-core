@@ -24,8 +24,6 @@
  **/
 package js.parsing;
 
-import static js.base.Tools.*;
-
 import js.base.BasePrinter;
 import js.data.DataUtil;
 

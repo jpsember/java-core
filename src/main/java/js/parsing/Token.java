@@ -116,7 +116,16 @@ public final class Token {
     return mTokenName;
   }
 
+  public ScanException failWith(Object... messages) {
+    throw auxFail(messages);
+  }
+
+  @Deprecated // This doesn't throw the exception, which is very confusing; 
   public ScanException fail(Object... messages) {
+    return auxFail(messages);
+  }
+
+  private ScanException auxFail(Object... messages) {
     String reason;
     if (messages == null)
       reason = "Unspecified problem";
