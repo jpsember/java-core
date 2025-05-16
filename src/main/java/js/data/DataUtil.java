@@ -1378,7 +1378,7 @@ public final class DataUtil {
    * 
    * # foo.dat
    * #
-   * fields {
+   * class {
    *       :
    *    ? Bar bar;
    *    File bar_path;
