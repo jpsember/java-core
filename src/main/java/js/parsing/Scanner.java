@@ -74,29 +74,27 @@ public final class Scanner extends BaseObject {
    * @return token, or null if end of input
    */
   public Token peek(int distance) {
-    if (mHistoryCursor + distance >= mHistory.size()) {
-      // Repeat until we find a non-skipped token, or end of input
-      while (true) {
-        Token token = peekAux();
-        if (token == null)
-          break;
+    // Repeat until we've filled the history buffer with enough (non-skipped) tokens,
+    // or we've reached the end of the input
+    while (mHistoryCursor + distance >= mHistory.size()) {
+      Token token = peekAux();
+      if (token == null)
+        break;
 
-        // Advance the column, row numbers
-        String tokenText = token.text();
-        for (int i = 0; i < tokenText.length(); i++) {
-          char c = tokenText.charAt(i);
-          mColumn++;
-          if (c == '\n') {
-            mLineNumber++;
-            mColumn = 0;
-          }
-        }
-        if (!token.id(mSkipId)) {
-          mHistory.add(token);
-          break;
+      // Advance the column, row numbers
+      String tokenText = token.text();
+      for (int i = 0; i < tokenText.length(); i++) {
+        char c = tokenText.charAt(i);
+        mColumn++;
+        if (c == '\n') {
+          mLineNumber++;
+          mColumn = 0;
         }
       }
+      if (!token.id(mSkipId))
+        mHistory.add(token);
     }
+
     Token ret = null;
     if (mHistoryCursor + distance < mHistory.size()) {
       ret = mHistory.get(mHistoryCursor + distance);
@@ -215,10 +213,12 @@ public final class Scanner extends BaseObject {
     mHistoryCursor -= count;
   }
 
+  @Deprecated
   public int readInt(int tokenId) {
     return (int) ensureIntegerValue(read(tokenId).text(), Integer.MIN_VALUE, Integer.MAX_VALUE);
   }
 
+  @Deprecated
   public static long ensureIntegerValue(String numberString, long min, long max) {
     try {
       long value = Long.parseLong(numberString);
