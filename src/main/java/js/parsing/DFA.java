@@ -30,6 +30,7 @@ import java.util.*;
 import js.data.DataUtil;
 import js.json.JSList;
 import js.json.JSMap;
+import js.json.JSUtils;
 
 public final class DFA {
 
@@ -392,8 +393,14 @@ public final class DFA {
 
     String text = "{\"final\":2,\"tokens\":[\"CR\",\"COMMA\",\"VALUE\"],\"version\":4.0,\"states\":[[[33,34,35,44,45,92,93,128],10,[44,45],9,[34,35],5,[32,33],4,[13,14],3,[10,11],1],[[-2,-1]],[],[[10,11],1],[[33,34,35,44,45,92,93,128],10,[-4,-3],2,[34,35],5,[32,33],4],[[32,34,35,92,93,255],5,[92,93],7,[34,35],6],[[-4,-3],2,[32,33],6],[[32,34,35,92,93,255],5,[92,93],7,[34,35],8],[[-4,-3],2,[33,34,35,92,93,255],5,[92,93],7,[32,33],8,[34,35],6],[[-3,-2]],[[32,34,35,44,45,92,93,128],10,[-4,-3]]]}";
 
+
     var mp = new JSMap(text);
     pr(mp);
+
+    var v2 = (JSMap) JSUtils.parse(text);
+    pr(v2);
+    if (true) return;
+
 
     var dfa = new DFA(mp);
     show("from JSMap", dfa);

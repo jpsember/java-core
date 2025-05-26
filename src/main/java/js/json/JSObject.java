@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.util.function.BiConsumer;
 
 import js.base.BasePrinter;
+import js.parsing.Scanner;
 
 /**
  * Common interface supported by both JSMap and JSList

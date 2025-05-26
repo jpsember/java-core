@@ -31,8 +31,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import js.data.AbstractData;
 import js.file.Files;
+import js.parsing.Scanner;
 
 import static js.base.Tools.*;
+import static js.json.JSUtils.*;
+import static js.json.JSUtils.J_BRCL;
 
 /**
  * A json object (see https://www.json.org/json-en.html)
@@ -148,6 +151,23 @@ public final class JSMap extends JSObject {
       if (value != null)
         mMap.put(key, value);
     }
+  }
+
+  static JSMap parseFrom(Scanner s) {
+    s.read(J_CBROP);
+    Map<String, Object> mp = concurrentHashMap();
+    while (s.readIf(J_CBRCL) == null) {
+      var key = JSUtils.parseStringFrom(s.read(J_STRING).text());
+      s.read(J_COLON);
+      var value = JSUtils.parseValue(s);
+      if (value != null)
+        mp.put(key,value);
+      if (null == s.readIf(J_COMMA)) {
+        s.read(J_CBRCL);
+        break;
+      }
+    }
+    return new JSMap(mp);
   }
 
   @Override

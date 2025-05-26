@@ -28,6 +28,7 @@ package js.json;
  * Parse a json value (as defined in https://www.json.org/json-en.html) from a
  * character sequence
  */
+@Deprecated
 final class JSParser {
 
   public JSParser(CharSequence source) {
