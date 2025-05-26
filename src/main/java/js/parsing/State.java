@@ -53,12 +53,7 @@ public final class State implements Comparable<State> {
     return Integer.compare(debugId(), other.debugId());
   }
 
-  @Deprecated
   public List<Edge> edges() {
-    throw notSupported("use getEdges() instead");
-  }
-
-  public Edge[] getEdges() {
     return mEdges;
   }
 
@@ -66,10 +61,10 @@ public final class State implements Comparable<State> {
     return mFinalState;
   }
 
-  private static final Edge[] EMPTY_EDGE_ARRAY = {};
-
   public void setEdges(List<Edge> edges) {
-    mEdges = edges.toArray(EMPTY_EDGE_ARRAY);
+    var edg = new ArrayList<Edge>(edges.size());
+    edg.addAll(edges);
+    mEdges = edg;
   }
 
   public void setFinal(boolean flag) {
@@ -86,7 +81,7 @@ public final class State implements Comparable<State> {
     sb.append(finalState() ? '*' : ' ');
     if (includeEdges) {
       sb.append("=>");
-      for (Edge e : getEdges()) {
+      for (Edge e : edges()) {
         sb.append(" ");
         sb.append(e.destinationState().debugId());
       }
@@ -150,7 +145,7 @@ public final class State implements Comparable<State> {
   }
 
   private final int mDebugId;
-  private Edge[] mEdges;
+  private List<Edge> mEdges;
   private boolean mFinalState;
 
 }
