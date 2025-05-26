@@ -23,8 +23,6 @@
  **/
 package js.parsing;
 
-import js.data.DataUtil;
-
 import java.util.ArrayList;
 import java.util.List;
 
