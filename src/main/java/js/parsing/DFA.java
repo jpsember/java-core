@@ -35,6 +35,9 @@ public final class DFA {
 
   public static final int UNKNOWN_TOKEN = -1;
 
+  DFA() { }
+
+
   @Deprecated
   public DFA(String script) {
     constructFromJson(new JSMap(script));
@@ -171,21 +174,251 @@ public final class DFA {
   private Map<String, Integer> mTokenNameIdMap = hashMap();
   private State[] mStates;
 
-  public static String toCode(DFA dfa, String prefix) {
-    var sb = new StringBuilder();
-    sb.append("String[] ").append(prefix).append("TokenNames = {");
-    for (var nm : dfa.tokenNames()) {
-      sb.append(quote(nm));
-      sb.append(',');
+
+  private static class SimpleScanner {
+    CharSequence text;
+    int cursor;
+
+    SimpleScanner(CharSequence text) {
+      this.text = text;
     }
-    chomp(sb, ",");
-    sb.append("};");
-    return sb.toString();
+
+    char peek() {
+      while (true) {
+        if (cursor == text.length()) return 0;
+        var c = text.charAt(cursor);
+        if (c == ' ') {
+          cursor++;
+        } else {
+          return c;
+        }
+      }
+    }
+
+    boolean readIf(char ch) {
+      if (peek() == ch) {
+        read();
+        return true;
+      }
+      return false;
+    }
+
+    int readInt() {
+      int curs = this.cursor;
+      while (true) {
+        var c = peek();
+        if (c == '-' || (c >= '0' && c <= '9')) {
+          read();
+          continue;
+        }
+        break;
+      }
+      var tx = text.subSequence(curs, this.cursor);
+      skipComma();
+      return Integer.parseInt(tx.toString());
+    }
+
+    void readExp(char ch) {
+      var ch2 = read();
+      if (ch != ch2)
+        badArg("unexpected character:", ch2, "; was expecting:", ch);
+    }
+
+    char read() {
+      var x = peek();
+      checkArgument(x != 0, "unexpected EOF");
+      this.cursor++;
+      return x;
+    }
+
+    String readStr() {
+      readExp('"');
+      var sb = new StringBuilder();
+      while (true) {
+        if (readIf('"')) {
+          skipComma();
+          break;
+        }
+        sb.append(read());
+      }
+      return sb.toString();
+    }
+
+    String readPhrase(String endTokens) {
+      var s = new StringBuilder();
+      int nestLevel = 0;
+      while (true) {
+        var ch = peek();
+        if (ch == '[' || ch == '{') {
+          nestLevel++;
+        } else if (ch == ']' || ch == '}') {
+          if (nestLevel == 0) break;
+          nestLevel--;
+        }
+        if (nestLevel == 0 && endTokens.indexOf(ch) >= 0) {
+          break;
+        }
+        s.append(read());
+      }
+      skipComma();
+      return s.toString();
+    }
+
+    void skipComma() {
+      while (readIf(',')) ;
+    }
+
   }
 
-  private static void chomp(StringBuilder s, String expr) {
-    int i = s.length() - expr.length();
-    if (i >= 0 && s.substring(i).equals(expr))
-      s.setLength(i);
+  /**
+   * A bespoke parser for json.dfa, which is simpler than general
+   * json: only a single outer map {...}, no floating point numbers, and
+   * no strings that need escaping.  This allows us to bootstrap to construct
+   * a DFA to parse (more elaborate) json content
+   */
+  public static DFA parseDfaFromJson(String source) {
+    State.resetDebugIds();
+    State.bumpDebugIds();
+
+    var dfa = new DFA();
+    List<String> tokenNames = arrayList();
+    List<State> states = arrayList();
+
+    var scanner = new SimpleScanner(source);
+
+    // Parse the outer map {....} into a map of keys and values that are
+    // json subexpressions that will need to be parsed separately.
+    //
+    Map<String, String> mp = hashMap();
+
+    scanner.readExp('{');
+    while (true) {
+      if (scanner.readIf('}')) break;
+      var key = scanner.readStr();
+      scanner.readExp(':');
+      var value = scanner.readPhrase(",}");
+      mp.put(key, value);
+    }
+    {
+      var val = mp.get("version");
+      checkArgument(val.equals("4.0"), "unexpected version");
+    }
+    int finalStateIndex = Integer.parseInt(mp.get("final"));
+
+    pr("final state index will be:",finalStateIndex);
+    var ss = new SimpleScanner(mp.get("tokens"));
+    while (true) {
+      if (ss.peek() == 0) break;
+      var ch = ss.read();
+      if (ch == '"') {
+        tokenNames.add(ss.readPhrase("\""));
+        ss.readExp('"');
+      }
+    }
+    dfa.mTokenNames = tokenNames.toArray(new String[0]);
+
+    // states
+
+    // Construct a list of states
+//    List<State> tempStates = arrayList();
+
+
+    ss = new SimpleScanner(mp.get("states"));
+    ss.readExp('['); // open list of states
+    int stateNumber = 0;
+
+    while (true) {
+      ss.skipComma();
+      if (ss.readIf(']')) {
+        ss.skipComma();
+        break;
+      }
+      ss.readExp('['); // open a state
+
+      // Extend states if necessary
+      var currentState = extendStates(states, stateNumber);
+  pr("current state now:",stateNumber,INDENT,currentState.toString(true));
+
+//      var currentState = states.get(stateNumber);
+     // currentState.setFinal(stateNumber == finalStateIndex);
+//      var state = new State(stateNumber == finalStateIndex);
+      while (true) { // Loop over edges
+        ss.skipComma();
+        if (ss.readIf(']')) break;
+        // Loop over edge info
+        ss.readExp('[');
+        List<Integer> codeSets = arrayList();
+        while (!ss.readIf(']')) {
+          codeSets.add(ss.readInt());
+          ss.skipComma();
+        }
+        ss.skipComma();
+        int targetState = finalStateIndex;
+        // If there's another number, it's the target state index; otherwise, the target state is the end state
+        if (ss.peek() != ']') {
+          targetState = ss.readInt();
+          ss.skipComma();
+        }
+
+        todo("this would be a lot simpler if the target state could be stored as an index");
+        var targetStatePtr = extendStates(states,targetState);
+//        // Extend state list so target state exists
+//        while (targetState >= states.size())
+//          states.add(new State());
+
+
+        int[] ia = new int[codeSets.size()];
+        int i = INIT_INDEX;
+        for (Integer x : codeSets) {
+          i++;
+          ia[i] = x;
+        }
+        var edge = new Edge(ia, targetStatePtr);
+        currentState.edges().add(edge);
+      }
+      stateNumber++;
+    }
+    states.get(finalStateIndex).setFinal(true);
+    dfa.mStates = states.toArray(new State[0]);
+    return dfa;
+  }
+
+  private static State extendStates(List<State> states,  int newStateNumber) {
+    while (newStateNumber >= states.size())
+      states.add(new State());
+    return states.get(newStateNumber);
+  }
+
+
+
+  // Quick test
+  public static void main(String[] args) {
+    pr("hello");
+
+    String text = "{\"final\":2,\"tokens\":[\"CR\",\"COMMA\",\"VALUE\"],\"version\":4.0,\"states\":[[[33,34,35,44,45,92,93,128],10,[44,45],9,[34,35],5,[32,33],4,[13,14],3,[10,11],1],[[-2,-1]],[],[[10,11],1],[[33,34,35,44,45,92,93,128],10,[-4,-3],2,[34,35],5,[32,33],4],[[32,34,35,92,93,255],5,[92,93],7,[34,35],6],[[-4,-3],2,[32,33],6],[[32,34,35,92,93,255],5,[92,93],7,[34,35],8],[[-4,-3],2,[33,34,35,92,93,255],5,[92,93],7,[32,33],8,[34,35],6],[[-3,-2]],[[32,34,35,44,45,92,93,128],10,[-4,-3]]]}";
+
+    var mp = new JSMap(text);
+    pr(mp);
+
+    var dfa = new DFA(mp);
+    show("from JSMap",dfa);
+    var dfa2 = parseDfaFromJson(text);
+    show("from string",dfa2);
+
+
+  }
+  private static void show(String prompt, DFA d) {
+    pr("dfa:",prompt);
+    pr("start state",d.getStartState());
+    for (var s : d.mStates) {
+      pr(s.toString(true));
+    }
+    var sampleText = "123,45,\"hello\",\n16";
+
+    var sc = new Scanner(d,sampleText,-1);
+    while (sc.hasNext()) {
+      pr("next token:",sc.read());
+    }
+
   }
 }
