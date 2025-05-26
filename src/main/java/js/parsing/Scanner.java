@@ -123,7 +123,7 @@ public final class Scanner extends BaseObject {
     while (true) {
       int ch = peekChar(charOffset);
       State nextState = null;
-      for (Edge edge : state.edges()) {
+      for (Edge edge : state.getEdges()) {
         if (edge.destinationState().finalState()) {
           int newTokenId = State.edgeLabelToTokenId(edge.codeSets()[0]);
           if (newTokenId >= bestId || charOffset > bestLength) {

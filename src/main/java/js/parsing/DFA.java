@@ -51,9 +51,9 @@ public final class DFA {
       throw badArg("unsupported version:" , map.prettyPrint());
 
     int finalStateIndex = map.getInt("final");
-    mTokenNames = map.getList("tokens").asStringList();
-    for (int i = 0; i < mTokenNames.size(); i++)
-      mTokenNameIdMap.put(mTokenNames.get(i), i);
+    mTokenNames = map.getList("tokens").asStringArray();
+    for (int i = 0; i < mTokenNames.length; i++)
+      mTokenNameIdMap.put(mTokenNames[i], i);
     JSList stateInfo = map.getList("states");
 
     mStates = new State[stateInfo.size()];
@@ -99,7 +99,7 @@ public final class DFA {
   public String tokenName(int tokenId) {
     if (tokenId == UNKNOWN_TOKEN)
       return "<UNKNOWN>";
-    return mTokenNames.get(tokenId);
+    return mTokenNames[tokenId];
   }
 
   public Integer optTokenId(String tokenName) {
@@ -164,7 +164,7 @@ public final class DFA {
     return mStates[id];
   }
 
-  private List<String> mTokenNames;
+  private String[] mTokenNames;
   private Map<String, Integer> mTokenNameIdMap = hashMap();
   private State[] mStates;
 }

@@ -1,18 +1,18 @@
 /**
  * MIT License
- * 
+ *
  * Copyright (c) 2021 Jeff Sember
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -20,9 +20,10 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- * 
  **/
 package js.parsing;
+
+import js.data.DataUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,7 +53,12 @@ public final class State implements Comparable<State> {
     return Integer.compare(debugId(), other.debugId());
   }
 
+  @Deprecated
   public List<Edge> edges() {
+    throw notSupported("use getEdges() instead");
+  }
+
+  public Edge[] getEdges() {
     return mEdges;
   }
 
@@ -60,11 +66,10 @@ public final class State implements Comparable<State> {
     return mFinalState;
   }
 
+  private static final Edge[] EMPTY_EDGE_ARRAY = {};
+
   public void setEdges(List<Edge> edges) {
-    ArrayList<Edge> edg = arrayList();
-    edg.addAll(edges);
-    edg.trimToSize();
-    mEdges = edg;
+    mEdges = edges.toArray(EMPTY_EDGE_ARRAY);
   }
 
   public void setFinal(boolean flag) {
@@ -81,7 +86,7 @@ public final class State implements Comparable<State> {
     sb.append(finalState() ? '*' : ' ');
     if (includeEdges) {
       sb.append("=>");
-      for (Edge e : edges()) {
+      for (Edge e : getEdges()) {
         sb.append(" ");
         sb.append(e.destinationState().debugId());
       }
@@ -145,7 +150,7 @@ public final class State implements Comparable<State> {
   }
 
   private final int mDebugId;
-  private List<Edge> mEdges;
+  private Edge[] mEdges;
   private boolean mFinalState;
 
 }
