@@ -35,7 +35,8 @@ public final class DFA {
 
   public static final int UNKNOWN_TOKEN = -1;
 
-  DFA() { }
+  DFA() {
+  }
 
 
   @Deprecated
@@ -277,119 +278,113 @@ public final class DFA {
    * a DFA to parse (more elaborate) json content
    */
   public static DFA parseDfaFromJson(String source) {
-    State.resetDebugIds();
     State.bumpDebugIds();
 
     var dfa = new DFA();
-    List<String> tokenNames = arrayList();
     List<State> states = arrayList();
-
-    var scanner = new SimpleScanner(source);
 
     // Parse the outer map {....} into a map of keys and values that are
     // json subexpressions that will need to be parsed separately.
-    //
+
     Map<String, String> mp = hashMap();
 
-    scanner.readExp('{');
-    while (true) {
-      if (scanner.readIf('}')) break;
-      var key = scanner.readStr();
-      scanner.readExp(':');
-      var value = scanner.readPhrase(",}");
-      mp.put(key, value);
-    }
     {
-      var val = mp.get("version");
-      checkArgument(val.equals("4.0"), "unexpected version");
-    }
-    int finalStateIndex = Integer.parseInt(mp.get("final"));
+      var scanner = new SimpleScanner(source);
 
-    pr("final state index will be:",finalStateIndex);
-    var ss = new SimpleScanner(mp.get("tokens"));
-    while (true) {
-      if (ss.peek() == 0) break;
-      var ch = ss.read();
-      if (ch == '"') {
-        tokenNames.add(ss.readPhrase("\""));
-        ss.readExp('"');
+      scanner.readExp('{');
+      while (true) {
+        if (scanner.readIf('}')) break;
+        var key = scanner.readStr();
+        scanner.readExp(':');
+        var value = scanner.readPhrase(",}");
+        mp.put(key, value);
       }
     }
-    dfa.mTokenNames = tokenNames.toArray(new String[0]);
 
-    // states
+    // Validate the version number, and final state index
+    checkArgument(mp.get("version").equals("4.0"), "unexpected version");
 
-    // Construct a list of states
-//    List<State> tempStates = arrayList();
+    var finalStateIndex = Integer.parseInt(mp.get("final"));
 
-
-    ss = new SimpleScanner(mp.get("states"));
-    ss.readExp('['); // open list of states
-    int stateNumber = 0;
-
-    while (true) {
-      ss.skipComma();
-      if (ss.readIf(']')) {
-        ss.skipComma();
-        break;
+    // Parse the token names
+    {
+      var scanner = new SimpleScanner(mp.get("tokens"));
+      List<String> tokenNames = arrayList();
+      while (scanner.peek() != 0) {
+        var ch = scanner.read();
+        if (ch == '"') {
+          tokenNames.add(scanner.readPhrase("\""));
+          scanner.readExp('"');
+        }
       }
-      ss.readExp('['); // open a state
-
-      // Extend states if necessary
-      var currentState = extendStates(states, stateNumber);
-  pr("current state now:",stateNumber,INDENT,currentState.toString(true));
-
-//      var currentState = states.get(stateNumber);
-     // currentState.setFinal(stateNumber == finalStateIndex);
-//      var state = new State(stateNumber == finalStateIndex);
-      while (true) { // Loop over edges
-        ss.skipComma();
-        if (ss.readIf(']')) break;
-        // Loop over edge info
-        ss.readExp('[');
-        List<Integer> codeSets = arrayList();
-        while (!ss.readIf(']')) {
-          codeSets.add(ss.readInt());
-          ss.skipComma();
-        }
-        ss.skipComma();
-        int targetState = finalStateIndex;
-        // If there's another number, it's the target state index; otherwise, the target state is the end state
-        if (ss.peek() != ']') {
-          targetState = ss.readInt();
-          ss.skipComma();
-        }
-
-        todo("this would be a lot simpler if the target state could be stored as an index");
-        var targetStatePtr = extendStates(states,targetState);
-//        // Extend state list so target state exists
-//        while (targetState >= states.size())
-//          states.add(new State());
-
-
-        int[] ia = new int[codeSets.size()];
-        int i = INIT_INDEX;
-        for (Integer x : codeSets) {
-          i++;
-          ia[i] = x;
-        }
-        var edge = new Edge(ia, targetStatePtr);
-        currentState.edges().add(edge);
-      }
-      stateNumber++;
+      dfa.mTokenNames = tokenNames.toArray(new String[0]);
     }
-    states.get(finalStateIndex).setFinal(true);
-    dfa.mStates = states.toArray(new State[0]);
+
+    // Parse the states.
+    //
+    // This would be quite a bit simpler if we knew the number of states in advance,
+    // so we could pre-construct the required number of states in advance...
+    {
+      var scanner = new SimpleScanner(mp.get("states"));
+      scanner.readExp('['); // open list of states
+      int stateNumber = 0;
+
+      while (true) {
+        scanner.skipComma();
+        if (scanner.readIf(']')) {
+          scanner.skipComma();
+          break;
+        }
+        scanner.readExp('['); // open a state
+
+        var currentState = extendStates(states, stateNumber);
+
+        // Loop over edges
+        while (true) {
+          scanner.skipComma();
+          if (scanner.readIf(']')) break;
+          // Loop over edge info
+          scanner.readExp('[');
+          List<Integer> codeSets = arrayList();
+          while (!scanner.readIf(']')) {
+            codeSets.add(scanner.readInt());
+            scanner.skipComma();
+          }
+          scanner.skipComma();
+          int targetState = finalStateIndex;
+          // If there's another number, it's the target state index; otherwise, the target state is the end state
+          if (scanner.peek() != ']') {
+            targetState = scanner.readInt();
+            scanner.skipComma();
+          }
+
+          var targetStatePtr = extendStates(states, targetState);
+
+          int[] ia = new int[codeSets.size()];
+          int i = INIT_INDEX;
+          for (Integer x : codeSets) {
+            i++;
+            ia[i] = x;
+          }
+          var edge = new Edge(ia, targetStatePtr);
+          currentState.edges().add(edge);
+        }
+        stateNumber++;
+      }
+      states.get(finalStateIndex).setFinal(true);
+      dfa.mStates = states.toArray(new State[0]);
+    }
     return dfa;
   }
 
-  private static State extendStates(List<State> states,  int newStateNumber) {
-    while (newStateNumber >= states.size())
+  // Extend a list of states to accomodate a particular state number (if necessary);
+  // return that state
+  //
+  private static State extendStates(List<State> states, int stateNumber) {
+    while (stateNumber >= states.size())
       states.add(new State());
-    return states.get(newStateNumber);
+    return states.get(stateNumber);
   }
-
-
 
   // Quick test
   public static void main(String[] args) {
@@ -401,24 +396,22 @@ public final class DFA {
     pr(mp);
 
     var dfa = new DFA(mp);
-    show("from JSMap",dfa);
+    show("from JSMap", dfa);
     var dfa2 = parseDfaFromJson(text);
-    show("from string",dfa2);
-
-
+    show("from string", dfa2);
   }
+
   private static void show(String prompt, DFA d) {
-    pr("dfa:",prompt);
-    pr("start state",d.getStartState());
+    pr("dfa:", prompt);
+    pr("start state", d.getStartState());
     for (var s : d.mStates) {
       pr(s.toString(true));
     }
     var sampleText = "123,45,\"hello\",\n16";
 
-    var sc = new Scanner(d,sampleText,-1);
+    var sc = new Scanner(d, sampleText, -1);
     while (sc.hasNext()) {
-      pr("next token:",sc.read());
+      pr("next token:", sc.read());
     }
-
   }
 }
