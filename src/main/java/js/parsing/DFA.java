@@ -395,10 +395,14 @@ public final class DFA {
     return states.get(stateNumber);
   }
 
+  // ----------------------------------------------------------------------------------------------
 
-  public static JSMap describe(DFA d) {
+  /**
+   * Get a description of the DFA; for development purposes only
+   */
+  public JSMap describe() {
     var m = map();
-    for (var s : d.mStates) {
+    for (var s : mStates) {
       var stateKey = "" + s.debugId();
       var altKey = stateKey + "*";
 
@@ -415,7 +419,7 @@ public final class DFA {
         if (edgeMap.containsKey(edgeKey))
           edgeMap.put("**ERR** " + edge.destinationState().debugId(), "duplicate destination state");
         else {
-          edgeMap.putUnsafe(edgeKey, edgeDescription(d, edge));
+          edgeMap.putUnsafe(edgeKey, edgeDescription(edge));
         }
       }
     }
@@ -429,7 +433,7 @@ public final class DFA {
   /**
    * Get a description of an edge's code sets, for display as a map key
    */
-  private static Object edgeDescription(DFA dfa, Edge edge) {
+  private Object edgeDescription(Edge edge) {
     var cs = edge.codeSets();
     if (cs.length % 2 != 0) {
       return edgeProblem(edge, "odd number of elements");
@@ -448,10 +452,10 @@ public final class DFA {
           return edgeProblem(edge, "unexpected token id expr");
         }
         var tokenId = -b - 1;
-        if (tokenId < 0 || tokenId >= dfa.mTokenNames.length) {
+        if (tokenId < 0 || tokenId >= mTokenNames.length) {
           return "*** no such token id: " + tokenId;
         }
-        return "<" + dfa.tokenName(tokenId) + ">";
+        return "<" + tokenName(tokenId) + ">";
       }
 
       if (b == a + 1) {
@@ -503,68 +507,6 @@ public final class DFA {
         }
         return String.format("%02x", n);
     }
-  }
-
-
-  // ----------------------------------------------------------------------------------------------
-
-
-  // Quick test
-  public static void main(String[] args) {
-    pr("hello");
-
-    String text = "{\"final\":2,\"tokens\":[\"WS\",\"BROP\",\"BRCL\",\"TRUE\",\"FALSE\",\"NULL\",\"CBROP\",\"CBRCL\",\"COMMA\",\"COLON\",\"STRING\",\"NUMBER\"],\"version\":4.0,\"states\":[[[125,126],47,[123,124],46,[116,117],42,[110,111],38,[102,103],33,[93,94],32,[91,92],31,[58,59],29,[49,58],28,[48,49],22,[47,48],18,[45,46],17,[44,45],16,[35,36],7,[34,35],3,[9,11,12,14,32,33],1],[[-2,-1],2,[9,11,12,14,32,33],1],[],[[32,34,35,92,93,256],3,[92,93],5,[34,35],4],[[-12,-11]],[[32,34,35,92,93,256],3,[92,93],5,[34,35],6],[[-12,-11],2,[32,34,35,92,93,256],3,[92,93],5,[34,35],4],[[-2,-1],2,[10,11],12,[1,10,11,13,14,256],7,[13,14],8],[[47,48],9],[[47,48],10],[[13,14],11],[[10,11],12],[[47,48],13],[[47,48],14],[[10,11],15],[[-2,-1]],[[-10,-9]],[[49,58],28,[48,49],22],[[47,48],21,[42,43],19],[[1,42,43,256],19,[42,43],20],[[47,48],15,[1,42,43,47,48,256],19,[42,43],20],[[-2,-1],2,[1,10,11,256],21,[10,11],12],[[-13,-12],2,[69,70,101,102],25,[46,47],23],[[48,58],24],[[-13,-12],2,[69,70,101,102],25,[48,58],24],[[48,58],27,[43,44,45,46],26],[[48,58],27],[[-13,-12],2,[48,58],27],[[-13,-12],2,[48,58],28,[69,70,101,102],25,[46,47],23],[[44,45],30],[[-11,-10]],[[-3,-2]],[[-4,-3]],[[97,98],34],[[108,109],35],[[115,116],36],[[101,102],37],[[-6,-5]],[[117,118],39],[[108,109],40],[[108,109],41],[[-7,-6]],[[114,115],43],[[117,118],44],[[101,102],45],[[-5,-4]],[[-8,-7]],[[-9,-8]]]}";
-
-    var result = validateNewParsing(text);
-    pr(result);
-//    var mp = new JSMap(text);
-//    pr(mp);
-//
-//    var v2 = (JSMap) JSUtils.parseNew(text);
-//    pr(v2);
-//    if (true) return;
-//
-//
-//    var dfa = new DFA(mp);
-//    show("from JSMap", dfa);
-//    var dfa2 = parseDfaFromJson(text);
-//    show("from string", dfa2);
-  }
-
-  private static void show(String prompt, DFA d) {
-    pr("dfa:", prompt);
-    pr("start state", d.getStartState());
-    for (var s : d.mStates) {
-      pr(s.toString(true));
-    }
-    var sampleText = "123,45,\"hello\",\n16";
-
-    var sc = new Scanner(d, sampleText, -1);
-    while (sc.hasNext()) {
-      pr("next token:", sc.read());
-    }
-  }
-
-  public static JSMap validateNewParsing(String dfaSource) {
-    JSMap result = map();
-    JSMap descOld, descNew;
-    {
-      State.resetDebugIds();
-      var json = JSMap.parseUsingOldParser(dfaSource);
-      var dfa = new DFA(json);
-      descOld = describe(dfa);
-      result.put("1_old", descOld);
-    }
-    {
-      State.resetDebugIds();
-      var dfa = DFA.parseDfaUsingBespokeParser(dfaSource);
-      descNew = describe(dfa);
-      result.put("1_new", descNew);
-    }
-    if (!descOld.equals(descNew)) {
-      result.put("*** Error ***", "descriptions differ");
-    }
-    return result;
   }
 
 }

@@ -52,10 +52,8 @@ public final class JSList extends JSObject implements Iterable<Object> {
   }
 
   public JSList(CharSequence charSequence) {
-    mList = new ArrayList<>();
-    JSParser p = new JSParser(charSequence);
-    constructFrom(p);
-    p.assertCompleted();
+    var scanner = new Scanner(JSON_DFA, charSequence.toString());
+    parseFrom(scanner, this);
   }
 
   protected JSList(List unsafeList) {
@@ -211,32 +209,20 @@ public final class JSList extends JSObject implements Iterable<Object> {
     return copy;
   }
 
-  @Override
-  void constructFrom(JSParser parser) {
-    parser.read('[');
-    boolean first = true;
-    while (!parser.readIf(']')) {
-      if (!first) {
-        parser.read(',');
-        if (parser.readIf(']'))
-          break;
-      } else
-        first = false;
-      mList.add(parser.readValue());
-    }
-  }
-
-  static JSList parseFrom(Scanner s) {
+  /**
+   * Parse a JSList from a scanner.  If target isn't null, it must be an empty JSList
+   */
+  static JSList parseFrom(Scanner s, JSList targetOrNull) {
+    var lst = targetOrNull == null ? new JSList() : targetOrNull;
     s.read(J_BROP);
-    var lst = arrayList();
     while (s.readIf(J_BRCL) == null) {
-      lst.add(JSUtils.parseValue(s));
+      lst.addUnsafe(JSUtils.parseValue(s));
       if (null == s.readIf(J_COMMA)) {
         s.read(J_BRCL);
         break;
       }
     }
-    return new JSList(lst);
+    return lst;
   }
 
   @Override

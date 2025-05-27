@@ -49,25 +49,9 @@ public final class JSMap extends JSObject {
   public JSMap() {
   }
 
-  public static JSMap parseUsingOldParser(CharSequence source) {
-    var m = new JSMap();
-    JSParser parser = new JSParser(source);
-    m.constructFrom(parser);
-    parser.assertCompleted();
-    return m;
-  }
-
-
   public JSMap(CharSequence source) {
-    if (OLDPARSER) {
-      todo("Use new parser here");
-      JSParser parser = new JSParser(source);
-      constructFrom(parser);
-      parser.assertCompleted();
-      return;
-    }
     var scanner = new Scanner(JSON_DFA, source.toString());
-    parseFrom(scanner, mMap);
+    parseFrom(scanner, this);
   }
 
   public static JSMap from(File file) {
@@ -75,7 +59,7 @@ public final class JSMap extends JSObject {
     return new JSMap(content);
   }
 
-  protected JSMap(Map<String, Object> wrappedMap) {
+  JSMap(Map<String, Object> wrappedMap) {
     mMap = wrappedMap;
   }
 
@@ -88,11 +72,6 @@ public final class JSMap extends JSObject {
       jsMap.putUnsafe(key, jsonValue);
     }
     return jsMap;
-  }
-
-  @Deprecated // Not used
-  public static JSMap fromResource(Class theClass, String resourceName) {
-    return new JSMap(Files.readString(theClass, resourceName));
   }
 
   public static JSMap fromFileIfExists(File file) {
@@ -147,32 +126,12 @@ public final class JSMap extends JSObject {
     return mMap.isEmpty();
   }
 
-  @Override
-  void constructFrom(JSParser parser) {
-    parser.read('{');
-    boolean firstKeyFlag = true;
-    while (!parser.readIf('}')) {
-      if (!firstKeyFlag) {
-        parser.read(',');
-        if (parser.readIf('}'))
-          break;
-      } else
-        firstKeyFlag = false;
-      String key = parser.readString();
-      parser.read(':');
-      Object value = parser.readValue();
-      if (value != null)
-        mMap.put(key, value);
-    }
-  }
-
-  static JSMap parseFrom(Scanner s) {
-    var m = new JSMap();
-    parseFrom(s, m.mMap);
-    return m;
-  }
-
-  static void parseFrom(Scanner s, Map<String, Object> mp) {
+  /**
+   * Parse a JSMap from a scanner.  If target isn't null, it must be an empty JSMap
+   */
+  static JSMap parseFrom(Scanner s, JSMap targetOrNull) {
+    var target = targetOrNull == null ? new JSMap() : targetOrNull;
+    var mp = target.mMap;
     s.read(J_CBROP);
     while (s.readIf(J_CBRCL) == null) {
       var key = JSUtils.parseStringFrom(s.read(J_STRING).text());
@@ -185,6 +144,7 @@ public final class JSMap extends JSObject {
         break;
       }
     }
+    return target;
   }
 
   @Override
@@ -574,7 +534,7 @@ public final class JSMap extends JSObject {
     sortedKeysList.addAll(keySet());
     Collections.sort(sortedKeysList);
 
-    List<String> escapedKeysList = new ArrayList<String>(sortedKeysList.size());
+    List<String> escapedKeysList = new ArrayList<>(sortedKeysList.size());
 
     // Create a corresponding list of keys in escaped form, suitable for printing
     {

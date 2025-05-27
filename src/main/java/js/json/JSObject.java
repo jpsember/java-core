@@ -24,11 +24,9 @@
  **/
 package js.json;
 
-import java.io.IOException;
 import java.util.function.BiConsumer;
 
 import js.base.BasePrinter;
-import js.parsing.Scanner;
 
 /**
  * Common interface supported by both JSMap and JSList
@@ -76,12 +74,6 @@ public abstract class JSObject {
 
   public final void printTo(BasePrinter destination) {
     destination.append(prettyPrint());
-  }
-
-  abstract void constructFrom(JSParser s);
-
-  private void writeObject(java.io.ObjectOutputStream stream) throws IOException {
-    stream.writeUTF(this.toString());
   }
 
   // Register BasePrinter handlers for json-related classes
