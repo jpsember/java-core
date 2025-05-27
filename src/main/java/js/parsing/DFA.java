@@ -176,6 +176,9 @@ public final class DFA {
   private Map<String, Integer> mTokenNameIdMap = hashMap();
   private State[] mStates;
 
+  public State[] debStates() {
+    return mStates;
+  }
 
   private static class SimpleScanner {
     CharSequence text;
@@ -270,6 +273,11 @@ public final class DFA {
       while (readIf(',')) ;
     }
 
+  }
+
+
+  public static DFA parseDfaUsingBespokeParser(String source) {
+    return parseDfaFromJson(source);
   }
 
   /**
@@ -391,13 +399,17 @@ public final class DFA {
   public static void main(String[] args) {
     pr("hello");
 
-    String text = "{\"final\":2,\"tokens\":[\"CR\",\"COMMA\",\"VALUE\"],\"version\":4.0,\"states\":[[[33,34,35,44,45,92,93,128],10,[44,45],9,[34,35],5,[32,33],4,[13,14],3,[10,11],1],[[-2,-1]],[],[[10,11],1],[[33,34,35,44,45,92,93,128],10,[-4,-3],2,[34,35],5,[32,33],4],[[32,34,35,92,93,255],5,[92,93],7,[34,35],6],[[-4,-3],2,[32,33],6],[[32,34,35,92,93,255],5,[92,93],7,[34,35],8],[[-4,-3],2,[33,34,35,92,93,255],5,[92,93],7,[32,33],8,[34,35],6],[[-3,-2]],[[32,34,35,44,45,92,93,128],10,[-4,-3]]]}";
+    String text = "{\"final\":2,\"tokens\":[\"WS\",\"BROP\",\"BRCL\",\"TRUE\",\"FALSE\",\"NULL\",\"CBROP\",\"CBRCL\",\"COMMA\",\"COLON\",\"STRING\",\"NUMBER\"],\"version\":4.0,\"states\":[[[125,126],47,[123,124],46,[116,117],42,[110,111],38,[102,103],33,[93,94],32,[91,92],31,[58,59],29,[49,58],28,[48,49],22,[47,48],18,[45,46],17,[44,45],16,[35,36],7,[34,35],3,[9,11,12,14,32,33],1],[[-2,-1],2,[9,11,12,14,32,33],1],[],[[32,34,35,92,93,256],3,[92,93],5,[34,35],4],[[-12,-11]],[[32,34,35,92,93,256],3,[92,93],5,[34,35],6],[[-12,-11],2,[32,34,35,92,93,256],3,[92,93],5,[34,35],4],[[-2,-1],2,[10,11],12,[1,10,11,13,14,256],7,[13,14],8],[[47,48],9],[[47,48],10],[[13,14],11],[[10,11],12],[[47,48],13],[[47,48],14],[[10,11],15],[[-2,-1]],[[-10,-9]],[[49,58],28,[48,49],22],[[47,48],21,[42,43],19],[[1,42,43,256],19,[42,43],20],[[47,48],15,[1,42,43,47,48,256],19,[42,43],20],[[-2,-1],2,[1,10,11,256],21,[10,11],12],[[-13,-12],2,[69,70,101,102],25,[46,47],23],[[48,58],24],[[-13,-12],2,[69,70,101,102],25,[48,58],24],[[48,58],27,[43,44,45,46],26],[[48,58],27],[[-13,-12],2,[48,58],27],[[-13,-12],2,[48,58],28,[69,70,101,102],25,[46,47],23],[[44,45],30],[[-11,-10]],[[-3,-2]],[[-4,-3]],[[97,98],34],[[108,109],35],[[115,116],36],[[101,102],37],[[-6,-5]],[[117,118],39],[[108,109],40],[[108,109],41],[[-7,-6]],[[114,115],43],[[117,118],44],[[101,102],45],[[-5,-4]],[[-8,-7]],[[-9,-8]]]}";
 
-
+    if (true) {
+      var result = validateNewParsing(text);
+      pr(result);
+      return;
+    }
     var mp = new JSMap(text);
     pr(mp);
 
-    var v2 = (JSMap) JSUtils.parse(text);
+    var v2 = (JSMap) JSUtils.parseNew(text);
     pr(v2);
     if (true) return;
 
@@ -420,5 +432,54 @@ public final class DFA {
     while (sc.hasNext()) {
       pr("next token:", sc.read());
     }
+  }
+
+  private static JSMap DFADump(DFA d) {
+    var outerMap = map();
+    var allStatesMap = map();
+    outerMap.put("states", allStatesMap);
+    for (var state : d.mStates) {
+      var currentStateMap = map();
+      state.debugId();
+      allStatesMap.put("" + state.debugId(), currentStateMap);
+      currentStateMap.put("id", state.debugId());
+      if (state.finalState())
+        currentStateMap.put("**final**", true);
+      var edgeMap = map();
+      currentStateMap.put("edges", edgeMap);
+      for (var edge : state.edges()) {
+//        if (edge.sourceState() != state) {
+//          currentStateMap.put("**ERR** " + edge.sourceState().debugId(), "Incorrect source state");
+//        }
+        var edgeKey = "--> " + edge.destinationState().debugId();
+        if (edgeMap.containsKey(edgeKey))
+          edgeMap.put("**ERR** " + edge.destinationState().debugId(), "duplicate destination state");
+        else {
+          edgeMap.put(edgeKey, JSList.with(edge.codeSets()));
+        }
+      }
+    }
+    return outerMap;
+  }
+
+
+  public static JSMap validateNewParsing(String dfaSource) {
+    JSMap result = map();
+    {
+      State.resetDebugIds();
+      var json = JSMap.parseUsingOldParser(dfaSource);
+      var dfa = new DFA(json);
+      result.put("1_old", describe(dfa));
+    }
+    {
+      State.resetDebugIds();
+      var dfa = DFA.parseDfaUsingBespokeParser(dfaSource);
+      result.put("1_new", describe(dfa));
+    }
+    return result;
+  }
+
+  private static JSMap describe(DFA dfa) {
+    return DFADump(dfa);
   }
 }

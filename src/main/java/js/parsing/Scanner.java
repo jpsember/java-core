@@ -111,6 +111,15 @@ public final class Scanner extends BaseObject {
     return peek(0);
   }
 
+  private static int stateNum(DFA dfa, State state) {
+    int i = INIT_INDEX;
+    for (var s : dfa.debStates()) {
+      i++;
+      if (s == state) return i;
+    }
+    throw badArg("can't find state:", state);
+  }
+
   private Token peekAux() {
     if (peekChar(0) < 0)
       return null;
@@ -123,9 +132,12 @@ public final class Scanner extends BaseObject {
     while (true) {
       int ch = peekChar(charOffset);
       State nextState = null;
+      pr("offset:",charOffset,"char:", (char) ch, "state:", stateNum(mDfa, state));
       for (Edge edge : state.edges()) {
         if (edge.destinationState().finalState()) {
           int newTokenId = State.edgeLabelToTokenId(edge.codeSets()[0]);
+          pr("...length:", charOffset, "token:", newTokenId);
+
           if (newTokenId >= bestId || charOffset > bestLength) {
             bestLength = charOffset;
             bestId = newTokenId;
@@ -150,6 +162,7 @@ public final class Scanner extends BaseObject {
         1 + mColumn);
     if (bestLength == 0)
       throw new ScanException(peekToken, "scanned zero-length token");
+    pr("...best length:", bestLength, "token:", bestId);
     return peekToken;
   }
 
