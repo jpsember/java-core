@@ -39,6 +39,8 @@ import js.system.MemoryMonitor;
 
 public final class Tools {
 
+  public static boolean OLDPARSER = true;
+
   /**
    * A do-nothing method that we can call to avoid 'unused import' warnings in
    * Eclipse
