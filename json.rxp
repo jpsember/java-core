@@ -8,8 +8,8 @@ NULL: null
 
 CBROP: \{
 CBRCL: \}
-COMMA: \,
-COLON: :,
+COMMA: $_COMMA
+COLON: $_COLON
 STRING: {_STRING}
 #  (Not used) SINGLESTRING: {_SINGLESTRING}
 
