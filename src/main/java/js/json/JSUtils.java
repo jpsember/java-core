@@ -150,6 +150,7 @@ public final class JSUtils {
       case J_FALSE:
         return s.read().id(J_TRUE);
       case J_NULL:
+        s.read();
         return null;
       case J_NUMBER:
         return parseNumberFrom(s.read().text());
