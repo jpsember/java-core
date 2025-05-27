@@ -435,42 +435,70 @@ public final class DFA {
   }
 
   private static JSMap DFADump(DFA d) {
-    var currentStateMap = map();
-    for (var state : d.mStates) {
-      var stateKey = "" + state.debugId();
+    var m = map();
+    for (var s : d.mStates) {
+      var stateKey = "" + s.debugId();
       var altKey = stateKey + "*";
 
-      if (currentStateMap.containsKey(stateKey) || currentStateMap.containsKey(altKey)) {
-        currentStateMap.putNumbered(stateKey, "*** duplicate state id ***");
+      if (m.containsKey(stateKey) || m.containsKey(altKey)) {
+        m.putNumbered(stateKey, "*** duplicate state id ***");
         continue;
       }
       var edgeMap = map();
-      currentStateMap.put(state.finalState() ? altKey : stateKey, edgeMap);
-      for (var edge : state.edges()) {
+      m.put(s.finalState() ? altKey : stateKey, edgeMap);
+      for (var edge : s.edges()) {
         var edgeKey = "--> " + edge.destinationState().debugId();
         if (edgeMap.containsKey(edgeKey))
           edgeMap.put("**ERR** " + edge.destinationState().debugId(), "duplicate destination state");
         else {
-          edgeMap.put(edgeKey, JSList.with(edge.codeSets()));
+          edgeMap.putUnsafe(edgeKey, edgeDescription(edge)); //JSList.with(edge.codeSets()));
         }
       }
     }
-    return currentStateMap;
+    return m;
   }
 
+  private static Object edgeProblem(Edge edge, String message) {
+    return "*** problem with edge: " + message + " ***; " + JSList.with(edge.codeSets());
+  }
+
+  private static Object edgeDescription(Edge edge) {
+    var cs = edge.codeSets();
+    if (cs.length % 2 != 0) {
+      return edgeProblem(edge, "odd number of elements");
+    }
+    var lst = list();
+    var sb = new StringBuilder();
+    for (var i = 0; i < cs.length; i += 2) {
+      var a = cs[i];
+      var b = cs[i + 1];
+      if ((a < 0 != b < 0) || (a >= b)) {
+        return edgeProblem(edge, "illegal code set");
+      }
+      lst.add(a);
+      lst.add(b);
+    }
+    return lst;
+  }
 
   public static JSMap validateNewParsing(String dfaSource) {
     JSMap result = map();
+    JSMap descOld, descNew;
     {
       State.resetDebugIds();
       var json = JSMap.parseUsingOldParser(dfaSource);
       var dfa = new DFA(json);
-      result.put("1_old", describe(dfa));
+      descOld = describe(dfa);
+      result.put("1_old", descOld);
     }
     {
       State.resetDebugIds();
       var dfa = DFA.parseDfaUsingBespokeParser(dfaSource);
-      result.put("1_new", describe(dfa));
+      descNew = describe(dfa);
+      result.put("1_new", descNew);
+    }
+    if (!descOld.equals(descNew)) {
+      result.put("*** Error ***", "descriptions differ");
     }
     return result;
   }
