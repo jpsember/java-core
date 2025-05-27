@@ -447,11 +447,13 @@ public final class DFA {
       var edgeMap = map();
       m.put(s.finalState() ? altKey : stateKey, edgeMap);
       for (var edge : s.edges()) {
-        var edgeKey = "" + edge.destinationState().debugId();
+        var ds = edge.destinationState();
+        String edgeKey =
+            ds.finalState() ? "*  " : String.format("%3d", edge.destinationState().debugId());
         if (edgeMap.containsKey(edgeKey))
           edgeMap.put("**ERR** " + edge.destinationState().debugId(), "duplicate destination state");
         else {
-          edgeMap.putUnsafe(edgeKey, edgeDescription(d, edge)); //JSList.with(edge.codeSets()));
+          edgeMap.putUnsafe(edgeKey, edgeDescription(d, edge));
         }
       }
     }
@@ -462,18 +464,18 @@ public final class DFA {
     return "*** problem with edge: " + message + " ***; " + JSList.with(edge.codeSets());
   }
 
+  /**
+   * Get a description of an edge's code sets, for display as a map key
+   */
   private static Object edgeDescription(DFA dfa, Edge edge) {
     var cs = edge.codeSets();
     if (cs.length % 2 != 0) {
       return edgeProblem(edge, "odd number of elements");
     }
     StringBuilder sb = new StringBuilder();
-    int prevB = 256;
     for (var i = 0; i < cs.length; i += 2) {
       var a = cs[i];
       var b = cs[i + 1];
-      var oldPrevB = prevB;
-      prevB = b;
       if ((a < 0 != b < 0) || (a >= b)) {
         return edgeProblem(edge, "illegal code set");
       }
@@ -490,67 +492,40 @@ public final class DFA {
         return "<" + dfa.tokenName(tokenId) + ">";
       }
 
-//      if (a > oldPrevB) {
-//        addSp(sb);
-//      }
       if (b == a + 1) {
-        sb.append(charExpr(a));
+        append(sb, charExpr(a));
         continue;
       }
 
-      var dist = b - a;
-      var max = 5;
-      if (b == 256) {
-        max = 2;
-      }
-//        addSp(sb);
-//        sb.append("(");
+      var maxRun = (b == 256) ? 2 : 5;
       int skipStart = 1000;
       int skipEnd = 1000;
-      if (dist > 2 * max + 4) {
-        skipStart = a + max;
-        skipEnd = b - 1 - max;
+      if (b - a > 2 * maxRun + 4) {
+        skipStart = a + maxRun;
+        skipEnd = b - 1 - maxRun;
       }
 
       for (int j = a; j < b; j++) {
         if (j < skipStart || j > skipEnd) {
-          var x = charExpr(j);
-          addSp(sb);
-          sb.append(x);
+          append(sb, charExpr(j));
         } else if (j == skipStart) {
-          addSp(sb);
-          sb.append("...");
+          append(sb, "...");
         }
       }
-//        if (dist > 2 * max + 4) {
-//          for (var j = a; j < a + max; j++) {
-//            if (j != a) addSp(sb);
-//            var x = charExpr(j);
-//            sb.append(x);
-//          }
-//          sb.append(" ...");
-//          for (var j = b - max; j < b; j++) {
-//            var x = charExpr(j);
-//            if (j != b) addSp(sb);
-//            sb.append(x);
-//          }
-//        } else {
-//
-//        }
-//
-//      lst.add(a);
-//      lst.add(b);
     }
     return sb.toString();
   }
 
-  private static void addSp(StringBuilder sb) {
+  private static void append(StringBuilder sb, Object expr) {
     if (sb.length() > 0 && sb.charAt(sb.length() - 1) > ' ')
       sb.append(' ');
+    sb.append(expr);
   }
 
+  /**
+   * Construct a string representation of a character code
+   */
   private static String charExpr(int n) {
-
     switch (n) {
       case 0x0a:
         return "_LF";
@@ -560,17 +535,11 @@ public final class DFA {
         return "_CR";
       case 0x20:
         return "_SP";
-      case '(':
-        return "_OP";
-      case ')':
-        return "_CL";
-//      case '.':
-//        return "_DT";
       default:
         if (n > 32 && n < 128) {
           return Character.toString((char) n);
         }
-        return String.format("$%02x", n);
+        return String.format("%02x", n);
     }
   }
 
