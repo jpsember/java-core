@@ -435,22 +435,18 @@ public final class DFA {
   }
 
   private static JSMap DFADump(DFA d) {
-    var outerMap = map();
-    var allStatesMap = map();
-    outerMap.put("states", allStatesMap);
+    var currentStateMap = map();
     for (var state : d.mStates) {
-      var currentStateMap = map();
-      state.debugId();
-      allStatesMap.put("" + state.debugId(), currentStateMap);
-      currentStateMap.put("id", state.debugId());
-      if (state.finalState())
-        currentStateMap.put("**final**", true);
+      var stateKey = "" + state.debugId();
+      var altKey = stateKey + "*";
+
+      if (currentStateMap.containsKey(stateKey) || currentStateMap.containsKey(altKey)) {
+        currentStateMap.putNumbered(stateKey, "*** duplicate state id ***");
+        continue;
+      }
       var edgeMap = map();
-      currentStateMap.put("edges", edgeMap);
+      currentStateMap.put(state.finalState() ? altKey : stateKey, edgeMap);
       for (var edge : state.edges()) {
-//        if (edge.sourceState() != state) {
-//          currentStateMap.put("**ERR** " + edge.sourceState().debugId(), "Incorrect source state");
-//        }
         var edgeKey = "--> " + edge.destinationState().debugId();
         if (edgeMap.containsKey(edgeKey))
           edgeMap.put("**ERR** " + edge.destinationState().debugId(), "duplicate destination state");
@@ -459,7 +455,7 @@ public final class DFA {
         }
       }
     }
-    return outerMap;
+    return currentStateMap;
   }
 
 
