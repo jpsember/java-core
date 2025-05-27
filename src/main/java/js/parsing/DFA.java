@@ -451,7 +451,7 @@ public final class DFA {
         if (edgeMap.containsKey(edgeKey))
           edgeMap.put("**ERR** " + edge.destinationState().debugId(), "duplicate destination state");
         else {
-          edgeMap.putUnsafe(edgeKey, edgeDescription(edge)); //JSList.with(edge.codeSets()));
+          edgeMap.putUnsafe(edgeKey, edgeDescription(d, edge)); //JSList.with(edge.codeSets()));
         }
       }
     }
@@ -462,7 +462,7 @@ public final class DFA {
     return "*** problem with edge: " + message + " ***; " + JSList.with(edge.codeSets());
   }
 
-  private static Object edgeDescription(Edge edge) {
+  private static Object edgeDescription(DFA dfa, Edge edge) {
     var cs = edge.codeSets();
     if (cs.length % 2 != 0) {
       return edgeProblem(edge, "odd number of elements");
@@ -474,6 +474,16 @@ public final class DFA {
       var b = cs[i + 1];
       if ((a < 0 != b < 0) || (a >= b)) {
         return edgeProblem(edge, "illegal code set");
+      }
+      if (a < 0) {
+        if (b != a + 1) {
+          return edgeProblem(edge, "unexpected token id expr");
+        }
+        var tokenId = -b - 1;
+        if (tokenId < 0 || tokenId >= dfa.mTokenNames.length) {
+          return "*** no such token id: " + tokenId;
+        }
+        return "<" + dfa.tokenName(tokenId) + ">";
       }
       lst.add(a);
       lst.add(b);
