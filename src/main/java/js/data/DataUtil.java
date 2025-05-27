@@ -180,7 +180,7 @@ public final class DataUtil {
   /**
    * Convert value to hex, store in StringBuilder
    */
-  private static void toHex(StringBuilder stringBuilder, int value, int digits) {
+  public static void toHex(StringBuilder stringBuilder, int value, int digits) {
     while (digits-- > 0) {
       int shift = digits << 2;
       int v = (value >> shift) & 0xf;
@@ -1177,7 +1177,7 @@ public final class DataUtil {
   /**
    * Convert value to hex, store in StringBuilder
    *
-   * @param sb
+   * @param sbOrNull
    *          where to store result, or null
    * @param value
    *          value to convert

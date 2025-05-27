@@ -447,7 +447,7 @@ public final class DFA {
       var edgeMap = map();
       m.put(s.finalState() ? altKey : stateKey, edgeMap);
       for (var edge : s.edges()) {
-        var edgeKey = "--> " + edge.destinationState().debugId();
+        var edgeKey = "" + edge.destinationState().debugId();
         if (edgeMap.containsKey(edgeKey))
           edgeMap.put("**ERR** " + edge.destinationState().debugId(), "duplicate destination state");
         else {
@@ -467,16 +467,20 @@ public final class DFA {
     if (cs.length % 2 != 0) {
       return edgeProblem(edge, "odd number of elements");
     }
-    var lst = list();
-    var sb = new StringBuilder();
+    StringBuilder sb = new StringBuilder();
+    int prevB = 256;
     for (var i = 0; i < cs.length; i += 2) {
       var a = cs[i];
       var b = cs[i + 1];
+      var oldPrevB = prevB;
+      prevB = b;
       if ((a < 0 != b < 0) || (a >= b)) {
         return edgeProblem(edge, "illegal code set");
       }
+      if (a == 0)
+        return edgeProblem(edge, "illegal code set");
       if (a < 0) {
-        if (b != a + 1) {
+        if (b != a + 1 || cs.length != 2) {
           return edgeProblem(edge, "unexpected token id expr");
         }
         var tokenId = -b - 1;
@@ -485,10 +489,89 @@ public final class DFA {
         }
         return "<" + dfa.tokenName(tokenId) + ">";
       }
-      lst.add(a);
-      lst.add(b);
+
+//      if (a > oldPrevB) {
+//        addSp(sb);
+//      }
+      if (b == a + 1) {
+        sb.append(charExpr(a));
+        continue;
+      }
+
+      var dist = b - a;
+      var max = 5;
+      if (b == 256) {
+        max = 2;
+      }
+//        addSp(sb);
+//        sb.append("(");
+      int skipStart = 1000;
+      int skipEnd = 1000;
+      if (dist > 2 * max + 4) {
+        skipStart = a + max;
+        skipEnd = b - 1 - max;
+      }
+
+      for (int j = a; j < b; j++) {
+        if (j < skipStart || j > skipEnd) {
+          var x = charExpr(j);
+          addSp(sb);
+          sb.append(x);
+        } else if (j == skipStart) {
+          addSp(sb);
+          sb.append("...");
+        }
+      }
+//        if (dist > 2 * max + 4) {
+//          for (var j = a; j < a + max; j++) {
+//            if (j != a) addSp(sb);
+//            var x = charExpr(j);
+//            sb.append(x);
+//          }
+//          sb.append(" ...");
+//          for (var j = b - max; j < b; j++) {
+//            var x = charExpr(j);
+//            if (j != b) addSp(sb);
+//            sb.append(x);
+//          }
+//        } else {
+//
+//        }
+//
+//      lst.add(a);
+//      lst.add(b);
     }
-    return lst;
+    return sb.toString();
+  }
+
+  private static void addSp(StringBuilder sb) {
+    if (sb.length() > 0 && sb.charAt(sb.length() - 1) > ' ')
+      sb.append(' ');
+  }
+
+  private static String charExpr(int n) {
+
+    switch (n) {
+      case 0x0a:
+        return "_LF";
+      case 0x09:
+        return "_HT";
+      case 0x0d:
+        return "_CR";
+      case 0x20:
+        return "_SP";
+      case '(':
+        return "_OP";
+      case ')':
+        return "_CL";
+//      case '.':
+//        return "_DT";
+      default:
+        if (n > 32 && n < 128) {
+          return Character.toString((char) n);
+        }
+        return String.format("$%02x", n);
+    }
   }
 
   public static JSMap validateNewParsing(String dfaSource) {
