@@ -132,12 +132,9 @@ public final class Scanner extends BaseObject {
     while (true) {
       int ch = peekChar(charOffset);
       State nextState = null;
-      pr("offset:",charOffset,"char:", (char) ch, "state:", stateNum(mDfa, state));
       for (Edge edge : state.edges()) {
         if (edge.destinationState().finalState()) {
           int newTokenId = State.edgeLabelToTokenId(edge.codeSets()[0]);
-          pr("...length:", charOffset, "token:", newTokenId);
-
           if (newTokenId >= bestId || charOffset > bestLength) {
             bestLength = charOffset;
             bestId = newTokenId;
@@ -162,7 +159,6 @@ public final class Scanner extends BaseObject {
         1 + mColumn);
     if (bestLength == 0)
       throw new ScanException(peekToken, "scanned zero-length token");
-    pr("...best length:", bestLength, "token:", bestId);
     return peekToken;
   }
 

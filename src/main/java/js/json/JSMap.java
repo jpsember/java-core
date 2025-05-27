@@ -66,9 +66,7 @@ public final class JSMap extends JSObject {
       parser.assertCompleted();
       return;
     }
-
     var scanner = new Scanner(JSON_DFA, source.toString());
-    //scanner.setVerbose(true);
     parseFrom(scanner, mMap);
   }
 
