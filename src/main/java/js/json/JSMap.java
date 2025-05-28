@@ -514,8 +514,6 @@ public final class JSMap extends JSObject {
 
   @Override
   public int hashCode() {
-    if (true)
-      throw notSupported("attempt to calculate hashCode() on JSMap, which might be nondeterministic");
     return toString().hashCode();
   }
 
