@@ -98,7 +98,8 @@ public final class JSMap extends JSObject {
     }
     stringBuilder.append('{');
     if (nonEmpty()) {
-      for (String key : keySet()) {
+      // Print the keys in sorted order, so they are deterministic
+      for (String key : sortedKeys()) {
         JSUtils.printAsQuotedJsonString(key, stringBuilder);
         stringBuilder.append(':');
         Object value = mMap.get(key);
@@ -503,8 +504,6 @@ public final class JSMap extends JSObject {
 
   @Override
   public boolean equals(Object o) {
-    if (true)
-      throw notSupported("attempt to do equals() on JSMap, which might be nondeterministic");
     if (this == o)
       return true;
     if (o == null || getClass() != o.getClass())
@@ -531,13 +530,16 @@ public final class JSMap extends JSObject {
     return ((Number) getValueFor(key, true));
   }
 
-  private void prettyPrintWithIndent(StringBuilder target, int indentColumns) {
-    indentColumns += 2;
-
+  private List<String> sortedKeys() {
     List<String> sortedKeysList = new ArrayList<>();
     sortedKeysList.addAll(keySet());
     Collections.sort(sortedKeysList);
+    return sortedKeysList;
+  }
 
+  private void prettyPrintWithIndent(StringBuilder target, int indentColumns) {
+    indentColumns += 2;
+    var sortedKeysList = sortedKeys();
     List<String> escapedKeysList = new ArrayList<>(sortedKeysList.size());
 
     // Create a corresponding list of keys in escaped form, suitable for printing
