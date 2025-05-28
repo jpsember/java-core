@@ -503,6 +503,8 @@ public final class JSMap extends JSObject {
 
   @Override
   public boolean equals(Object o) {
+    if (true)
+      throw notSupported("attempt to do equals() on JSMap, which might be nondeterministic");
     if (this == o)
       return true;
     if (o == null || getClass() != o.getClass())
@@ -513,6 +515,8 @@ public final class JSMap extends JSObject {
 
   @Override
   public int hashCode() {
+    if (true)
+      throw notSupported("attempt to calculate hashCode() on JSMap, which might be nondeterministic");
     return toString().hashCode();
   }
 
