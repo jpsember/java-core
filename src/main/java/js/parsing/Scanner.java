@@ -21,37 +21,36 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  **/
+
 package js.parsing;
 
 import static js.base.Tools.*;
 
-import java.io.IOException;
-import java.io.Reader;
-import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import js.base.BaseObject;
 
-public final class Scanner extends BaseObject {
+import js.parsing.*;
 
-  private static final int SKIP_ID_NONE = -10000;
+public class Scanner extends BaseObject {
 
-  public Scanner(DFA dfa, Reader reader, int skipId) {
-    mDfa = dfa;
-    mSkipId = (skipId < 0 ? SKIP_ID_NONE : skipId);
-    mReader = reader;
-  }
+  private static final int SKIP_ID_NONE = -1;
+  private static final boolean DEBUG = false && alert("DEBUG in effect");
 
-  public Scanner(DFA dfa, Reader reader) {
-    this(dfa, reader, 0);
+  private static void p(Object... messages) {
+    if (DEBUG)
+      pr(insertStringToFront("Scanner>>>", messages));
   }
 
   public Scanner(DFA dfa, String string, int skipId) {
-    this(dfa, new StringReader(string), skipId);
+    mDfa = dfa;
+    mSkipId = (skipId < 0 ? SKIP_ID_NONE : skipId);
+    mBytes = string.getBytes(StandardCharsets.UTF_8);
   }
 
   public Scanner(DFA dfa, String string) {
-    this(dfa, new StringReader(string), 0);
+    this(dfa, string, 0);
   }
 
   public void setAcceptUnknownTokens() {
@@ -82,13 +81,14 @@ public final class Scanner extends BaseObject {
         break;
 
       // Advance the column, row numbers
-      String tokenText = token.text();
-      for (int i = 0; i < tokenText.length(); i++) {
-        char c = tokenText.charAt(i);
-        mColumn++;
-        if (c == '\n') {
-          mLineNumber++;
-          mColumn = 0;
+      {
+        for (int i = mLastTokenOffset; i < mLastTokenOffset + mLastTokenByteCount; i++) {
+          // For windows, unix, and (modern) osx, checking for a LF is sufficient
+          mColumn++;
+          if (mBytes[i] == 0x0a) {
+            mLineNumber++;
+            mColumn = 0;
+          }
         }
       }
       if (!token.id(mSkipId))
@@ -111,52 +111,98 @@ public final class Scanner extends BaseObject {
     return peek(0);
   }
 
-  private static int stateNum(DFA dfa, State state) {
-    int i = INIT_INDEX;
-    for (var s : dfa.debStates()) {
-      i++;
-      if (s == state) return i;
-    }
-    throw badArg("can't find state:", state);
-  }
-
   private Token peekAux() {
-    if (peekChar(0) < 0)
+    p("peekAux, nextTokenStart", mNextTokenStart, "peekByte:", peekByte(0));
+    if (peekByte(0) == 0)
       return null;
     int bestLength = 1;
-    int bestId = DFA.UNKNOWN_TOKEN;
-    String bestTokenName = null;
-    int charOffset = 0;
-    State state = mDfa.getStartState();
+    int bestId = Token.ID_UNKNOWN;
+    int byteOffset = 0;
+
+    var graph = mDfa.graph();
+
+    // <graph> ::= <int: # of states> <state>*
+    //
+    // <state> ::= <edge count> <edge>*
+    //
+    // <edge>  ::= <int: number of char_range items> <char_range>* <dest_state_id>
+    //
+    // <char_range> ::= <int: start of range> <int: end of range (exclusive)>
+    //                | <int: -(token index + 1)>
+    //
+    // <dest_state_id> ::= offset of state within graph
+
+    // The first state is always the start state
+    int statePtr = 1; // skip the # of states
 
     while (true) {
-      int ch = peekChar(charOffset);
-      State nextState = null;
-      for (Edge edge : state.edges()) {
-        if (edge.destinationState().finalState()) {
-          int newTokenId = State.edgeLabelToTokenId(edge.codeSets()[0]);
-          if (newTokenId >= bestId || charOffset > bestLength) {
-            bestLength = charOffset;
-            bestId = newTokenId;
-            bestTokenName = mDfa.tokenName(newTokenId);
-          }
-        } else {
-          // If the character is non-ascii, allow it if the range includes 255
-          var effectiveCh = (ch >= 128) ? 255 : ch;
-          if (rangeContainsValue(edge.codeSets(), effectiveCh)) {
-            nextState = edge.destinationState();
-            break;
+      p(VERT_SP, "byte offset:", byteOffset);
+      int ch = peekByte(byteOffset);
+      p("nextByte:", ch, "state_ptr:", statePtr, "max:", graph.length);
+      int nextState = -1;
+
+      int edgeCount = graph[statePtr++];
+      p("...edge count:", edgeCount);
+
+      // Iterate over the edges
+      for (var en = 0; en < edgeCount; en++) {
+
+        p("...edge #:", en);
+        boolean followEdge = false;
+
+        // Iterate over the char_ranges
+        //
+        var rangeCount = graph[statePtr++];
+        p("......ranges:", rangeCount);
+        for (var rn = 0; rn < rangeCount; rn++) {
+          // Range is either positive integers a,b or negative -x
+          int first = graph[statePtr++];
+          if (first < 0) { // it's a final state
+            int newTokenId = -first - 1;
+            p("..........token:", newTokenId, "offset:", byteOffset, "best:", bestLength);
+            if (newTokenId >= bestId || byteOffset > bestLength) {
+              bestLength = byteOffset;
+              bestId = newTokenId;
+              p("...........setting bestId:", mDfa.tokenName(bestId));
+            }
+
+          } else {
+            int second = graph[statePtr++];
+            p("......range #", rn, " [", first, "...", second, "]");
+            // If the character is non-ascii, allow it if the range includes 128
+            if (ch >= first && (ch < second || (ch >= 128 && second == 128))) {
+              followEdge = true;
+              p("......contains char, following edge");
+            }
           }
         }
+        var edgeDest = graph[statePtr++];
+        if (followEdge) {
+          p("...following edge to:", edgeDest);
+          nextState = edgeDest;
+        }
       }
-      if (nextState == null)
-        break;
-      state = nextState;
-      charOffset++;
+      statePtr = nextState;
+      p("...advanced to next state:", statePtr);
+      if (statePtr < 0) break;
+      byteOffset++;
     }
-    String tokenText = skipChars(bestLength);
-    Token peekToken = new Token(mSourceDescription, bestId, bestTokenName, tokenText, 1 + mLineNumber,
+
+    String tokenText =
+        new String(mBytes, mNextTokenStart, bestLength);
+    mLastTokenOffset = mNextTokenStart;
+
+    mLastTokenByteCount = bestLength;
+    mNextTokenStart += bestLength;
+
+    Token peekToken = new Token(mSourceDescription, bestId, mDfa.tokenName(bestId), tokenText,
+        1 + mLineNumber,
         1 + mColumn);
+    p("peek token:", INDENT, peekToken);
+    if (peekToken.isUnknown() && !mAcceptUnknownTokens) {
+      throw new ScanException(peekToken, "unknown token");
+    }
+    todo("is length zero even possible?");
     if (bestLength == 0)
       throw new ScanException(peekToken, "scanned zero-length token");
     return peekToken;
@@ -184,16 +230,6 @@ public final class Scanner extends BaseObject {
     return token;
   }
 
-  @Deprecated
-  public Token read(String tokenName) {
-    return read(mDfa.tokenId(tokenName));
-  }
-
-  @Deprecated
-  public Token readIf(String tokenName) {
-    return readIf(mDfa.tokenId(tokenName));
-  }
-
   public Token readIf(int tokenId) {
     Token token = peek();
     boolean readIt = (token != null && tokenId == token.id());
@@ -208,10 +244,6 @@ public final class Scanner extends BaseObject {
     return peek() != null;
   }
 
-  public String nameOf(Token token) {
-    return mDfa.tokenName(token.id());
-  }
-
   public void unread() {
     unread(1);
   }
@@ -222,66 +254,23 @@ public final class Scanner extends BaseObject {
     mHistoryCursor -= count;
   }
 
-  @Deprecated
-  public int readInt(int tokenId) {
-    return (int) ensureIntegerValue(read(tokenId).text(), Integer.MIN_VALUE, Integer.MAX_VALUE);
-  }
-
-  @Deprecated
-  public static long ensureIntegerValue(String numberString, long min, long max) {
-    try {
-      long value = Long.parseLong(numberString);
-      if (value < min || value > max)
-        badArg("integral value out of range of", min, "...", max, ":", numberString);
-      return value;
-    } catch (Throwable t) {
-      throw badArg("expected an integer, not:", quote(numberString));
+  private byte peekByte(int index) {
+    var absIndex = index + mNextTokenStart;
+    if (absIndex < mBytes.length) {
+      return mBytes[absIndex];
     }
+    return 0;
   }
 
-  private int peekChar(int index) {
-    try {
-      if (index < mCharacterBuffer.length()) {
-        return mCharacterBuffer.charAt(index);
-      }
-      int nRead = mReader.read(mReaderBuffer);
-      if (nRead < 0)
-        return -1;
-      mCharacterBuffer.append(mReaderBuffer, 0, nRead);
-      return mCharacterBuffer.charAt(index);
-    } catch (IOException e) {
-      throw asRuntimeException(e);
-    }
-  }
-
-  private String skipChars(int count) {
-    String s = mCharacterBuffer.substring(0, count);
-    mCharacterBuffer.delete(0, count);
-    return s;
-  }
-
-  private static boolean rangeContainsValue(int[] range, int value) {
-    // If the value is > 255, accept it if the range contains 255
-    var effectiveValue = (value > 255) ? 255 : value;
-    int i = 0;
-    while (i < range.length) {
-      if (effectiveValue < range[i])
-        return false;
-      if (effectiveValue < range[i + 1])
-        return true;
-      i += 2;
-    }
-    return false;
-  }
-
-  private Reader mReader;
   private DFA mDfa;
+  private byte[] mBytes;
+  private int mNextTokenStart;
+  private int mLastTokenOffset;
+  private int mLastTokenByteCount;
   private int mSkipId;
   private int mLineNumber;
   private int mColumn;
   private boolean mAcceptUnknownTokens;
   private List<Token> mHistory = arrayList();
   private int mHistoryCursor;
-  private StringBuilder mCharacterBuffer = new StringBuilder();
-  private char[] mReaderBuffer = new char[256];
 }
