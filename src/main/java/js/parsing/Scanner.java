@@ -31,11 +31,9 @@ import java.util.List;
 
 import js.base.BaseObject;
 
-import js.parsing.*;
+public class  Scanner extends BaseObject {
 
-public class Scanner extends BaseObject {
-
-  private static final int SKIP_ID_NONE = -1;
+  private static final int SKIP_ID_NONE = -2;
   private static final boolean DEBUG = false && alert("DEBUG in effect");
 
   private static void p(Object... messages) {
@@ -184,7 +182,9 @@ public class Scanner extends BaseObject {
       }
       statePtr = nextState;
       p("...advanced to next state:", statePtr);
-      if (statePtr < 0) break;
+      if (statePtr < 0) {
+        break;
+      }
       byteOffset++;
     }
 
@@ -202,9 +202,6 @@ public class Scanner extends BaseObject {
     if (peekToken.isUnknown() && !mAcceptUnknownTokens) {
       throw new ScanException(peekToken, "unknown token");
     }
-    todo("is length zero even possible?");
-    if (bestLength == 0)
-      throw new ScanException(peekToken, "scanned zero-length token");
     return peekToken;
   }
 
