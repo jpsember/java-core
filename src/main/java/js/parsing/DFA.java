@@ -111,7 +111,7 @@ public class DFA {
    * => an integer within the graph
    * 2)  '$' (any character except '$')*
    * => version (e.g. $42)
-   * 3)  ('A'..'Z')+
+   * 3)  ('A'..'Z', '_')+
    * => token id
    */
   public static DFA parse(String str) {
@@ -162,7 +162,7 @@ public class DFA {
   // Parser helper functions
 
   private static boolean isUpper(byte b) {
-    return b >= 'A' && b <= 'Z';
+    return b == '_' || (b >= 'A' && b <= 'Z');
   }
 
   private static boolean isNumber(byte b) {
