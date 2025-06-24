@@ -111,7 +111,7 @@ public class DFA {
    * => an integer within the graph
    * 2)  '$' (any character except '$')*
    * => version (e.g. $42)
-   * 3)  ('A'..'Z', '_')+
+   * 3)  ('A'..'Z') ('A'..'Z', '_')*
    * => token id
    */
   public static DFA parse(String str) {
@@ -139,7 +139,8 @@ public class DFA {
       } else if (isUpper(b)) {
         while (true) {
           i++;
-          if (!isUpper(strBytes[i])) {
+          var by = strBytes[i];
+          if (!(isUpper(by) || by == '_')) {
             tokenNames.add(new String(strBytes, j, i - j));
             break;
           }
@@ -162,7 +163,7 @@ public class DFA {
   // Parser helper functions
 
   private static boolean isUpper(byte b) {
-    return b == '_' || (b >= 'A' && b <= 'Z');
+    return b >= 'A' && b <= 'Z';
   }
 
   private static boolean isNumber(byte b) {
