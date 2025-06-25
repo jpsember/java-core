@@ -23,10 +23,9 @@
  **/
 package js.parsing;
 
-import js.data.ShortArray;
+import js.data.ByteArray;
 import js.json.JSList;
 import js.json.JSMap;
-import js.parsing.Token;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -34,31 +33,29 @@ import java.util.List;
 import static js.base.Tools.*;
 
 /**
- * A new, more compact representation of a DFA
+ * An even newer, more compact representation of a DFA
  */
 
 // {
-//   "version" : "$1",
+//   "version" : "$2",
 //   "tokens" : "space-delimited set of token names",
-//   "graph"  : [ array of integers, described below ]
+//   "graph"  : [ array of bytes, described below ]
 // }
 //
-// <graph> ::= <int: # of states> <state>*
+// <graph> ::= <state>*
 //
-// <state> ::= <edge count> <edge>*
+// <state> ::= <1 + token id, or 0> <edge count> <edge>*
 //
-// <edge>  ::= <int: number of char_range items> <char_range>* <dest_state_id>
+// <edge>  ::= <char_range count> <char_range>* <dest_state_offset, low byte first>
 //
-// <char_range> ::= <int: start of range> <int: end of range (exclusive)>
-//                | <int: -(token index + 1)>
+// <char_range> ::= <start of range (1..127)> <size of range>
 //
-// <dest_state_id> ::= offset of state within graph
 //
 public class DFA {
 
-  public static String VERSION = "$1";
+  public static String VERSION = "$2";
 
-  public DFA(String version, String[] tokenNames, short[] graph) {
+  public DFA(String version, String[] tokenNames, byte[] graph) {
     checkArgument(version.equals(VERSION), "bad version:", version, "; expected", VERSION);
     mVersion = version;
     mTokenNames = tokenNames;
@@ -78,7 +75,7 @@ public class DFA {
     return toJson().toString();
   }
 
-  public short[] graph() {
+  public byte[] graph() {
     return mGraph;
   }
 
@@ -88,14 +85,13 @@ public class DFA {
     return mTokenNames[id];
   }
 
-  @Deprecated // suspect it's unused
   public String[] tokenNames() {
     return mTokenNames;
   }
 
   private String mVersion;
   private String[] mTokenNames;
-  private short[] mGraph;
+  private byte[] mGraph;
 
 
   // ----------------------------------------------------------------------------------------------
@@ -120,7 +116,7 @@ public class DFA {
     //
     String version = VERSION;
     List<String> tokenNames = arrayList();
-    var nums = ShortArray.DEFAULT_INSTANCE.newBuilder();
+    var nums = ByteArray.newBuilder();
 
     var strBytes = str.getBytes(StandardCharsets.UTF_8);
     var i = 0;
@@ -149,7 +145,7 @@ public class DFA {
         while (true) {
           i++;
           if (!isNumber(strBytes[i])) {
-            nums.add(Short.parseShort(new String(strBytes, j, i - j)));
+            nums.add(Byte.parseByte(new String(strBytes, j, i - j)));
             break;
           }
         }
@@ -170,8 +166,4 @@ public class DFA {
     return (b >= '0' && b <= '9') || b == '-';
   }
 
-  @Deprecated // suspect it's unused
-  public int numTokens() {
-    return mTokenNames.length;
-  }
 }

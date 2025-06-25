@@ -31,7 +31,7 @@ import java.util.List;
 
 import js.base.BaseObject;
 
-public class  Scanner extends BaseObject {
+public class Scanner extends BaseObject {
 
   private static final int SKIP_ID_NONE = -2;
   private static final boolean DEBUG = false && alert("DEBUG in effect");
@@ -119,31 +119,56 @@ public class  Scanner extends BaseObject {
 
     var graph = mDfa.graph();
 
-    // <graph> ::= <int: # of states> <state>*
+    // <graph> ::= <state>*
     //
-    // <state> ::= <edge count> <edge>*
+    // <state> ::= <1 + token id, or 0> <edge count> <edge>*
     //
-    // <edge>  ::= <int: number of char_range items> <char_range>* <dest_state_id>
+    // <edge>  ::= <char_range count> <char_range>* <dest_state_offset, low byte first>
     //
-    // <char_range> ::= <int: start of range> <int: end of range (exclusive)>
-    //                | <int: -(token index + 1)>
+    // <char_range> ::= <start of range (1..127)> <size of range>
     //
-    // <dest_state_id> ::= offset of state within graph
+    //
+
 
     // The first state is always the start state
-    int statePtr = 1; // skip the # of states
+    int statePtr = 0;
 
     while (true) {
       p(VERT_SP, "byte offset:", byteOffset);
       int ch = peekByte(byteOffset);
+
+      // If the byte is -128...-1, set it to 127.
+      // The convention is that any range that includes 127 will also include these bytes.
+      if (ch < 0)
+        ch = 127;
+
       p("nextByte:", ch, "state_ptr:", statePtr, "max:", graph.length);
       int nextState = -1;
+
+      int newTokenId = -1;
+      var tokenCode = graph[statePtr++];
+      if (tokenCode != 0) {
+        newTokenId = (tokenCode  & 0xff) - 1;
+        p("..........token:", newTokenId, "offset:", byteOffset, "best:", bestLength);
+        if (newTokenId >= bestId || byteOffset > bestLength) {
+          bestLength = byteOffset;
+          bestId = newTokenId;
+          p("...........setting bestId:", mDfa.tokenName(bestId));
+        }
+      }
 
       int edgeCount = graph[statePtr++];
       p("...edge count:", edgeCount);
 
       // Iterate over the edges
       for (var en = 0; en < edgeCount; en++) {
+
+
+        //
+        // <edge>  ::= <char_range count> <char_range>* <dest_state_offset, low byte first>
+        //
+        // <char_range> ::= <start of range (1..127)> <size of range>
+        //
 
         p("...edge #:", en);
         boolean followEdge = false;
@@ -153,28 +178,17 @@ public class  Scanner extends BaseObject {
         var rangeCount = graph[statePtr++];
         p("......ranges:", rangeCount);
         for (var rn = 0; rn < rangeCount; rn++) {
-          // Range is either positive integers a,b or negative -x
           int first = graph[statePtr++];
-          if (first < 0) { // it's a final state
-            int newTokenId = -first - 1;
-            p("..........token:", newTokenId, "offset:", byteOffset, "best:", bestLength);
-            if (newTokenId >= bestId || byteOffset > bestLength) {
-              bestLength = byteOffset;
-              bestId = newTokenId;
-              p("...........setting bestId:", mDfa.tokenName(bestId));
-            }
+          int rangeSize = graph[statePtr++];
+          int posWithinRange = ch - first;
 
-          } else {
-            int second = graph[statePtr++];
-            p("......range #", rn, " [", first, "...", second, "]");
-            // If the character is non-ascii, allow it if the range includes 128
-            if (ch >= first && (ch < second || (ch >= 128 && second == 128))) {
+            p("......range #", rn, " [", first, "...", first+rangeSize, "]");
+            if (posWithinRange >= 0 && posWithinRange < rangeSize) {
               followEdge = true;
               p("......contains char, following edge");
             }
-          }
         }
-        var edgeDest = graph[statePtr++];
+        var edgeDest = (graph[statePtr++] & 0xff) | ((graph[statePtr++] & 0xff) << 8);
         if (followEdge) {
           p("...following edge to:", edgeDest);
           nextState = edgeDest;
