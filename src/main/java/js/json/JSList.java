@@ -215,9 +215,9 @@ public final class JSList extends JSObject implements Iterable<Object> {
   static JSList parseFrom(Scanner s, JSList targetOrNull) {
     var lst = targetOrNull == null ? new JSList() : targetOrNull;
     s.read(J_BROP);
-    while (s.readIf(J_BRCL) == null) {
+    while (!s.readIf(J_BRCL) ) {
       lst.addUnsafe(JSUtils.parseValue(s));
-      if (null == s.readIf(J_COMMA)) {
+      if (!s.readIf(J_COMMA)) {
         s.read(J_BRCL);
         break;
       }

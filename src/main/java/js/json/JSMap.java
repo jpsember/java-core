@@ -134,13 +134,13 @@ public final class JSMap extends JSObject {
     var target = targetOrNull == null ? new JSMap() : targetOrNull;
     var mp = target.mMap;
     s.read(J_CBROP);
-    while (s.readIf(J_CBRCL) == null) {
+    while (!s.readIf(J_CBRCL)) {
       var key = JSUtils.parseStringFrom(s.read(J_STRING).text());
       s.read(J_COLON);
       var value = JSUtils.parseValue(s);
       if (value != null)
         mp.put(key, value);
-      if (null == s.readIf(J_COMMA)) {
+      if (!s.readIf(J_COMMA)) {
         s.read(J_CBRCL);
         break;
       }
