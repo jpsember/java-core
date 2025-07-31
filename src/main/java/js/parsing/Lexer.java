@@ -33,8 +33,13 @@ public class Lexer extends BaseObject {
     return this;
   }
 
+  public Lexer withNoSkip() {
+    mSkipId = Lexeme.ID_SKIP_NONE;
+    return this;
+  }
+
   public Lexer withSkipId(int skipId) {
-    checkArgument(skipId >= 0 || skipId == Lexeme.ID_SKIP_NONE, "bad skipId; did you mean ID_SKIP_NONE?");
+    checkArgument(skipId >= 0, "bad skipId");
     mSkipId = skipId;
     return this;
   }
@@ -147,7 +152,7 @@ public class Lexer extends BaseObject {
    * Determine if the next n tokens exist and match the specified ids
    */
   public boolean peekIf(int... tokenIds) {
-    p2("peekIs, tokenIds:", tokenIds);
+    //p2("peekIs, tokenIds:", tokenIds);
     start();
 
     resetAction();
@@ -171,7 +176,7 @@ public class Lexer extends BaseObject {
 
     if (success) {
       mActionLength = tokenIds.length;
-      p2("...setting prev token count:", mActionLength);
+      //p2("...setting prev token count:", mActionLength);
     }
     return success;
   }
@@ -183,7 +188,7 @@ public class Lexer extends BaseObject {
     var result = peekIf(tokenIds);
     if (result) {
       mReadIndex += mActionLength;
-      p2("...readIf, advance cursor by prev token count", mActionLength, "to", mReadIndex);
+      //p2("...readIf, advance cursor by prev token count", mActionLength, "to", mReadIndex);
     }
     return result;
   }
@@ -654,7 +659,7 @@ public class Lexer extends BaseObject {
 
   private DFA mDfa;
   private byte[] mBytes;
-  private int mSkipId = Lexeme.ID_SKIP_DEFAULT;
+  private int mSkipId;
   private boolean mAcceptUnknownTokens;
   private int mReadIndex;
   private int[] mTokenInfo;
