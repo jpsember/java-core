@@ -66,7 +66,11 @@ public class DFA {
     var m = map();
     m.put("version", mVersion);
     m.put("token_names", String.join(" ", mTokenNames));
-    m.put("graph", JSList.with(mGraph));
+    // Convert bytes to unsigned ints
+    var g = list();
+    for (var x : graph())
+      g.add(x & 0xff);
+    m.put("graph", g);
     return m;
   }
 
