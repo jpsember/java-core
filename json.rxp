@@ -10,8 +10,8 @@ CBROP: \{
 CBRCL: \}
 COMMA: $_COMMA
 COLON: $_COLON
-STRING: {_STRING}
-#  (Not used) SINGLESTRING: {_SINGLESTRING}
+STRING: {$_STRING}
+#  (Not used) SINGLESTRING: {$_SINGLESTRING}
 
 # For numbers, see https://www.json.org/img/number.png
 
@@ -19,5 +19,4 @@ _NUMINTEGER: ( \-? (0 | ([1-9] \d*)) )
 _NUMFRAC: (\. \d+ )
 _EXP: ([eE] (\- | \+)? \d+)
 
-NUMBER: {_NUMINTEGER} {_NUMFRAC}? {_EXP}?
-
+NUMBER: {$_NUMINTEGER} {$_NUMFRAC}? {$_EXP}?
