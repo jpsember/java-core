@@ -28,6 +28,7 @@ import static js.base.Tools.*;
 import js.base.BasePrinter;
 import js.data.DataUtil;
 
+@Deprecated // Use Lexer instead of Scanner
 public final class Token {
 
   public static final int ID_UNKNOWN = -1;

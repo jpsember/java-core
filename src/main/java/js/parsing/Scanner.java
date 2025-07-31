@@ -31,6 +31,7 @@ import java.util.List;
 
 import js.base.BaseObject;
 
+@Deprecated // Use Lexer instead of Scanner
 public class Scanner extends BaseObject {
 
   private static final int SKIP_ID_NONE = -2;

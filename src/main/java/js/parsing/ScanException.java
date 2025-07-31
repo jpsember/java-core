@@ -27,6 +27,7 @@ package js.parsing;
 import js.base.BasePrinter;
 import js.data.DataUtil;
 
+@Deprecated // Use Lexer instead of Scanner
 public final class ScanException extends RuntimeException {
 
   public ScanException(Token token, Object... messages) {
