@@ -37,6 +37,7 @@ import js.data.FloatArray;
 import js.data.IntArray;
 import js.data.LongArray;
 import js.data.ShortArray;
+import js.parsing.Lexer;
 import js.parsing.Scanner;
 
 public final class JSList extends JSObject implements Iterable<Object> {
@@ -52,8 +53,8 @@ public final class JSList extends JSObject implements Iterable<Object> {
   }
 
   public JSList(CharSequence charSequence) {
-    var scanner = new Scanner(JSON_DFA, charSequence.toString());
-    parseFrom(scanner, this);
+    var lexer = new Lexer(JSON_DFA).withText(charSequence);
+    parseFrom(lexer, this);
   }
 
   protected JSList(List unsafeList) {
@@ -212,7 +213,7 @@ public final class JSList extends JSObject implements Iterable<Object> {
   /**
    * Parse a JSList from a scanner.  If target isn't null, it must be an empty JSList
    */
-  static JSList parseFrom(Scanner s, JSList targetOrNull) {
+  static JSList parseFrom(Lexer s, JSList targetOrNull) {
     var lst = targetOrNull == null ? new JSList() : targetOrNull;
     s.read(J_BROP);
     while (!s.readIf(J_BRCL) ) {

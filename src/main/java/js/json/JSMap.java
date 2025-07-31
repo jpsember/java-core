@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import js.data.AbstractData;
 import js.file.Files;
+import js.parsing.Lexer;
 import js.parsing.Scanner;
 
 import static js.base.Tools.*;
@@ -50,8 +51,8 @@ public final class JSMap extends JSObject {
   }
 
   public JSMap(CharSequence source) {
-    var scanner = new Scanner(JSON_DFA, source.toString());
-    parseFrom(scanner, this);
+    var lexer = new Lexer(JSON_DFA).withText(source);
+    parseFrom(lexer, this);
   }
 
   public static JSMap from(File file) {
@@ -130,7 +131,7 @@ public final class JSMap extends JSObject {
   /**
    * Parse a JSMap from a scanner.  If target isn't null, it must be an empty JSMap
    */
-  static JSMap parseFrom(Scanner s, JSMap targetOrNull) {
+  static JSMap parseFrom(Lexer s, JSMap targetOrNull) {
     var target = targetOrNull == null ? new JSMap() : targetOrNull;
     var mp = target.mMap;
     s.read(J_CBROP);

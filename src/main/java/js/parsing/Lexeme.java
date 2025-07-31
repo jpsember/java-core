@@ -1,5 +1,7 @@
 package js.parsing;
 
+import java.nio.charset.StandardCharsets;
+
 import static js.base.Tools.*;
 
 public final class Lexeme {
@@ -104,10 +106,8 @@ public final class Lexeme {
     switch (mId) {
       case ID_END_OF_INPUT:
         return "<END>";
-      case ID_UNKNOWN:
-        return "<UNKNOWN>";
       default:
-        return mLexer.dfa().tokenName(mId);
+        return mLexer.getText(mInfoAddress);
     }
   }
 
