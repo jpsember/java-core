@@ -18,7 +18,6 @@ public final class LexerException extends RuntimeException {
     String text = BasePrinter.toString(messages);
 
     var sb = new StringBuilder();
-
     if (token != null) {
       sb.append("-------------------------------------------------------------------------------\n");
       sb.append(token.plotWithinContext());

@@ -27,6 +27,11 @@ public class Lexer extends BaseObject {
     return withBytes(text.toString().getBytes(StandardCharsets.UTF_8));
   }
 
+  public Lexer withSourceDescription(String descr) {
+    mSourceDescription = descr;
+    return this;
+  }
+
   public Lexer withBytes(byte[] sourceBytes) {
     mBytes = normalizeNewlines(sourceBytes);
     mStarted = false;
@@ -418,6 +423,15 @@ public class Lexer extends BaseObject {
     var maxTextColumns = TEXT_COLUMNS - context.maxLineNumberDigits;
 
     var sb = new StringBuilder();
+
+    {
+      var sourceInfo = mSourceDescription;
+      if (nonEmpty(sourceInfo)) {
+        sb.append(sourceInfo);
+        addLF(sb);
+      }
+    }
+
     int maxIndex = Math.max(context.rows.size(), context.tokenRow + 2);
     for (var index = 0; index < maxIndex; index++) {
       String r = null;
@@ -666,6 +680,7 @@ public class Lexer extends BaseObject {
   private int[] mFilteredOffsets;
   private int mTokenCount;
   private boolean mStarted;
+  private String mSourceDescription;
   // Action info
   private int mActionLength;
   private int mActionCursor;

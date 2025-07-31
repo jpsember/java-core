@@ -116,7 +116,6 @@ public final class Lexeme {
     return lexer().plotContext(context);
   }
 
-
   private final int mId;
   private Lexer mLexer;
   private int mInfoAddress;
