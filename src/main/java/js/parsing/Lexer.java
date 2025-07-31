@@ -98,7 +98,7 @@ public class Lexer extends BaseObject {
    * @return Lexeme
    */
   public Lexeme peek(int distance) {
-    return checkUnknownAllowed(auxPeek(0));
+    return checkUnknownAllowed(auxPeek(distance));
   }
 
   /**
