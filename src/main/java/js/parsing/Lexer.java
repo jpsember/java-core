@@ -3,15 +3,12 @@ package js.parsing;
 import static js.base.Tools.*;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.List;
 
 import js.base.BaseObject;
 import js.data.ByteArray;
-import js.data.DataUtil;
 import js.data.IntArray;
 import js.json.JSList;
-import js.parsing.DFA;
 
 public class Lexer extends BaseObject {
 
@@ -37,6 +34,7 @@ public class Lexer extends BaseObject {
   }
 
   public Lexer withSkipId(int skipId) {
+    checkArgument(skipId >= 0 || skipId == Lexeme.ID_SKIP_NONE, "bad skipId; did you mean ID_SKIP_NONE?");
     mSkipId = skipId;
     return this;
   }
@@ -656,7 +654,7 @@ public class Lexer extends BaseObject {
 
   private DFA mDfa;
   private byte[] mBytes;
-  private int mSkipId = Lexeme.ID_SKIP_NONE;
+  private int mSkipId = Lexeme.ID_SKIP_DEFAULT;
   private boolean mAcceptUnknownTokens;
   private int mReadIndex;
   private int[] mTokenInfo;

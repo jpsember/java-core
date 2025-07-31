@@ -9,6 +9,7 @@ public final class Lexeme {
   public static final int ID_UNKNOWN = -1;
   public static final int ID_END_OF_INPUT = -2;
   public static final int ID_SKIP_NONE = -3;
+  public static final int ID_SKIP_DEFAULT = 0;
 
   Lexeme(int id) {
     mId = id;
