@@ -70,7 +70,8 @@ public class DFA {
     var g = list();
     for (var x : graph())
       g.add(x & 0xff);
-    m.put("graph", g);
+    m.put("graph2", g);
+    m.put("graph",JSList.with(graph()));
     return m;
   }
 
