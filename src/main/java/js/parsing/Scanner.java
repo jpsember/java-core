@@ -35,19 +35,6 @@ import js.base.BaseObject;
 public class Scanner extends BaseObject {
 
   private static final int SKIP_ID_NONE = -2;
-  private static final boolean DEBUG = false && alert("DEBUG in effect");
-
-  private static void p(Object... messages) {
-    if (DEBUG)
-      pr(insertStringToFront("Scanner>>>", messages));
-  }
-
-  private static final boolean DEBUG2 = true && alert("DEBUG in effect");
-
-  private static void p2(Object... messages) {
-    if (DEBUG2)
-      pr(insertStringToFront("Scanner>>>", messages));
-  }
 
   public Scanner(DFA dfa, String string, int skipId) {
     mDfa = dfa;
@@ -118,7 +105,6 @@ public class Scanner extends BaseObject {
   }
 
   private Token peekAux() {
-    p("peekAux, nextTokenStart", mNextTokenStart, "peekByte:", peekByte(0));
     if (peekByte(0) == 0)
       return null;
     int bestLength = 1;
@@ -142,7 +128,6 @@ public class Scanner extends BaseObject {
     int statePtr = 0;
 
     while (true) {
-      p(VERT_SP, "byte offset:", byteOffset);
       int ch = peekByte(byteOffset);
 
       // If the byte is -128...-1, set it to 127.
@@ -150,23 +135,19 @@ public class Scanner extends BaseObject {
       if (ch < 0)
         ch = 127;
 
-      p("nextByte:", ch, "state_ptr:", statePtr, "max:", graph.length);
       int nextState = -1;
 
       int newTokenId = -1;
       var tokenCode = graph[statePtr++];
       if (tokenCode != 0) {
         newTokenId = (tokenCode  & 0xff) - 1;
-        p("..........token:", newTokenId, "offset:", byteOffset, "best:", bestLength);
         if (newTokenId >= bestId || byteOffset > bestLength) {
           bestLength = byteOffset;
           bestId = newTokenId;
-          p("...........setting bestId:", mDfa.tokenName(bestId));
         }
       }
 
       int edgeCount = graph[statePtr++];
-      p("...edge count:", edgeCount);
 
       // Iterate over the edges
       for (var en = 0; en < edgeCount; en++) {
@@ -178,32 +159,26 @@ public class Scanner extends BaseObject {
         // <char_range> ::= <start of range (1..127)> <size of range>
         //
 
-        p("...edge #:", en);
         boolean followEdge = false;
 
         // Iterate over the char_ranges
         //
         var rangeCount = graph[statePtr++];
-        p("......ranges:", rangeCount);
         for (var rn = 0; rn < rangeCount; rn++) {
           int first = graph[statePtr++];
           int rangeSize = graph[statePtr++];
           int posWithinRange = ch - first;
 
-            p("......range #", rn, " [", first, "...", first+rangeSize, "]");
             if (posWithinRange >= 0 && posWithinRange < rangeSize) {
               followEdge = true;
-              p("......contains char, following edge");
             }
         }
         var edgeDest = (graph[statePtr++] & 0xff) | ((graph[statePtr++] & 0xff) << 8);
         if (followEdge) {
-          p("...following edge to:", edgeDest);
           nextState = edgeDest;
         }
       }
       statePtr = nextState;
-      p("...advanced to next state:", statePtr);
       if (statePtr < 0) {
         break;
       }
@@ -220,7 +195,6 @@ public class Scanner extends BaseObject {
     Token peekToken = new Token(mSourceDescription, bestId, mDfa.tokenName(bestId), tokenText,
         1 + mLineNumber,
         1 + mColumn);
-    p("peek token:", INDENT, peekToken);
     if (peekToken.isUnknown() && !mAcceptUnknownTokens) {
       throw new ScanException(peekToken, "unknown token");
     }
