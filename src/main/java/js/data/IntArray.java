@@ -242,6 +242,13 @@ public class IntArray implements AbstractData {
       return this;
     }
 
+    public Builder set(int position, int value) {
+      if (position >= size())
+        throw badArg("attempt to set at position:", position, ">= size", size());
+      mArray[position] = value;
+      return this;
+    }
+
     private static ArrayIndexOutOfBoundsException outOfBounds(Object... messages) {
       throw new ArrayIndexOutOfBoundsException(BasePrinter.toString(messages));
     }

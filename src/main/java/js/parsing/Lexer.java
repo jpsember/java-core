@@ -347,13 +347,24 @@ public class Lexer extends BaseObject {
         tokLenCurr++;
       }
 
-      if (bestId != mSkipId) {
-        filteredPtrs.add(ti.size());
-      }
+      // If unknown, and so was previous, merge into the previous one.
+      if (bestId == Lexeme.ID_UNKNOWN
+          && !ti.isEmpty() && ti.get(ti.size() - F_TOTAL + F_TOKEN_ID) == Lexeme.ID_UNKNOWN) {
 
-      ti.add(tokenOffset);
-      ti.add(bestId);
-      ti.add(lineNumber);
+        // We don't need to do any further work, as the length of token
+        // is determined as the difference between the start of the next
+        // one (which we aren't adding now) and the previous one
+
+      } else {
+
+        if (bestId != mSkipId) {
+          filteredPtrs.add(ti.size());
+        }
+
+        ti.add(tokenOffset);
+        ti.add(bestId);
+        ti.add(lineNumber);
+      }
 
       // increment line number for each linefeed encountered
       for (var j = tokenOffset; j < tokenOffset + tokLenBest; j++)
