@@ -78,7 +78,7 @@ public class Lexer extends BaseObject {
   }
 
 
-  static final int //
+  public static final int //
       F_TOKEN_OFFSET = 0,
       F_TOKEN_ID = 1,
       F_LINE_NUMBER = 2,
@@ -251,6 +251,11 @@ public class Lexer extends BaseObject {
     return mFilteredOffsets;
   }
 
+  public byte[] inputBytes() {
+    start();
+    return mBytes;
+  }
+  
   void start() {
     if (!mStarted) {
       extractTokens();
