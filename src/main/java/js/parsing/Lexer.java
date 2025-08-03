@@ -241,8 +241,14 @@ public class Lexer extends BaseObject {
     return Lexeme.construct(this, infoIndex);
   }
 
-  int[] tokenInfo() {
+  public int[] tokenInfo() {
+    start();
     return mTokenInfo;
+  }
+
+  public int[] filteredAddresses() {
+    start();
+    return mFilteredOffsets;
   }
 
   void start() {
