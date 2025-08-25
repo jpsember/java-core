@@ -255,7 +255,7 @@ public class Lexer extends BaseObject {
     start();
     return mBytes;
   }
-  
+
   void start() {
     if (!mStarted) {
       extractTokens();
@@ -412,7 +412,6 @@ public class Lexer extends BaseObject {
   DFA dfa() {
     return mDfa;
   }
-
 
   int tokenStartLineNumber(int address) {
     return mTokenInfo[address + F_LINE_NUMBER];

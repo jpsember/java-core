@@ -1,0 +1,8 @@
+# WS:  \x20+
+
+NUMBER: $_INTORFLOAT
+
+_H: [0-9a-fA-F]
+
+#   "200ab897-399e-f8d2-4d03-eb59f9223372036854775807cea"
+UUID:   "  $_H $_H $_H $_H $_H $_H $_H $_H \-  [^\"]* "

@@ -1,18 +1,18 @@
 /**
  * MIT License
- * 
+ *
  * Copyright (c) 2021 Jeff Sember
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -20,7 +20,6 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- * 
  **/
 package js.data;
 
@@ -42,11 +41,14 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
+import js.base.BasePrinter;
 import js.base.Pair;
 import js.base.Tools;
 import js.file.Files;
 import js.json.JSList;
 import js.json.JSMap;
+import js.parsing.DFA;
+import js.parsing.Lexer;
 
 /**
  * Utility methods in support of AbstractData class
@@ -136,40 +138,40 @@ public final class DataUtil {
       char c = sourceSequence.charAt(i);
       final char ESCAPE = '\\';
       switch (c) {
-      case '"':
-        sb.append(ESCAPE);
-        break;
-      case ESCAPE:
-        sb.append(ESCAPE);
-        break;
-      case 8:
-        sb.append(ESCAPE);
-        c = 'b';
-        break;
-      case 12:
-        sb.append(ESCAPE);
-        c = 'f';
-        break;
-      case 10:
-        sb.append(ESCAPE);
-        c = 'n';
-        break;
-      case 13:
-        sb.append(ESCAPE);
-        c = 'r';
-        break;
-      case 9:
-        sb.append(ESCAPE);
-        c = 't';
-        break;
-      default:
-        // Remove the '|| c > 126' to leave text as unicode
-        if (c < ' ' || c > 126) {
-          sb.append("\\u");
-          toHex(sb, (int) c, 4);
-          continue;
-        }
-        break;
+        case '"':
+          sb.append(ESCAPE);
+          break;
+        case ESCAPE:
+          sb.append(ESCAPE);
+          break;
+        case 8:
+          sb.append(ESCAPE);
+          c = 'b';
+          break;
+        case 12:
+          sb.append(ESCAPE);
+          c = 'f';
+          break;
+        case 10:
+          sb.append(ESCAPE);
+          c = 'n';
+          break;
+        case 13:
+          sb.append(ESCAPE);
+          c = 'r';
+          break;
+        case 9:
+          sb.append(ESCAPE);
+          c = 't';
+          break;
+        default:
+          // Remove the '|| c > 126' to leave text as unicode
+          if (c < ' ' || c > 126) {
+            sb.append("\\u");
+            toHex(sb, (int) c, 4);
+            continue;
+          }
+          break;
       }
       sb.append(c);
     }
@@ -243,20 +245,20 @@ public final class DataUtil {
     for (int i = 0; i < source.length(); i++) {
       char c = source.charAt(i);
       switch (c) {
-      case '\n':
-        target.append(c);
-        cursor = 0;
+        case '\n':
+          target.append(c);
+          cursor = 0;
+          break;
+        case '\t': {
+          int spacesToAdd = ((cursor + tabLen - 1) % tabLen) + 1;
+          target.append(spaces(spacesToAdd));
+          cursor += spacesToAdd;
+        }
         break;
-      case '\t': {
-        int spacesToAdd = ((cursor + tabLen - 1) % tabLen) + 1;
-        target.append(spaces(spacesToAdd));
-        cursor += spacesToAdd;
-      }
-        break;
-      default:
-        target.append(c);
-        cursor++;
-        break;
+        default:
+          target.append(c);
+          cursor++;
+          break;
       }
     }
   }
@@ -407,11 +409,9 @@ public final class DataUtil {
 
   /**
    * Convert a bit sequence to a string, for development purposes;
-   * 
-   * @param wordSize
-   *          the size of the bit sequence
-   * @param bits
-   *          integer containing the bit sequence, in its least significant bits
+   *
+   * @param wordSize the size of the bit sequence
+   * @param bits     integer containing the bit sequence, in its least significant bits
    * @return string with set bits represented by '1', cleared bits by '.'
    */
   public static String bitString(int wordSize, int bits) {
@@ -987,7 +987,7 @@ public final class DataUtil {
   }
 
   public static <T extends AbstractData> List<T> parseListOfObjects(T defaultInstance,
-      JSList sourceListOrNull, boolean nullIfSourceNull) {
+                                                                    JSList sourceListOrNull, boolean nullIfSourceNull) {
     if (sourceListOrNull == null)
       return nullIfSourceNull ? null : emptyList();
     List<T> items = new ArrayList<>(sourceListOrNull.size());
@@ -1108,10 +1108,9 @@ public final class DataUtil {
   /**
    * Parse bytes as json header + payload.
    *
-   * @param byteArray
-   *          bytes, with LITTLE_ENDIAN byte order, with format:
-   * 
-   *          [4] length (n) of json [n] json map [x] binary payload
+   * @param byteArray bytes, with LITTLE_ENDIAN byte order, with format:
+   *
+   *                  [4] length (n) of json [n] json map [x] binary payload
    */
   public static Pair<JSMap, byte[]> parseJsonAndPayload(byte[] byteArray) {
 
@@ -1177,16 +1176,13 @@ public final class DataUtil {
   /**
    * Convert value to hex, store in StringBuilder
    *
-   * @param sbOrNull
-   *          where to store result, or null
-   * @param value
-   *          value to convert
-   * @param digits
-   *          number of hex digits to output
+   * @param sbOrNull where to store result, or null
+   * @param value    value to convert
+   * @param digits   number of hex digits to output
    * @return result
    */
   public static StringBuilder toHex(StringBuilder sbOrNull, int value, int digits, boolean stripLeadingZeros,
-      boolean groupsOfFour) {
+                                    boolean groupsOfFour) {
     StringBuilder sb = constructStringBuilderIfNec(sbOrNull);
 
     boolean nonZeroSeen = !stripLeadingZeros;
@@ -1369,13 +1365,13 @@ public final class DataUtil {
 
   /**
    * <pre>
-   * 
+   *
    * Field links are a mechanism to allow a data type to point to some other file containing the data type's value.
    * For example, let us define a data type Foo that wants to have a field representing an instance of type Bar.
-   * 
+   *
    * By convention, Foo's field link to a Bar instance consists of two fields, an optional value, and a link
    * to an external value:
-   * 
+   *
    * # foo.dat
    * #
    * class {
@@ -1384,39 +1380,35 @@ public final class DataUtil {
    *    File bar_path;
    *       :
    * }
-   * 
+   *
    * If the optional field bar is non null, then that is the value of Bar that is used.  Otherwise, the field link
    * is *resolved* by parsing the bar_path field.  This is a File with the structure:
-   *      
+   *
    *      <target_file> ( ',' <key> )*
-   * 
+   *
    * <target_file> is the path to a file containing a JSMap (typically the serialization of some other data type),
    * and <key> is a list of keys defining a path through the JSMap to reach the desired JSMap representing the
    * Foo to be returned.
-   * 
+   *
    * </pre>
    */
 
   /**
    * Resolve a field link. See discussion above.
-   * 
-   * @param baseDirectoryOrNull
-   *          if not null, a directory to serve as the base directory for the
-   *          path argument (if it is relative)
-   * @param fieldPrototype
-   *          an instance of the returned type, to use as a parser
-   * @param optionalField
-   *          if non-null, this value is returned
-   * @param path
-   *          if optionalField is null, this path is parsed as a comma-delimited
-   *          sequence of strings, the first of which is a path to a file
-   *          containing a JSMap (A), and the subsequent strings are a set of
-   *          keys pointing to a nested JSMap (B) within (A). B is parsed and
-   *          returned
+   *
+   * @param baseDirectoryOrNull if not null, a directory to serve as the base directory for the
+   *                            path argument (if it is relative)
+   * @param fieldPrototype      an instance of the returned type, to use as a parser
+   * @param optionalField       if non-null, this value is returned
+   * @param path                if optionalField is null, this path is parsed as a comma-delimited
+   *                            sequence of strings, the first of which is a path to a file
+   *                            containing a JSMap (A), and the subsequent strings are a set of
+   *                            keys pointing to a nested JSMap (B) within (A). B is parsed and
+   *                            returned
    * @return value, either optionalField or B
    */
   public static <F extends AbstractData> F resolveField(File baseDirectoryOrNull, F fieldPrototype,
-      F optionalField, File path) {
+                                                        F optionalField, File path) {
     if (optionalField != null)
       return optionalField;
     JSMap jsonMap = resolveJSMap(baseDirectoryOrNull, path);
@@ -1479,6 +1471,48 @@ public final class DataUtil {
     for (int x : intArray)
       out.add(x);
     return out;
+  }
+
+
+  private static DFA getDFAClean() {
+    if (sDFAClean == null) {
+      var dfaStr =
+          Files.readString(DFA.class, "clean.dfa");
+      sDFAClean = DFA.parse(dfaStr);
+    }
+    return sDFAClean;
+  }
+
+  private static DFA sDFAClean;
+
+  // Token Ids generated by 'dev dfa' tool (DO NOT EDIT BELOW)
+  private static final int T_NUMBER = 0;
+  private static final int T_UUID = 1;
+  // End of token Ids generated by 'dev dfa' tool (DO NOT EDIT ABOVE)
+
+  public static String cleanString(Object message) {
+    var s = message.toString();
+    var sc = new Lexer(getDFAClean()).withNoSkip().withAcceptUnknownTokens().withText(s);
+    var sb = new StringBuilder();
+    while (sc.hasNext()) {
+      var t = sc.read();
+      var tx = t.text();
+      switch (t.id()) {
+        case T_NUMBER: {
+          try {
+            var y = Double.parseDouble(tx);
+            tx = "" + ((long) y);
+          } catch (NumberFormatException e) {
+          }
+        }
+        break;
+        case T_UUID:
+          tx = "<uuid" + tx.substring(0, 4) + "..>";
+          break;
+      }
+      sb.append(tx);
+    }
+    return sb.toString();
   }
 
 }

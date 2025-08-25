@@ -29,6 +29,7 @@ import java.util.concurrent.*;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
+import js.data.DataUtil;
 import org.apache.commons.io.FileUtils;
 
 import js.file.Files;
@@ -424,6 +425,12 @@ public final class Tools {
     sBasePrinter.clear();
     sBasePrinter.resetIndentation();
     sLogger.println(result);
+  }
+
+  public static void pc(Object... messages) {
+    var p = new BasePrinter();
+    p.prNoCr(messages);
+    pr(DataUtil.cleanString(p.toString()));
   }
 
   public static LoggerInterface logger() {
