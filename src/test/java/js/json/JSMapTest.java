@@ -20,4 +20,22 @@ public class JSMapTest {
     var mp = new JSMap(text);
     checkArgument(mp.size() == 1);
   }
+
+
+  @Test
+  public void parseJsonStrings() {
+    String[] samples = {
+        "\\u001b",
+        "------\\u001b",
+        "------\\u001b[39m",
+    };
+
+    var result = map();
+    for (var s : samples) {
+      s = quote(s);
+      var x = JSUtils.parseStringFrom(s);
+      result.putNumbered(x);
+    }
+  }
+
 }

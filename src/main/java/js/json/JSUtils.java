@@ -160,15 +160,22 @@ public final class JSUtils {
   }
 
   static String parseStringFrom(String s) {
+    // Assumes the first and last characters in s are '"'
     StringBuilder w = new StringBuilder();
     int cursor = 1;
     int cursorMax = s.length() - 1;
     while (cursor < cursorMax) {
+      // Read next character, and advance cursor
       char c = s.charAt(cursor++);
+
+      // If it's not a backslash, append it and continue
       if (c != '\\') {
         w.append(c);
         continue;
       }
+
+      // It's an escape sequence.  Read escape code and advance cursor
+      //
       c = s.charAt(cursor++);
       switch (c) {
         case '\\':
@@ -194,7 +201,7 @@ public final class JSUtils {
         case 'u':
           if (cursor + 4 > cursorMax)
             throw badArg("illegal escape sequence:", s);
-          w.append((char) ((readHex(s, c) << 12) | (readHex(s, c + 1) << 8) | (readHex(s, c + 2) << 4) | readHex(s, c + 3)));
+          w.append((char) ((readHex(s, cursor) << 12) | (readHex(s, cursor + 1) << 8) | (readHex(s, cursor + 2) << 4) | readHex(s, cursor + 3)));
           cursor += 4;
           break;
         default:
