@@ -359,7 +359,7 @@ public class Lexer extends BaseObject {
       }
 
       // If unknown, and so was previous, merge into the previous one.
-      if (bestId == Lexeme.ID_UNKNOWN
+      if (false && bestId == Lexeme.ID_UNKNOWN
           && !ti.isEmpty() && ti.get(ti.size() - F_TOTAL + F_TOKEN_ID) == Lexeme.ID_UNKNOWN) {
 
         // We don't need to do any further work, as the length of token
